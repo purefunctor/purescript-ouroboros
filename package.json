@@ -1,0 +1,10 @@
+{
+  "private": "true",
+  "type": "module",
+  "devDependencies": {
+    "purescript": "^0.15.15",
+    "purs-backend-es": "^1.4.2",
+    "purs-tidy": "^0.11.0",
+    "spago": "^0.93.32"
+  }
+}
