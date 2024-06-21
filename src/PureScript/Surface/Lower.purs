@@ -10,7 +10,7 @@ import Data.Array.NonEmpty as NEA
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Array.ST.Partial as STAP
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), isJust)
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
@@ -293,7 +293,9 @@ lowerExpr state = runEffectFn1 go
       CST.ExprDo { statements: cstStatements } → do
         SST.ExprDo annotation <$> traverse (lowerDoStatement state) cstStatements
       CST.ExprAdo { statements: cstStatements, result: cstResult } → do
-        SST.ExprAdo annotation <$> traverse (lowerDoStatement state) cstStatements <*> runEffectFn1 go cstResult
+        SST.ExprAdo annotation <$> traverse (lowerDoStatement state) cstStatements <*> runEffectFn1
+          go
+          cstResult
       CST.ExprError v → do
         absurd v
 
@@ -327,6 +329,42 @@ lowerType state = runEffectFn1 go
     insertTypeSourceRange state index range
     pure index
 
+  goLabeled ∷ ∀ a. EffectFn1 (CST.Labeled a (CST.Type Void)) (Tuple a SST.Type)
+  goLabeled = mkEffectFn1 case _ of
+    CST.Labeled { label: cstLabel, value: cstValue } →
+      Tuple cstLabel <$> runEffectFn1 go cstValue
+
+  goRow ∷ EffectFn1 (CST.Wrapped (CST.Row Void)) SST.Row
+  goRow = mkEffectFn1 case _ of
+    CST.Wrapped { value: CST.Row { labels: cstLabels, tail: cstTail } } → do
+      labels ← case cstLabels of
+        Just (CST.Separated { head: cstLabelsHead, tail: cstLabelsTail }) → do
+          labelsHead ← runEffectFn1 goLabeled cstLabelsHead
+          labelsTail ← traverse (Tuple.snd >>> runEffectFn1 goLabeled) cstLabelsTail
+          pure $ Array.cons labelsHead labelsTail
+        Nothing →
+          pure []
+      tail ← traverse (Tuple.snd >>> lowerType state) cstTail
+      pure $ SST.Row labels tail
+
+  goBinding
+    ∷ EffectFn1
+        (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) Void)
+        (SST.TypeVarBinding (CST.Name CST.Ident))
+  goBinding = mkEffectFn1 case _ of
+    CST.TypeVarKinded (CST.Wrapped { value: cstValue }) → do
+      Tuple (CST.Prefixed { value: n }) v ← runEffectFn1 goLabeled cstValue
+      pure $ SST.TypeVarKinded n v
+    CST.TypeVarName (CST.Prefixed { value: n }) →
+      pure $ SST.TypeVarName n
+
+  goChain ∷ ∀ a b. EffectFn2 (EffectFn1 a b) (Tuple a (CST.Type Void)) (Tuple b SST.Type)
+  goChain = mkEffectFn2 \onOperator (Tuple operator operand) →
+    Tuple <$> runEffectFn1 onOperator operator <*> runEffectFn1 go operand
+
+  goOperator ∷ EffectFn1 (CST.QualifiedName CST.Operator) (CST.QualifiedName CST.Operator)
+  goOperator = mkEffectFn1 pure
+
   go ∷ EffectFn1 (CST.Type Void) SST.Type
   go = mkEffectFn1 \t → do
     let
@@ -337,7 +375,55 @@ lowerType state = runEffectFn1 go
       annotation ∷ SST.TypeAnnotation
       annotation = SST.Annotation { index }
     insertTypeSourceRange state index range
-    pure $ SST.TypeNotImplemented annotation
+    case t of
+      CST.TypeVar v →
+        pure $ SST.TypeVar annotation v
+      CST.TypeConstructor c →
+        pure $ SST.TypeConstructor annotation c
+      CST.TypeWildcard _ →
+        pure $ SST.TypeWildcard annotation
+      CST.TypeHole h →
+        pure $ SST.TypeHole annotation h
+      CST.TypeString _ s →
+        pure $ SST.TypeString annotation s
+      CST.TypeInt n _ i →
+        pure $ SST.TypeInt annotation (isJust n) i
+      CST.TypeRow r → do
+        SST.TypeRow annotation <$> runEffectFn1 goRow r
+      CST.TypeRecord r → do
+        SST.TypeRecord annotation <$> runEffectFn1 goRow r
+      CST.TypeForall _ cstBindings _ cstBody → do
+        bindings ← traverse (runEffectFn1 goBinding) cstBindings
+        body ← runEffectFn1 go cstBody
+        pure $ SST.TypeForall annotation bindings body
+      CST.TypeKinded cstType _ cstKind →
+        SST.TypeKinded annotation
+          <$> runEffectFn1 go cstType
+          <*> runEffectFn1 go cstKind
+      CST.TypeApp cstType cstArguments →
+        SST.TypeApp annotation
+          <$> runEffectFn1 go cstType
+          <*> traverse (runEffectFn1 go) cstArguments
+      CST.TypeOp cstHead cstChain →
+        SST.TypeOp annotation
+          <$> runEffectFn1 go cstHead
+          <*> traverse (runEffectFn2 goChain goOperator) cstChain
+      CST.TypeOpName n →
+        pure $ SST.TypeOpName annotation n
+      CST.TypeArrow cstArgument _ cstReturn →
+        SST.TypeArrow annotation
+          <$> runEffectFn1 go cstArgument
+          <*> runEffectFn1 go cstReturn
+      CST.TypeArrowName _ →
+        pure $ SST.TypeArrowName annotation
+      CST.TypeConstrained cstConstraint _ cstConstrained →
+        SST.TypeConstrained annotation
+          <$> runEffectFn1 go cstConstraint
+          <*> runEffectFn1 go cstConstrained
+      CST.TypeParens (CST.Wrapped { value }) →
+        SST.TypeParens annotation <$> runEffectFn1 go value
+      CST.TypeError v →
+        absurd v
 
 lowerLetBinding ∷ State → CST.LetBinding Void → Effect SST.LetBinding
 lowerLetBinding state = runEffectFn1 go
@@ -376,17 +462,17 @@ lowerLetBinding state = runEffectFn1 go
 -- so we keep the shape similar to other lowerX functions. For instance, indices could improve
 -- error reporting for do blocks since we can recover the entire statement rather than just the
 -- let binding.
-lowerDoStatement :: State -> CST.DoStatement Void -> Effect SST.DoStatement
+lowerDoStatement ∷ State → CST.DoStatement Void → Effect SST.DoStatement
 lowerDoStatement state = runEffectFn1 go
   where
-  go :: EffectFn1 (CST.DoStatement Void) SST.DoStatement
-  go = mkEffectFn1 \d -> do
+  go ∷ EffectFn1 (CST.DoStatement Void) SST.DoStatement
+  go = mkEffectFn1 \d → do
     case d of
-      CST.DoLet _ cstLetBindings -> do
+      CST.DoLet _ cstLetBindings → do
         SST.DoLet <$> traverse (lowerLetBinding state) cstLetBindings
-      CST.DoDiscard cstExpr -> do
+      CST.DoDiscard cstExpr → do
         SST.DoDiscard <$> lowerExpr state cstExpr
-      CST.DoBind cstBinder _ cstExpr -> do
+      CST.DoBind cstBinder _ cstExpr → do
         SST.DoBind <$> lowerBinder state cstBinder <*> lowerExpr state cstExpr
-      CST.DoError e ->
+      CST.DoError e →
         absurd e

@@ -1,6 +1,6 @@
 module PureScript.Surface.Types where
 
-import Prim hiding (Type)
+import Prim hiding (Row, Type)
 
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Maybe (Maybe)
@@ -14,6 +14,10 @@ newtype Index a = Index Int
 newtype Annotation a = Annotation
   { index ∷ Index a
   }
+
+data TypeVarBinding a
+  = TypeVarKinded a Type
+  | TypeVarName a
 
 data Guarded
   = Unconditional Where
@@ -95,4 +99,24 @@ data Binder = BinderNotImplemented BinderAnnotation
 type TypeAnnotation = Annotation Type
 type TypeIndex = Index Type
 
-data Type = TypeNotImplemented TypeAnnotation
+data Type
+  = TypeVar TypeAnnotation (Name Ident)
+  | TypeConstructor TypeAnnotation (QualifiedName Proper)
+  | TypeWildcard TypeAnnotation
+  | TypeHole TypeAnnotation (Name Ident)
+  | TypeString TypeAnnotation String
+  | TypeInt TypeAnnotation Boolean IntValue
+  | TypeRow TypeAnnotation Row
+  | TypeRecord TypeAnnotation Row
+  | TypeForall TypeAnnotation (NonEmptyArray (TypeVarBinding (Name Ident))) Type
+  | TypeKinded TypeAnnotation Type Type
+  | TypeApp TypeAnnotation Type (NonEmptyArray Type)
+  | TypeOp TypeAnnotation Type (NonEmptyArray (Tuple (QualifiedName Operator) Type))
+  | TypeOpName TypeAnnotation (QualifiedName Operator)
+  | TypeArrow TypeAnnotation Type Type
+  | TypeArrowName TypeAnnotation
+  | TypeConstrained TypeAnnotation Type Type
+  | TypeParens TypeAnnotation Type
+  | TypeNotImplemented TypeAnnotation
+
+data Row = Row (Array (Tuple (Name Label) Type)) (Maybe Type)
