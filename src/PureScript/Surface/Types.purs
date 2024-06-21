@@ -79,8 +79,8 @@ data Expr
   | ExprNotImplemented ExprAnnotation
 
 data AppSpine
-  = AppSpineTerm Expr
-  | AppSpineNotImplemented
+  = AppTerm Expr
+  | AppType Type
 
 data RecordLabeled a
   = RecordPun (Name Ident)

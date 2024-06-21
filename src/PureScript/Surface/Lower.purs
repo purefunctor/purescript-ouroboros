@@ -166,8 +166,8 @@ lowerExpr state = runEffectFn1 go
 
   goAppSpine ∷ EffectFn1 (CST.AppSpine CST.Expr Void) SST.AppSpine
   goAppSpine = mkEffectFn1 case _ of
-    CST.AppTerm e → SST.AppSpineTerm <$> runEffectFn1 go e
-    CST.AppType _ _ → pure SST.AppSpineNotImplemented
+    CST.AppTerm e → SST.AppTerm <$> runEffectFn1 go e
+    CST.AppType _ t → SST.AppType <$> lowerType state t
 
   goRecordLabeled ∷ EffectFn1 (CST.RecordLabeled (CST.Expr Void)) (SST.RecordLabeled SST.Expr)
   goRecordLabeled = mkEffectFn1 case _ of

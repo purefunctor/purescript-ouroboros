@@ -83,6 +83,30 @@ collectGuardedExpr _ (SST.GuardedExpr _ _) = pure unit
 collectExpr ∷ State → SST.Expr → Effect Unit
 collectExpr state = runEffectFn1 go
   where
+  goRecordUpdate :: EffectFn1 SST.RecordUpdate Unit
+  goRecordUpdate = mkEffectFn1 case _ of
+    SST.RecordUpdateLeaf _ i -> 
+      runEffectFn1 go i
+    SST.RecordUpdateBranch _ r -> 
+      traverse_ (runEffectFn1 goRecordUpdate) r
+
+  goAppSpine :: EffectFn1 SST.AppSpine Unit
+  goAppSpine = mkEffectFn1 case _ of
+    SST.AppTerm e -> runEffectFn1 go e
+    SST.AppType t -> collectType state t
+
+  goPushDoStatement :: EffectFn1 SST.DoStatement Unit
+  goPushDoStatement = mkEffectFn1 case _ of
+    SST.DoLet bindings -> 
+      collectPushLetBindings state $ NEA.toArray bindings
+    SST.DoDiscard term -> 
+      runEffectFn1 go term
+    SST.DoBind binder term -> do
+      runEffectFn1 go term
+      collectPushBinders state [binder]
+    SST.DoNotImplemented -> 
+      pure unit
+
   go ∷ EffectFn1 SST.Expr Unit
   go = mkEffectFn1 \e →
     case e of
@@ -104,40 +128,79 @@ collectExpr state = runEffectFn1 go
         pushExprScopeNode state index
       SST.ExprNumber (SST.Annotation { index }) _ →
         pushExprScopeNode state index
-      SST.ExprArray (SST.Annotation { index }) _ →
+      SST.ExprArray (SST.Annotation { index }) items → do
         pushExprScopeNode state index
-      SST.ExprRecord (SST.Annotation { index }) _ →
+        traverse_ (runEffectFn1 go) items
+      SST.ExprRecord (SST.Annotation { index }) items → do
         pushExprScopeNode state index
-      SST.ExprParens (SST.Annotation { index }) _ →
+        for_ items case _ of
+          SST.RecordPun _ -> pure unit
+          SST.RecordField _ item -> runEffectFn1 go item
+      SST.ExprParens (SST.Annotation { index }) i → do
         pushExprScopeNode state index
-      SST.ExprTyped (SST.Annotation { index }) _ _ →
+        runEffectFn1 go i
+      SST.ExprTyped (SST.Annotation { index }) i t → do
         pushExprScopeNode state index
-      SST.ExprInfix (SST.Annotation { index }) _ _ →
+        runEffectFn1 go i
+        collectType state t
+      SST.ExprInfix (SST.Annotation { index }) head chain → do
         pushExprScopeNode state index
-      SST.ExprOp (SST.Annotation { index }) _ _ →
+        runEffectFn1 go head
+        for_ chain \(Tuple operator operand) -> do
+          runEffectFn1 go operator
+          runEffectFn1 go operand
+      SST.ExprOp (SST.Annotation { index }) head chain → do
         pushExprScopeNode state index
+        runEffectFn1 go head
+        for_ chain \(Tuple _ operand) -> do
+          runEffectFn1 go operand
       SST.ExprOpName (SST.Annotation { index }) _ →
         pushExprScopeNode state index
-      SST.ExprNegate (SST.Annotation { index }) _ →
+      SST.ExprNegate (SST.Annotation { index }) i → do
         pushExprScopeNode state index
-      SST.ExprRecordAccessor (SST.Annotation { index }) _ _ →
+        runEffectFn1 go i
+      SST.ExprRecordAccessor (SST.Annotation { index }) i _ → do
         pushExprScopeNode state index
-      SST.ExprRecordUpdate (SST.Annotation { index }) _ _ →
+        runEffectFn1 go i
+      SST.ExprRecordUpdate (SST.Annotation { index }) i r → do
         pushExprScopeNode state index
-      SST.ExprApplication (SST.Annotation { index }) _ _ →
+        runEffectFn1 go i
+        traverse_ (runEffectFn1 goRecordUpdate) r
+      SST.ExprApplication (SST.Annotation { index }) f s → do
         pushExprScopeNode state index
-      SST.ExprLambda (SST.Annotation { index }) _ _ →
+        runEffectFn1 go f
+        traverse_ (runEffectFn1 goAppSpine) s
+      SST.ExprLambda (SST.Annotation { index }) b i → do
         pushExprScopeNode state index
-      SST.ExprIfThenElse (SST.Annotation { index }) _ _ _ →
+        withRevertingScope state do
+          collectPushBinders state $ NEA.toArray b
+          runEffectFn1 go i
+      SST.ExprIfThenElse (SST.Annotation { index }) c t f → do
         pushExprScopeNode state index
-      SST.ExprCase (SST.Annotation { index }) _ _ →
+        runEffectFn1 go c
+        runEffectFn1 go t
+        runEffectFn1 go f
+      SST.ExprCase (SST.Annotation { index }) head branches → do
         pushExprScopeNode state index
-      SST.ExprLet (SST.Annotation { index }) _ _ →
+        traverse_ (runEffectFn1 go) head
+        for_ branches \(Tuple binders guarded) -> do
+          withRevertingScope state do
+            collectPushBinders state $ NEA.toArray binders
+            collectGuarded state guarded
+      SST.ExprLet (SST.Annotation { index }) bindings body → do
         pushExprScopeNode state index
-      SST.ExprDo (SST.Annotation { index }) _ →
+        withRevertingScope state do
+          collectPushLetBindings state $ NEA.toArray bindings
+          runEffectFn1 go body
+      SST.ExprDo (SST.Annotation { index }) statements → do
         pushExprScopeNode state index
-      SST.ExprAdo (SST.Annotation { index }) _ _ →
+        withRevertingScope state do
+          traverse_ (runEffectFn1 goPushDoStatement) statements
+      SST.ExprAdo (SST.Annotation { index }) statements body → do
         pushExprScopeNode state index
+        withRevertingScope state do
+          traverse_ (runEffectFn1 goPushDoStatement) statements
+          runEffectFn1 go body
       SST.ExprNotImplemented (SST.Annotation { index }) →
         pushExprScopeNode state index
 
