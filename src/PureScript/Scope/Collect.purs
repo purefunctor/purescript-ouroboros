@@ -22,7 +22,7 @@ import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
 import Partial.Unsafe (unsafeCrashWith, unsafePartial)
 import PureScript.CST.Types as CST
-import PureScript.Scope.Types (ScopeNode(..), LetBindingRef)
+import PureScript.Scope.Types (LetBindingRef, ScopeNode(..))
 import PureScript.Surface.Types as SST
 import Safe.Coerce (coerce)
 
@@ -78,33 +78,47 @@ collectWhere state (SST.Where expr bindings) = do
     collectExpr state expr
 
 collectGuardedExpr ∷ State → SST.GuardedExpr → Effect Unit
-collectGuardedExpr _ (SST.GuardedExpr _ _) = pure unit
+collectGuardedExpr state (SST.GuardedExpr guards (SST.Where expr bindings)) = do
+  patternGuardScope ← withRevertingScope state do
+    traverse_ (collectPushPatternGuard state) guards
+    currentScope state
+  letBindingScope ← withRevertingScope state do
+    collectPushLetBindings state bindings
+    currentScope state
+  withRevertingScope state do
+    pushScope state (JoinScope patternGuardScope letBindingScope)
+    collectExpr state expr
+
+collectPushPatternGuard ∷ State → SST.PatternGuard → Effect Unit
+collectPushPatternGuard state (SST.PatternGuard binder expr) = do
+  collectPushBinders state $ Array.fromFoldable binder
+  collectExpr state expr
 
 collectExpr ∷ State → SST.Expr → Effect Unit
 collectExpr state = runEffectFn1 go
   where
-  goRecordUpdate :: EffectFn1 SST.RecordUpdate Unit
+  goRecordUpdate ∷ EffectFn1 SST.RecordUpdate Unit
   goRecordUpdate = mkEffectFn1 case _ of
-    SST.RecordUpdateLeaf _ i -> 
+    SST.RecordUpdateLeaf _ i →
       runEffectFn1 go i
-    SST.RecordUpdateBranch _ r -> 
+    SST.RecordUpdateBranch _ r →
       traverse_ (runEffectFn1 goRecordUpdate) r
 
-  goAppSpine :: EffectFn1 SST.AppSpine Unit
+  goAppSpine ∷ EffectFn1 SST.AppSpine Unit
   goAppSpine = mkEffectFn1 case _ of
-    SST.AppTerm e -> runEffectFn1 go e
-    SST.AppType t -> collectType state t
+    SST.AppTerm e → runEffectFn1 go e
+    SST.AppType t → collectType state t
 
-  goPushDoStatement :: EffectFn1 SST.DoStatement Unit
+  goPushDoStatement ∷ EffectFn1 SST.DoStatement Unit
   goPushDoStatement = mkEffectFn1 case _ of
-    SST.DoLet bindings -> 
+    SST.DoLet bindings →
       collectPushLetBindings state $ NEA.toArray bindings
-    SST.DoDiscard term -> 
+    SST.DoDiscard term →
       runEffectFn1 go term
-    SST.DoBind binder term -> do
+    SST.DoBind binder term → do
       runEffectFn1 go term
-      collectPushBinders state [binder]
-    SST.DoNotImplemented -> 
+      collectPushBinders state [ binder ]
+    SST.DoNotImplemented →
       pure unit
 
   go ∷ EffectFn1 SST.Expr Unit
@@ -134,8 +148,8 @@ collectExpr state = runEffectFn1 go
       SST.ExprRecord (SST.Annotation { index }) items → do
         pushExprScopeNode state index
         for_ items case _ of
-          SST.RecordPun _ -> pure unit
-          SST.RecordField _ item -> runEffectFn1 go item
+          SST.RecordPun _ → pure unit
+          SST.RecordField _ item → runEffectFn1 go item
       SST.ExprParens (SST.Annotation { index }) i → do
         pushExprScopeNode state index
         runEffectFn1 go i
@@ -146,13 +160,13 @@ collectExpr state = runEffectFn1 go
       SST.ExprInfix (SST.Annotation { index }) head chain → do
         pushExprScopeNode state index
         runEffectFn1 go head
-        for_ chain \(Tuple operator operand) -> do
+        for_ chain \(Tuple operator operand) → do
           runEffectFn1 go operator
           runEffectFn1 go operand
       SST.ExprOp (SST.Annotation { index }) head chain → do
         pushExprScopeNode state index
         runEffectFn1 go head
-        for_ chain \(Tuple _ operand) -> do
+        for_ chain \(Tuple _ operand) → do
           runEffectFn1 go operand
       SST.ExprOpName (SST.Annotation { index }) _ →
         pushExprScopeNode state index
@@ -183,7 +197,7 @@ collectExpr state = runEffectFn1 go
       SST.ExprCase (SST.Annotation { index }) head branches → do
         pushExprScopeNode state index
         traverse_ (runEffectFn1 go) head
-        for_ branches \(Tuple binders guarded) -> do
+        for_ branches \(Tuple binders guarded) → do
           withRevertingScope state do
             collectPushBinders state $ NEA.toArray binders
             collectGuarded state guarded
@@ -250,7 +264,7 @@ collectBinder _ perName = runEffectFn1 go
       SST.BinderNotImplemented _ →
         pure unit
 
-collectType :: State -> SST.Type -> Effect Unit
+collectType ∷ State → SST.Type → Effect Unit
 collectType _ _ = pure unit
 
 collectPushBinders ∷ State → Array SST.Binder → Effect Unit
@@ -304,15 +318,15 @@ insertNameRef ∷ STObject Global LetBindingRef → NonEmptyArray SST.LetBinding
 insertNameRef letBoundRaw = NEA.uncons >>> case _ of
   { head: SST.LetBindingSignature (SST.Annotation { index }) (CST.Name { name }) _, tail } → do
     let
-      letBindingRef :: LetBindingRef
+      letBindingRef ∷ LetBindingRef
       letBindingRef =
         { signatureIndex: Just index
-        , nameIndices: map getNameIndex tail 
+        , nameIndices: map getNameIndex tail
         }
     void $ STG.toEffect $ STO.poke (coerce name) letBindingRef letBoundRaw
   { head: SST.LetBindingName (SST.Annotation { index }) (CST.Name { name }) _ _, tail } → do
     let
-      letBindingRef :: LetBindingRef
+      letBindingRef ∷ LetBindingRef
       letBindingRef =
         { signatureIndex: Nothing
         , nameIndices: Array.cons index (map getNameIndex tail)
@@ -321,22 +335,22 @@ insertNameRef letBoundRaw = NEA.uncons >>> case _ of
   _ →
     unsafeCrashWith "invariant violated: expected LetBindingSignature/LetBindingName"
 
-collectNamedLetBinding :: State -> SST.LetBinding -> Effect Unit
+collectNamedLetBinding ∷ State → SST.LetBinding → Effect Unit
 collectNamedLetBinding state = case _ of
-  SST.LetBindingSignature _ _ t ->
+  SST.LetBindingSignature _ _ t →
     collectType state t
-  SST.LetBindingName _ _ binders guarded ->
+  SST.LetBindingName _ _ binders guarded →
     withRevertingScope state do
       collectPushBinders state binders
       collectGuarded state guarded
   _ →
     unsafeCrashWith "invariant violated: expected LetBindingSignature/LetBindingName"
 
-collectPatternLetBinding :: State -> SST.LetBinding -> Effect Unit
+collectPatternLetBinding ∷ State → SST.LetBinding → Effect Unit
 collectPatternLetBinding state = case _ of
-  SST.LetBindingPattern _ b w -> do
+  SST.LetBindingPattern _ b w → do
     collectWhere state w
-    collectPushBinders state [b]
+    collectPushBinders state [ b ]
   _ →
     unsafeCrashWith "invariant violated: expected LetBindingPattern"
 
@@ -390,5 +404,5 @@ collectPushLetBindings state letBindings = do
         parentScope ← currentScope state
         pushScope state (LetBound parentScope letBound)
 
-        for_ nameGroups \nameGroup ->
+        for_ nameGroups \nameGroup →
           traverse_ (collectNamedLetBinding state) nameGroup

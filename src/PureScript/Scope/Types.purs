@@ -15,3 +15,4 @@ data ScopeNode
   = RootScope
   | Binders ScopeNode (Object BinderRef)
   | LetBound ScopeNode (Object LetBindingRef)
+  | JoinScope ScopeNode ScopeNode
