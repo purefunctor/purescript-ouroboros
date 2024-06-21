@@ -3,6 +3,7 @@ module PureScript.Surface.Types where
 import Prim hiding (Type)
 
 import Data.Array.NonEmpty (NonEmptyArray)
+import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
 import Prim as Prim
 import PureScript.CST.Types (Ident, IntValue, Label, Name, Operator, Proper, QualifiedName)
@@ -13,6 +14,25 @@ newtype Index a = Index Int
 newtype Annotation a = Annotation
   { index ∷ Index a
   }
+
+data Guarded
+  = Unconditional Where
+  | Guarded (NonEmptyArray GuardedExpr)
+
+data GuardedExpr = GuardedExpr (NonEmptyArray PatternGuard) Where
+
+data PatternGuard = PatternGuard (Maybe Binder) Expr
+
+type LetBindingAnnotation = Annotation LetBinding
+type LetBindingIndex = Index LetBinding
+
+data LetBinding
+  = LetBindingSignature LetBindingAnnotation (Name Ident) Type
+  | LetBindingName LetBindingAnnotation (Name Ident) (Array Binder) Guarded
+  | LetBindingPattern LetBindingAnnotation Binder Where
+  | LetBindingNotImplemented LetBindingAnnotation
+
+data Where = Where Expr (Array LetBinding)
 
 type ExprAnnotation = Annotation Expr
 type ExprIndex = Index Expr
@@ -38,6 +58,15 @@ data Expr
   | ExprRecordAccessor ExprAnnotation Expr (NonEmptyArray (Name Label))
   | ExprRecordUpdate ExprAnnotation Expr (NonEmptyArray RecordUpdate)
   | ExprApplication ExprAnnotation Expr (NonEmptyArray AppSpine)
+  | ExprLambda ExprAnnotation (NonEmptyArray Binder) Expr
+  | ExprIfThenElse ExprAnnotation Expr Expr Expr
+  | ExprCase
+      ExprAnnotation
+      (NonEmptyArray Expr)
+      (NonEmptyArray (Tuple (NonEmptyArray Binder) Guarded))
+  | ExprLet ExprAnnotation (NonEmptyArray LetBinding) Expr
+  | ExprDo ExprAnnotation (NonEmptyArray DoStatement)
+  | ExprAdo ExprAnnotation (Array DoStatement) Expr
   | ExprNotImplemented ExprAnnotation
 
 data AppSpine
@@ -51,6 +80,17 @@ data RecordLabeled a
 data RecordUpdate
   = RecordUpdateLeaf (Name Label) Expr
   | RecordUpdateBranch (Name Label) (NonEmptyArray RecordUpdate)
+
+data DoStatement
+  = DoLet (NonEmptyArray LetBinding)
+  | DoDiscard Expr
+  | DoBind Binder Expr
+  | DoNotImplemented
+
+type BinderAnnotation = Annotation Binder
+type BinderIndex = Index Binder
+
+data Binder = BinderNotImplemented BinderAnnotation
 
 type TypeAnnotation = Annotation Type
 type TypeIndex = Index Type
