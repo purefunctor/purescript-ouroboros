@@ -4,6 +4,7 @@ package:
     - console
     - debug
     - effect
+    - foreign-object
     - language-cst-parser
     - prelude
     - refs

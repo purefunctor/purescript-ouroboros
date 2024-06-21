@@ -6,6 +6,7 @@ workspace:
         - console
         - debug
         - effect
+        - foreign-object
         - language-cst-parser
         - prelude
         - refs
@@ -26,6 +27,7 @@ workspace:
         - exceptions
         - exists
         - foldable-traversable
+        - foreign-object
         - free
         - functions
         - functors
@@ -705,6 +707,23 @@ packages:
       - orders
       - prelude
       - tuples
+  foreign-object:
+    type: registry
+    version: 4.1.0
+    integrity: sha256-q24okj6mT+yGHYQ+ei/pYPj5ih6sTbu7eDv/WU56JVo=
+    dependencies:
+      - arrays
+      - foldable-traversable
+      - functions
+      - gen
+      - lists
+      - maybe
+      - prelude
+      - st
+      - tailrec
+      - tuples
+      - typelevel-prelude
+      - unfoldable
   free:
     type: registry
     version: 7.1.0
