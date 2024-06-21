@@ -15,6 +15,11 @@ newtype Annotation a = Annotation
   { index ∷ Index a
   }
 
+data Declaration
+  = DeclarationSignature (Name Ident) Type
+  | DeclarationValue (Name Ident) (Array Binder) Guarded
+  | DeclarationNotImplemented
+
 data TypeVarBinding a
   = TypeVarKinded a Type
   | TypeVarName a

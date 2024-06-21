@@ -99,6 +99,23 @@ insertLetBindingSourceRange ∷ State → SST.LetBindingIndex → CST.SourceRang
 insertLetBindingSourceRange { letBindingSourceRange } (SST.Index letBindingIndex) letBindingRange =
   unsafePartial $ STG.toEffect $ STAP.poke letBindingIndex letBindingRange letBindingSourceRange
 
+lowerDeclaration ∷ State → CST.Declaration Void → Effect SST.Declaration
+lowerDeclaration state = runEffectFn1 go
+  where
+  go ∷ EffectFn1 (CST.Declaration Void) SST.Declaration
+  go = mkEffectFn1 \d → do
+    case d of
+      CST.DeclSignature (CST.Labeled { label: cstLabel, value: cstValue }) →
+        SST.DeclarationSignature cstLabel <$> lowerType state cstValue
+      CST.DeclValue { name: cstName, binders: cstBinders, guarded: cstGuarded } →
+        SST.DeclarationValue cstName
+          <$> traverse (lowerBinder state) cstBinders
+          <*> lowerGuarded state cstGuarded
+      CST.DeclError v →
+        absurd v
+      _ →
+        pure $ SST.DeclarationNotImplemented
+
 lowerGuarded ∷ State → CST.Guarded Void → Effect SST.Guarded
 lowerGuarded state = case _ of
   CST.Unconditional _ w → SST.Unconditional <$> lowerWhere state w
