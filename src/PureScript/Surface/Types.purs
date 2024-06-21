@@ -94,7 +94,22 @@ data DoStatement
 type BinderAnnotation = Annotation Binder
 type BinderIndex = Index Binder
 
-data Binder = BinderNotImplemented BinderAnnotation
+data Binder
+  = BinderWildcard BinderAnnotation
+  | BinderVar BinderAnnotation (Name Ident)
+  | BinderNamed BinderAnnotation (Name Ident) Binder
+  | BinderConstructor BinderAnnotation (QualifiedName Proper) (Array Binder)
+  | BinderBoolean BinderAnnotation Boolean
+  | BinderChar BinderAnnotation Char
+  | BinderString BinderAnnotation String
+  | BinderInt BinderAnnotation Boolean IntValue
+  | BinderNumber BinderAnnotation Boolean Number
+  | BinderArray BinderAnnotation (Array Binder)
+  | BinderRecord BinderAnnotation (Array (RecordLabeled Binder))
+  | BinderParens BinderAnnotation Binder
+  | BinderTyped BinderAnnotation Binder Type
+  | BinderOp BinderAnnotation Binder (NonEmptyArray (Tuple (QualifiedName Operator) Binder))
+  | BinderNotImplemented BinderAnnotation
 
 type TypeAnnotation = Annotation Type
 type TypeIndex = Index Type

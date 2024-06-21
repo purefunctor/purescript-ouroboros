@@ -308,6 +308,18 @@ lowerBinder state = runEffectFn1 go
     insertBinderSourceRange state index range
     pure index
 
+  goRecordLabeled ∷ EffectFn1 (CST.RecordLabeled (CST.Binder Void)) (SST.RecordLabeled SST.Binder)
+  goRecordLabeled = mkEffectFn1 case _ of
+    CST.RecordPun n → pure $ SST.RecordPun n
+    CST.RecordField l _ e → SST.RecordField l <$> runEffectFn1 go e
+
+  goChain ∷ ∀ a b. EffectFn2 (EffectFn1 a b) (Tuple a (CST.Binder Void)) (Tuple b SST.Binder)
+  goChain = mkEffectFn2 \onOperator (Tuple operator operand) →
+    Tuple <$> runEffectFn1 onOperator operator <*> runEffectFn1 go operand
+
+  goOperator ∷ EffectFn1 (CST.QualifiedName CST.Operator) (CST.QualifiedName CST.Operator)
+  goOperator = mkEffectFn1 pure
+
   go ∷ EffectFn1 (CST.Binder Void) SST.Binder
   go = mkEffectFn1 \b → do
     let
@@ -318,7 +330,53 @@ lowerBinder state = runEffectFn1 go
       annotation ∷ SST.BinderAnnotation
       annotation = SST.Annotation { index }
     insertBinderSourceRange state index range
-    pure $ SST.BinderNotImplemented annotation
+    case b of
+      CST.BinderWildcard _ →
+        pure $ SST.BinderWildcard annotation
+      CST.BinderVar n →
+        pure $ SST.BinderVar annotation n
+      CST.BinderNamed n _ i →
+        SST.BinderNamed annotation n <$> runEffectFn1 go i
+      CST.BinderConstructor n a →
+        SST.BinderConstructor annotation n <$> traverse (runEffectFn1 go) a
+      CST.BinderBoolean _ v →
+        pure $ SST.BinderBoolean annotation v
+      CST.BinderChar _ c →
+        pure $ SST.BinderChar annotation c
+      CST.BinderString _ s →
+        pure $ SST.BinderString annotation s
+      CST.BinderInt n _ v →
+        pure $ SST.BinderInt annotation (isJust n) v
+      CST.BinderNumber n _ v →
+        pure $ SST.BinderNumber annotation (isJust n) v
+      CST.BinderArray (CST.Wrapped { value: cstValues }) → do
+        values ← case cstValues of
+          Just (CST.Separated { head: cstValueHead, tail: cstValueTail }) → do
+            valueHead ← runEffectFn1 go cstValueHead
+            valueTail ← traverse (Tuple.snd >>> runEffectFn1 go) cstValueTail
+            pure $ Array.cons valueHead valueTail
+          Nothing →
+            pure []
+        pure $ SST.BinderArray annotation values
+      CST.BinderRecord (CST.Wrapped { value: cstValues }) → do
+        values ← case cstValues of
+          Just (CST.Separated { head: cstValueHead, tail: cstValueTail }) → do
+            valueHead ← runEffectFn1 goRecordLabeled cstValueHead
+            valueTail ← traverse (Tuple.snd >>> runEffectFn1 goRecordLabeled) cstValueTail
+            pure $ Array.cons valueHead valueTail
+          Nothing →
+            pure []
+        pure $ SST.BinderRecord annotation values
+      CST.BinderParens (CST.Wrapped { value }) → do
+        SST.BinderParens annotation <$> runEffectFn1 go value
+      CST.BinderTyped i _ t → do
+        SST.BinderTyped annotation <$> runEffectFn1 go i <*> lowerType state t
+      CST.BinderOp cstHead cstChain →
+        SST.BinderOp annotation
+          <$> runEffectFn1 go cstHead
+          <*> traverse (runEffectFn2 goChain goOperator) cstChain
+      CST.BinderError v →
+        absurd v
 
 lowerType ∷ State → CST.Type Void → Effect SST.Type
 lowerType state = runEffectFn1 go
