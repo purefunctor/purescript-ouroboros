@@ -38,10 +38,8 @@ data LetBindingSourceRange
 
 type StateLetBindingSourceRange = STArray Global LetBindingSourceRange
 
-type DeclarationSourceRange =
-  { signature ∷ Maybe CST.SourceRange
-  , values ∷ Array CST.SourceRange
-  }
+data DeclarationSourceRange
+  = DeclarationValueSourceRange SigDefSourceRange
 
 type StateDeclarationSourceRange = STArray Global DeclarationSourceRange
 
@@ -671,9 +669,9 @@ lowerModule
           values ← STG.toEffect $ STA.unsafeFreeze valuesRaw
           let
             declarationSourceRange ∷ DeclarationSourceRange
-            declarationSourceRange =
+            declarationSourceRange = DeclarationValueSourceRange
               { signature: signature <#> _.sourceRange
-              , values: values <#> _.sourceRange
+              , definitions: values <#> _.sourceRange
               }
           index ← nextDeclarationIndex state
           let
