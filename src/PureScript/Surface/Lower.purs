@@ -430,8 +430,11 @@ lowerType state = runEffectFn1 go
     insertTypeSourceRange state index range
     pure index
 
-  goNameLabeled ∷ ∀ a. EffectFn1 (CST.Labeled (CST.Name a) (CST.Type Void)) (Tuple a SST.Type)
-  goNameLabeled = mkEffectFn1 case _ of
+  goRowPair
+    ∷ EffectFn1
+        (CST.Labeled (CST.Name CST.Label) (CST.Type Void))
+        (Tuple CST.Label SST.Type)
+  goRowPair = mkEffectFn1 case _ of
     CST.Labeled { label: (CST.Name { name: cstLabel }), value: cstValue } →
       Tuple cstLabel <$> runEffectFn1 go cstValue
 
@@ -440,22 +443,22 @@ lowerType state = runEffectFn1 go
     CST.Wrapped { value: CST.Row { labels: cstLabels, tail: cstTail } } → do
       labels ← case cstLabels of
         Just (CST.Separated { head: cstLabelsHead, tail: cstLabelsTail }) → do
-          labelsHead ← runEffectFn1 goNameLabeled cstLabelsHead
-          labelsTail ← traverse (Tuple.snd >>> runEffectFn1 goNameLabeled) cstLabelsTail
+          labelsHead ← runEffectFn1 goRowPair cstLabelsHead
+          labelsTail ← traverse (Tuple.snd >>> runEffectFn1 goRowPair) cstLabelsTail
           pure $ Array.cons labelsHead labelsTail
         Nothing →
           pure []
       tail ← traverse (Tuple.snd >>> lowerType state) cstTail
       pure $ SST.Row labels tail
 
-  goPrefixedNameLabeled
-    ∷ ∀ a
-    . EffectFn1
-        (CST.Labeled (CST.Prefixed (CST.Name a)) (CST.Type Void))
-        (Tuple a SST.Type)
-  goPrefixedNameLabeled = mkEffectFn1 case _ of
-    CST.Labeled { label: (CST.Prefixed { value: (CST.Name { name: cstLabel }) }), value: cstValue } →
-      Tuple cstLabel <$> runEffectFn1 go cstValue
+  goTypeVar
+    ∷ EffectFn1
+        (CST.Labeled (CST.Prefixed (CST.Name CST.Ident)) (CST.Type Void))
+        { visible ∷ Boolean, name ∷ CST.Ident, value ∷ SST.Type }
+  goTypeVar = mkEffectFn1 case _ of
+    CST.Labeled
+      { label: (CST.Prefixed { prefix, value: (CST.Name { name: cstLabel }) }), value: cstValue } →
+      { visible: isJust prefix, name: cstLabel, value: _ } <$> lowerType state cstValue
 
   goBinding
     ∷ EffectFn1
@@ -463,10 +466,10 @@ lowerType state = runEffectFn1 go
         (SST.TypeVarBinding CST.Ident)
   goBinding = mkEffectFn1 case _ of
     CST.TypeVarKinded (CST.Wrapped { value: cstValue }) → do
-      Tuple n v ← runEffectFn1 goPrefixedNameLabeled cstValue
-      pure $ SST.TypeVarKinded n v
-    CST.TypeVarName (CST.Prefixed { value: CST.Name { name } }) →
-      pure $ SST.TypeVarName name
+      { visible, name, value } ← runEffectFn1 goTypeVar cstValue
+      pure $ SST.TypeVarKinded visible name value
+    CST.TypeVarName (CST.Prefixed { prefix, value: CST.Name { name } }) →
+      pure $ SST.TypeVarName (isJust prefix) name
 
   goChain ∷ ∀ a b. EffectFn2 (EffectFn1 a b) (Tuple a (CST.Type Void)) (Tuple b SST.Type)
   goChain = mkEffectFn2 \onOperator (Tuple operator operand) →

@@ -38,8 +38,8 @@ data Declaration
   | DeclarationNotImplemented DeclarationAnnotation
 
 data TypeVarBinding a
-  = TypeVarKinded a Type
-  | TypeVarName a
+  = TypeVarKinded Boolean a Type
+  | TypeVarName Boolean a
 
 data Guarded
   = Unconditional Where
