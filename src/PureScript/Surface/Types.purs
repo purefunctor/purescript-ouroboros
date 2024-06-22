@@ -6,16 +6,12 @@ import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
 import Prim as Prim
-import PureScript.CST.Types
-  ( Ident
-  , IntValue
-  , Label
-  , ModuleName
-  , Name
-  , Operator
-  , Proper
-  , QualifiedName
-  )
+import PureScript.CST.Types (Ident, IntValue, Label, ModuleName, Operator, Proper)
+
+newtype QualifiedName a = QualifiedName
+  { moduleName ∷ Maybe ModuleName
+  , name ∷ a
+  }
 
 newtype Index ∷ Prim.Type → Prim.Type
 newtype Index a = Index Int
@@ -67,7 +63,7 @@ type ExprAnnotation = Annotation Expr
 type ExprIndex = Index Expr
 
 data Expr
-  = ExprHole ExprAnnotation (Name Ident)
+  = ExprHole ExprAnnotation Ident
   | ExprSection ExprAnnotation
   | ExprIdent ExprAnnotation (QualifiedName Ident)
   | ExprConstructor ExprAnnotation (QualifiedName Proper)
@@ -84,7 +80,7 @@ data Expr
   | ExprOp ExprAnnotation Expr (NonEmptyArray (Tuple (QualifiedName Operator) Expr))
   | ExprOpName ExprAnnotation (QualifiedName Operator)
   | ExprNegate ExprAnnotation Expr
-  | ExprRecordAccessor ExprAnnotation Expr (NonEmptyArray (Name Label))
+  | ExprRecordAccessor ExprAnnotation Expr (NonEmptyArray Label)
   | ExprRecordUpdate ExprAnnotation Expr (NonEmptyArray RecordUpdate)
   | ExprApplication ExprAnnotation Expr (NonEmptyArray AppSpine)
   | ExprLambda ExprAnnotation (NonEmptyArray Binder) Expr
@@ -103,12 +99,12 @@ data AppSpine
   | AppType Type
 
 data RecordLabeled a
-  = RecordPun (Name Ident)
-  | RecordField (Name Label) a
+  = RecordPun Ident
+  | RecordField Label a
 
 data RecordUpdate
-  = RecordUpdateLeaf (Name Label) Expr
-  | RecordUpdateBranch (Name Label) (NonEmptyArray RecordUpdate)
+  = RecordUpdateLeaf Label Expr
+  | RecordUpdateBranch Label (NonEmptyArray RecordUpdate)
 
 data DoStatement
   = DoLet (NonEmptyArray LetBinding)
@@ -121,8 +117,8 @@ type BinderIndex = Index Binder
 
 data Binder
   = BinderWildcard BinderAnnotation
-  | BinderVar BinderAnnotation (Name Ident)
-  | BinderNamed BinderAnnotation (Name Ident) Binder
+  | BinderVar BinderAnnotation Ident
+  | BinderNamed BinderAnnotation Ident Binder
   | BinderConstructor BinderAnnotation (QualifiedName Proper) (Array Binder)
   | BinderBoolean BinderAnnotation Boolean
   | BinderChar BinderAnnotation Char
@@ -140,15 +136,15 @@ type TypeAnnotation = Annotation Type
 type TypeIndex = Index Type
 
 data Type
-  = TypeVar TypeAnnotation (Name Ident)
+  = TypeVar TypeAnnotation Ident
   | TypeConstructor TypeAnnotation (QualifiedName Proper)
   | TypeWildcard TypeAnnotation
-  | TypeHole TypeAnnotation (Name Ident)
+  | TypeHole TypeAnnotation Ident
   | TypeString TypeAnnotation String
   | TypeInt TypeAnnotation Boolean IntValue
   | TypeRow TypeAnnotation Row
   | TypeRecord TypeAnnotation Row
-  | TypeForall TypeAnnotation (NonEmptyArray (TypeVarBinding (Name Ident))) Type
+  | TypeForall TypeAnnotation (NonEmptyArray (TypeVarBinding Ident)) Type
   | TypeKinded TypeAnnotation Type Type
   | TypeApp TypeAnnotation Type (NonEmptyArray Type)
   | TypeOp TypeAnnotation Type (NonEmptyArray (Tuple (QualifiedName Operator) Type))
@@ -159,4 +155,4 @@ data Type
   | TypeParens TypeAnnotation Type
   | TypeNotImplemented TypeAnnotation
 
-data Row = Row (Array (Tuple (Name Label) Type)) (Maybe Type)
+data Row = Row (Array (Tuple Label Type)) (Maybe Type)

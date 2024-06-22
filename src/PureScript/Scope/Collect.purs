@@ -230,9 +230,9 @@ collectBinder _ perName = runEffectFn1 go
     case b of
       SST.BinderWildcard _ →
         pure unit
-      SST.BinderVar (SST.Annotation { index }) (CST.Name { name }) →
+      SST.BinderVar (SST.Annotation { index }) name →
         insert (coerce name) index
-      SST.BinderNamed (SST.Annotation { index }) (CST.Name { name }) _ →
+      SST.BinderNamed (SST.Annotation { index }) name _ →
         insert (coerce name) index
       SST.BinderConstructor _ _ arguments →
         traverse_ (runEffectFn1 go) arguments
@@ -250,7 +250,7 @@ collectBinder _ perName = runEffectFn1 go
         traverse_ (runEffectFn1 go) items
       SST.BinderRecord (SST.Annotation { index }) items →
         for_ items case _ of
-          SST.RecordPun (CST.Name { name }) →
+          SST.RecordPun name →
             insert (coerce name) index
           SST.RecordField _ i →
             runEffectFn1 go i
@@ -297,20 +297,20 @@ collectPushLetBindings state letBindings = do
   let
     kindGroups = Array.groupBy groupByKind letBindings
 
-    collectValue :: SST.LetBinding -> Effect Unit
+    collectValue ∷ SST.LetBinding → Effect Unit
     collectValue = case _ of
-      SST.LetBindingValue _ _ t e -> do
+      SST.LetBindingValue _ _ t e → do
         traverse_ (collectType state) t
         traverse_ (collectValueEquation state) e
-      _ ->
+      _ →
         unsafeCrashWith "invariant violated: expected LetBindingValue"
 
-    collectPattern :: SST.LetBinding -> Effect Unit
+    collectPattern ∷ SST.LetBinding → Effect Unit
     collectPattern = case _ of
-      SST.LetBindingPattern _ b w -> do
+      SST.LetBindingPattern _ b w → do
         collectWhere state w
-        collectPushBinders state [b]
-      _ ->
+        collectPushBinders state [ b ]
+      _ →
         unsafeCrashWith "invariant violated: expected LetBindingPattern"
 
   for_ kindGroups \kindGroup →
