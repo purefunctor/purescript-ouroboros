@@ -57,14 +57,17 @@ withRevertingScope state action = do
 
 collectDeclaration ∷ State → SST.Declaration → Effect Unit
 collectDeclaration state = case _ of
-  SST.DeclarationSignature _ _ →
+  SST.DeclarationValue _ _ t e → do
+    traverse_ (collectType state) t
+    traverse_ (collectValueEquation state) e
+  SST.DeclarationNotImplemented _ →
     pure unit
-  SST.DeclarationValue _ binders guarded → do
-    withRevertingScope state do
-      collectPushBinders state binders
-      collectGuarded state guarded
-  SST.DeclarationNotImplemented →
-    pure unit
+
+collectValueEquation ∷ State → SST.ValueEquation → Effect Unit
+collectValueEquation state (SST.ValueEquation { binders, guarded }) = do
+  withRevertingScope state do
+    collectPushBinders state binders
+    collectGuarded state guarded
 
 collectGuarded ∷ State → SST.Guarded → Effect Unit
 collectGuarded state = case _ of
@@ -406,3 +409,8 @@ collectPushLetBindings state letBindings = do
 
         for_ nameGroups \nameGroup →
           traverse_ (collectNamedLetBinding state) nameGroup
+
+collectModule ∷ SST.Module → Effect Unit
+collectModule (SST.Module { declarations }) = do
+  state ← defaultState
+  traverse_ (collectDeclaration state) declarations

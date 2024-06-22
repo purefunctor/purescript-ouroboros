@@ -11,7 +11,7 @@ import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Array.ST.Partial as STAP
 import Data.Maybe (Maybe(..), isJust)
-import Data.Traversable (traverse)
+import Data.Traversable (for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Effect (Effect)
@@ -27,15 +27,24 @@ type StateIndex = Ref Int
 
 type StateSourceRange = STArray Global CST.SourceRange
 
+type DeclarationSourceRange =
+  { signature ∷ Maybe CST.SourceRange
+  , values ∷ Array CST.SourceRange
+  }
+
+type StateDeclarationSourceRange = STArray Global DeclarationSourceRange
+
 type State =
   { exprIndex ∷ StateIndex
   , binderIndex ∷ StateIndex
   , typeIndex ∷ StateIndex
   , letBindingIndex ∷ StateIndex
+  , declarationIndex ∷ StateIndex
   , exprSourceRange ∷ StateSourceRange
   , binderSourceRange ∷ StateSourceRange
   , typeSourceRange ∷ StateSourceRange
   , letBindingSourceRange ∷ StateSourceRange
+  , declarationSourceRange ∷ StateDeclarationSourceRange
   }
 
 defaultState ∷ Effect State
@@ -44,19 +53,23 @@ defaultState = do
   binderIndex ← Ref.new 0
   typeIndex ← Ref.new 0
   letBindingIndex ← Ref.new 0
+  declarationIndex ← Ref.new 0
   exprSourceRange ← STG.toEffect $ STA.new
   binderSourceRange ← STG.toEffect $ STA.new
   typeSourceRange ← STG.toEffect $ STA.new
   letBindingSourceRange ← STG.toEffect $ STA.new
+  declarationSourceRange ← STG.toEffect $ STA.new
   pure
     { exprIndex
     , binderIndex
     , typeIndex
     , letBindingIndex
+    , declarationIndex
     , exprSourceRange
     , binderSourceRange
     , typeSourceRange
     , letBindingSourceRange
+    , declarationSourceRange
     }
 
 nextExprIndex ∷ State → Effect SST.ExprIndex
@@ -83,6 +96,12 @@ nextLetBindingIndex { letBindingIndex } = do
   Ref.modify_ (_ + 1) letBindingIndex
   pure $ SST.Index index
 
+nextDeclarationIndex ∷ State → Effect SST.DeclarationIndex
+nextDeclarationIndex { declarationIndex } = do
+  index ← Ref.read declarationIndex
+  Ref.modify_ (_ + 1) declarationIndex
+  pure $ SST.Index index
+
 insertExprSourceRange ∷ State → SST.ExprIndex → CST.SourceRange → Effect Unit
 insertExprSourceRange { exprSourceRange } (SST.Index exprIndex) exprRange = do
   unsafePartial $ STG.toEffect $ STAP.poke exprIndex exprRange exprSourceRange
@@ -99,22 +118,12 @@ insertLetBindingSourceRange ∷ State → SST.LetBindingIndex → CST.SourceRang
 insertLetBindingSourceRange { letBindingSourceRange } (SST.Index letBindingIndex) letBindingRange =
   unsafePartial $ STG.toEffect $ STAP.poke letBindingIndex letBindingRange letBindingSourceRange
 
-lowerDeclaration ∷ State → CST.Declaration Void → Effect SST.Declaration
-lowerDeclaration state = runEffectFn1 go
-  where
-  go ∷ EffectFn1 (CST.Declaration Void) SST.Declaration
-  go = mkEffectFn1 \d → do
-    case d of
-      CST.DeclSignature (CST.Labeled { label: cstLabel, value: cstValue }) →
-        SST.DeclarationSignature cstLabel <$> lowerType state cstValue
-      CST.DeclValue { name: cstName, binders: cstBinders, guarded: cstGuarded } →
-        SST.DeclarationValue cstName
-          <$> traverse (lowerBinder state) cstBinders
-          <*> lowerGuarded state cstGuarded
-      CST.DeclError v →
-        absurd v
-      _ →
-        pure $ SST.DeclarationNotImplemented
+insertDeclarationSourceRange ∷ State → SST.DeclarationIndex → DeclarationSourceRange → Effect Unit
+insertDeclarationSourceRange
+  { declarationSourceRange }
+  (SST.Index declarationIndex)
+  declarationRange =
+  unsafePartial $ STG.toEffect $ STAP.poke declarationIndex declarationRange declarationSourceRange
 
 lowerGuarded ∷ State → CST.Guarded Void → Effect SST.Guarded
 lowerGuarded state = case _ of
@@ -551,3 +560,104 @@ lowerDoStatement state = runEffectFn1 go
         SST.DoBind <$> lowerBinder state cstBinder <*> lowerExpr state cstExpr
       CST.DoError e →
         absurd e
+
+data LoweringGroup = LoweringGroupValue
+  CST.Ident
+  (Ref (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
+  (STArray Global { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
+
+lowerModule ∷ CST.Module Void → Effect SST.Module
+lowerModule
+  ( CST.Module
+      { header: CST.ModuleHeader { name: CST.Name { name } }
+      , body: CST.ModuleBody { decls: cstDeclarations }
+      }
+  ) = do
+  state ← defaultState
+  currentGroupRef ← Ref.new Nothing
+  declarationsRaw ← STG.toEffect STA.new
+
+  let
+    dischargeGroup ∷ Effect Unit
+    dischargeGroup = do
+      currentGroup ← Ref.read currentGroupRef
+      case currentGroup of
+        Just (LoweringGroupValue groupName signatureRef valuesRaw) → do
+          signature ← Ref.read signatureRef
+          values ← STG.toEffect $ STA.unsafeFreeze valuesRaw
+          let
+            declarationSourceRange ∷ DeclarationSourceRange
+            declarationSourceRange =
+              { signature: signature <#> _.sourceRange
+              , values: values <#> _.sourceRange
+              }
+          index ← nextDeclarationIndex state
+          let
+            annotation ∷ SST.DeclarationAnnotation
+            annotation = SST.Annotation { index }
+          insertDeclarationSourceRange state index declarationSourceRange
+          let
+            declaration ∷ SST.Declaration
+            declaration =
+              SST.DeclarationValue annotation groupName (signature <#> _.t) (values <#> _.v)
+          void $ STG.toEffect $ STA.push declaration declarationsRaw
+        Nothing →
+          pure unit
+      Ref.write Nothing currentGroupRef
+
+    newValueGroup ∷ CST.Ident → _ → _ → Effect Unit
+    newValueGroup groupName signature values = do
+      signatureRef ← Ref.new signature
+      valuesRaw ← STG.toEffect $ STA.unsafeThaw values
+      Ref.write (Just $ LoweringGroupValue groupName signatureRef valuesRaw) currentGroupRef
+
+    onDeclSignature ∷ CST.SourceRange → CST.Ident → SST.Type → Effect Unit
+    onDeclSignature sourceRange signatureName t = do
+      currentGroup ← Ref.read currentGroupRef
+      case currentGroup of
+        Just (LoweringGroupValue groupName signatureRef _) → do
+          if signatureName == groupName then do
+            Ref.write (Just { sourceRange, t }) signatureRef
+          else do
+            dischargeGroup
+            newValueGroup signatureName (Just { sourceRange, t }) []
+        Nothing → do
+          newValueGroup signatureName (Just { sourceRange, t }) []
+
+    onDeclValue ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → Effect Unit
+    onDeclValue sourceRange valueName v = do
+      currentGroup ← Ref.read currentGroupRef
+      case currentGroup of
+        Just (LoweringGroupValue groupName _ values) → do
+          if valueName == groupName then
+            void $ STG.toEffect $ STA.push { sourceRange, v } values
+          else do
+            dischargeGroup
+            newValueGroup valueName Nothing [ { sourceRange, v } ]
+        Nothing → do
+          newValueGroup valueName Nothing [ { sourceRange, v } ]
+
+  for_ cstDeclarations \cstDeclaration → do
+    let
+      sourceRange ∷ CST.SourceRange
+      sourceRange = rangeOf cstDeclaration
+    case cstDeclaration of
+      CST.DeclSignature
+        (CST.Labeled { label: CST.Name { name: signatureName }, value }) →
+        do
+          signature ← lowerType state value
+          onDeclSignature sourceRange signatureName signature
+      CST.DeclValue
+        { name: CST.Name { name: valueName }, binders: cstBinders, guarded: cstGuarded } →
+        do
+          binders ← traverse (lowerBinder state) cstBinders
+          guarded ← lowerGuarded state cstGuarded
+          onDeclValue sourceRange valueName (SST.ValueEquation { binders, guarded })
+      CST.DeclError v →
+        absurd v
+      _ →
+        pure unit
+
+  dischargeGroup
+  declarations ← STG.toEffect $ STA.unsafeFreeze declarationsRaw
+  pure $ SST.Module { name, declarations }

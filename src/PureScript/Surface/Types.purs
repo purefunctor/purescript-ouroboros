@@ -6,7 +6,16 @@ import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
 import Prim as Prim
-import PureScript.CST.Types (Ident, IntValue, Label, Name, Operator, Proper, QualifiedName)
+import PureScript.CST.Types
+  ( Ident
+  , IntValue
+  , Label
+  , ModuleName
+  , Name
+  , Operator
+  , Proper
+  , QualifiedName
+  )
 
 newtype Index ∷ Prim.Type → Prim.Type
 newtype Index a = Index Int
@@ -15,10 +24,22 @@ newtype Annotation a = Annotation
   { index ∷ Index a
   }
 
+newtype Module = Module
+  { name ∷ ModuleName
+  , declarations ∷ Array Declaration
+  }
+
+type DeclarationAnnotation = Annotation Declaration
+type DeclarationIndex = Index Declaration
+
+newtype ValueEquation = ValueEquation
+  { binders ∷ Array Binder
+  , guarded ∷ Guarded
+  }
+
 data Declaration
-  = DeclarationSignature (Name Ident) Type
-  | DeclarationValue (Name Ident) (Array Binder) Guarded
-  | DeclarationNotImplemented
+  = DeclarationValue DeclarationAnnotation Ident (Maybe Type) (Array ValueEquation)
+  | DeclarationNotImplemented DeclarationAnnotation
 
 data TypeVarBinding a
   = TypeVarKinded a Type
