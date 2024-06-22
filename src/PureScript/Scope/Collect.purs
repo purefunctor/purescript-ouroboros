@@ -5,12 +5,10 @@ import Prelude
 import Control.Monad.ST.Global (Global)
 import Control.Monad.ST.Global as STG
 import Data.Array as Array
-import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Array.ST.Partial as STAP
-import Data.Maybe (Maybe(..))
 import Data.Traversable (for_, traverse_)
 import Data.Tuple (Tuple(..))
 import Effect (Effect)
@@ -22,7 +20,7 @@ import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
 import Partial.Unsafe (unsafeCrashWith, unsafePartial)
 import PureScript.CST.Types as CST
-import PureScript.Scope.Types (LetBindingRef, ScopeNode(..))
+import PureScript.Scope.Types (ScopeNode(..))
 import PureScript.Surface.Types as SST
 import Safe.Coerce (coerce)
 
@@ -280,135 +278,56 @@ collectPushBinders state binders = do
 
 groupByKind ∷ SST.LetBinding → SST.LetBinding → Boolean
 groupByKind = case _, _ of
-  SST.LetBindingSignature _ _ _, SST.LetBindingSignature _ _ _ →
-    true
-  SST.LetBindingName _ _ _ _, SST.LetBindingName _ _ _ _ →
-    true
-  SST.LetBindingSignature _ _ _, SST.LetBindingName _ _ _ _ →
-    true
-  SST.LetBindingName _ _ _ _, SST.LetBindingSignature _ _ _ →
+  SST.LetBindingValue _ _ _ _, SST.LetBindingValue _ _ _ _ →
     true
   SST.LetBindingPattern _ _ _, SST.LetBindingPattern _ _ _ →
     true
   _, _ →
     false
 
-groupByName ∷ SST.LetBinding → SST.LetBinding → Boolean
-groupByName = case _, _ of
-  SST.LetBindingSignature _ (CST.Name { name: n }) _,
-  SST.LetBindingSignature _ (CST.Name { name: m }) _ →
-    n == m
-  SST.LetBindingName _ (CST.Name { name: n }) _ _,
-  SST.LetBindingName _ (CST.Name { name: m }) _ _ →
-    n == m
-  SST.LetBindingSignature _ (CST.Name { name: n }) _,
-  SST.LetBindingName _ (CST.Name { name: m }) _ _ →
-    n == m
-  SST.LetBindingName _ (CST.Name { name: n }) _ _,
-  SST.LetBindingSignature _ (CST.Name { name: m }) _ →
-    n == m
-  _, _ →
-    false
-
-getNameIndex ∷ SST.LetBinding → SST.LetBindingIndex
-getNameIndex = case _ of
-  SST.LetBindingName (SST.Annotation { index }) _ _ _ →
-    index
+extractNameIndex ∷ STObject Global SST.LetBindingIndex → SST.LetBinding → Effect Unit
+extractNameIndex letBoundRaw = case _ of
+  SST.LetBindingValue (SST.Annotation { index }) name _ _ →
+    void $ STG.toEffect $ STO.poke (coerce name) index letBoundRaw
   _ →
-    unsafeCrashWith "invariant violated: expected LetBindingName"
-
-insertNameRef ∷ STObject Global LetBindingRef → NonEmptyArray SST.LetBinding → Effect Unit
-insertNameRef letBoundRaw = NEA.uncons >>> case _ of
-  { head: SST.LetBindingSignature (SST.Annotation { index }) (CST.Name { name }) _, tail } → do
-    let
-      letBindingRef ∷ LetBindingRef
-      letBindingRef =
-        { signatureIndex: Just index
-        , nameIndices: map getNameIndex tail
-        }
-    void $ STG.toEffect $ STO.poke (coerce name) letBindingRef letBoundRaw
-  { head: SST.LetBindingName (SST.Annotation { index }) (CST.Name { name }) _ _, tail } → do
-    let
-      letBindingRef ∷ LetBindingRef
-      letBindingRef =
-        { signatureIndex: Nothing
-        , nameIndices: Array.cons index (map getNameIndex tail)
-        }
-    void $ STG.toEffect $ STO.poke (coerce name) letBindingRef letBoundRaw
-  _ →
-    unsafeCrashWith "invariant violated: expected LetBindingSignature/LetBindingName"
-
-collectNamedLetBinding ∷ State → SST.LetBinding → Effect Unit
-collectNamedLetBinding state = case _ of
-  SST.LetBindingSignature _ _ t →
-    collectType state t
-  SST.LetBindingName _ _ binders guarded →
-    withRevertingScope state do
-      collectPushBinders state binders
-      collectGuarded state guarded
-  _ →
-    unsafeCrashWith "invariant violated: expected LetBindingSignature/LetBindingName"
-
-collectPatternLetBinding ∷ State → SST.LetBinding → Effect Unit
-collectPatternLetBinding state = case _ of
-  SST.LetBindingPattern _ b w → do
-    collectWhere state w
-    collectPushBinders state [ b ]
-  _ →
-    unsafeCrashWith "invariant violated: expected LetBindingPattern"
+    unsafeCrashWith "invariant violated: expected LetBindingValue"
 
 collectPushLetBindings ∷ State → Array SST.LetBinding → Effect Unit
 collectPushLetBindings state letBindings = do
   let
-    kindGroups ∷ Array (NonEmptyArray SST.LetBinding)
     kindGroups = Array.groupBy groupByKind letBindings
+
+    collectValue :: SST.LetBinding -> Effect Unit
+    collectValue = case _ of
+      SST.LetBindingValue _ _ t e -> do
+        traverse_ (collectType state) t
+        traverse_ (collectValueEquation state) e
+      _ ->
+        unsafeCrashWith "invariant violated: expected LetBindingValue"
+
+    collectPattern :: SST.LetBinding -> Effect Unit
+    collectPattern = case _ of
+      SST.LetBindingPattern _ b w -> do
+        collectWhere state w
+        collectPushBinders state [b]
+      _ ->
+        unsafeCrashWith "invariant violated: expected LetBindingPattern"
+
   for_ kindGroups \kindGroup →
     case NEA.uncons kindGroup of
-      -- For each pattern, push a new scope.
-      { head: SST.LetBindingPattern _ _ _ } →
-        traverse_ (collectPatternLetBinding state) kindGroup
-      -- Each group of signatures/names is effectively delimited by patterns.
-      -- We want to break these up even further by grouping them nominally,
-      -- before pushing a LetBound scope and then traversing even further.
-      -- 
-      -- Example:
-      --
-      -- x = 0
-      --   where
-      --   a = 1
-      --   b = 2
-      --   _ = 3
-      --   c = 4
-      --   d = 5
-      --
-      -- The groups look like this at first:
-      --   kindGroups: [a, b], [_], [c, d]
-      -- 
-      -- Then, we refine them further such that:
-      --   nameGroups: [[a], [b]], ..., [[c], [d]]
-      --
-      -- Finally:
-      -- 
-      -- LetBound({ a, b }) 
-      --   is in scope for 1, 2, 3
-      --
-      -- LetBound({ a, b }) <- LetBound({ c, d }) 
-      --   is in scope for 4, 5
-      -- 
-      _ → do
-        let
-          nameGroups ∷ NonEmptyArray (NonEmptyArray SST.LetBinding)
-          nameGroups = NEA.groupBy groupByName kindGroup
-
+      { head: SST.LetBindingValue _ _ _ _ } → do
         letBoundRaw ← STG.toEffect STO.new
-        traverse_ (insertNameRef letBoundRaw) nameGroups
+        traverse_ (extractNameIndex letBoundRaw) kindGroup
         letBound ← STG.toEffect $ O.freezeST letBoundRaw
-
         parentScope ← currentScope state
         pushScope state (LetBound parentScope letBound)
+        traverse_ collectValue kindGroup
+      { head: SST.LetBindingPattern _ _ _ } →
+        traverse_ collectPattern kindGroup
+      _ →
+        pure unit
 
-        for_ nameGroups \nameGroup →
-          traverse_ (collectNamedLetBinding state) nameGroup
+  pure unit
 
 collectModule ∷ SST.Module → Effect Unit
 collectModule (SST.Module { declarations }) = do

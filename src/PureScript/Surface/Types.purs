@@ -57,8 +57,7 @@ type LetBindingAnnotation = Annotation LetBinding
 type LetBindingIndex = Index LetBinding
 
 data LetBinding
-  = LetBindingSignature LetBindingAnnotation (Name Ident) Type
-  | LetBindingName LetBindingAnnotation (Name Ident) (Array Binder) Guarded
+  = LetBindingValue LetBindingAnnotation Ident (Maybe Type) (Array ValueEquation)
   | LetBindingPattern LetBindingAnnotation Binder Where
   | LetBindingNotImplemented LetBindingAnnotation
 

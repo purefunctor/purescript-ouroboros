@@ -5,8 +5,8 @@ import Prelude
 import Control.Monad.ST.Global (Global)
 import Control.Monad.ST.Global as STG
 import Data.Array as Array
-import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Array.NonEmpty as NEA
+import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Array.ST.Partial as STAP
@@ -27,6 +27,17 @@ type StateIndex = Ref Int
 
 type StateSourceRange = STArray Global CST.SourceRange
 
+type SigDefSourceRange =
+  { signature ∷ Maybe CST.SourceRange
+  , definitions ∷ Array CST.SourceRange
+  }
+
+data LetBindingSourceRange
+  = LetBindingNameSourceRange SigDefSourceRange
+  | LetBindingPatternSourceRange CST.SourceRange
+
+type StateLetBindingSourceRange = STArray Global LetBindingSourceRange
+
 type DeclarationSourceRange =
   { signature ∷ Maybe CST.SourceRange
   , values ∷ Array CST.SourceRange
@@ -43,7 +54,7 @@ type State =
   , exprSourceRange ∷ StateSourceRange
   , binderSourceRange ∷ StateSourceRange
   , typeSourceRange ∷ StateSourceRange
-  , letBindingSourceRange ∷ StateSourceRange
+  , letBindingSourceRange ∷ StateLetBindingSourceRange
   , declarationSourceRange ∷ StateDeclarationSourceRange
   }
 
@@ -114,7 +125,7 @@ insertTypeSourceRange ∷ State → SST.TypeIndex → CST.SourceRange → Effect
 insertTypeSourceRange { typeSourceRange } (SST.Index typeIndex) typeRange = do
   unsafePartial $ STG.toEffect $ STAP.poke typeIndex typeRange typeSourceRange
 
-insertLetBindingSourceRange ∷ State → SST.LetBindingIndex → CST.SourceRange → Effect Unit
+insertLetBindingSourceRange ∷ State → SST.LetBindingIndex → LetBindingSourceRange → Effect Unit
 insertLetBindingSourceRange { letBindingSourceRange } (SST.Index letBindingIndex) letBindingRange =
   unsafePartial $ STG.toEffect $ STAP.poke letBindingIndex letBindingRange letBindingSourceRange
 
@@ -159,7 +170,7 @@ lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
   expr ← lowerExpr state cstExpr
   bindings ← case cstBindings of
     Just (Tuple _ cstBindings') →
-      NEA.toArray <$> traverse (lowerLetBinding state) cstBindings'
+      NEA.toArray <$> lowerLetBindings state cstBindings'
     Nothing →
       pure []
   pure $ SST.Where expr bindings
@@ -313,7 +324,7 @@ lowerExpr state = runEffectFn1 go
           branches ← traverse (runEffectFn1 goCaseBranch) cstBranches
           pure $ SST.ExprCase annotation head branches
       CST.ExprLet { bindings: cstBindings, body: cstBody } → do
-        bindings ← traverse (lowerLetBinding state) cstBindings
+        bindings ← lowerLetBindings state cstBindings
         body ← runEffectFn1 go cstBody
         pure $ SST.ExprLet annotation bindings body
       CST.ExprDo { statements: cstStatements } → do
@@ -509,38 +520,111 @@ lowerType state = runEffectFn1 go
       CST.TypeError v →
         absurd v
 
-lowerLetBinding ∷ State → CST.LetBinding Void → Effect SST.LetBinding
-lowerLetBinding state = runEffectFn1 go
-  where
-  nextIndexWith ∷ CST.SourceRange → Effect SST.LetBindingIndex
-  nextIndexWith range = do
-    index ← nextLetBindingIndex state
-    insertLetBindingSourceRange state index range
-    pure index
+data LetLoweringGroup = LetLoweringGroup
+  CST.Ident
+  (Ref (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
+  (STArray Global { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
 
-  go ∷ EffectFn1 (CST.LetBinding Void) SST.LetBinding
-  go = mkEffectFn1 \l → do
+lowerLetBindings
+  ∷ State → NonEmptyArray (CST.LetBinding Void) → Effect (NonEmptyArray SST.LetBinding)
+lowerLetBindings state cstLetBindings = do
+  currentGroupRef ← Ref.new Nothing
+  letBindingsRaw ← STG.toEffect STA.new
+
+  let
+    dischargeGroup ∷ Effect Unit
+    dischargeGroup = do
+      currentGroup ← Ref.read currentGroupRef
+      case currentGroup of
+        Just (LetLoweringGroup groupName signatureRef valuesRaw) → do
+          signature ← Ref.read signatureRef
+          values ← STG.toEffect $ STA.unsafeFreeze valuesRaw
+          let
+            letBindingSourceRange ∷ LetBindingSourceRange
+            letBindingSourceRange = LetBindingNameSourceRange
+              { signature: signature <#> _.sourceRange
+              , definitions: values <#> _.sourceRange
+              }
+          index ← nextLetBindingIndex state
+          let
+            annotation ∷ SST.LetBindingAnnotation
+            annotation = SST.Annotation { index }
+          insertLetBindingSourceRange state index letBindingSourceRange
+          let
+            letBinding ∷ SST.LetBinding
+            letBinding =
+              SST.LetBindingValue annotation groupName (signature <#> _.t) (values <#> _.v)
+          void $ STG.toEffect $ STA.push letBinding letBindingsRaw
+        Nothing →
+          pure unit
+      Ref.write Nothing currentGroupRef
+
+    newNameGroup ∷ CST.Ident → _ → _ → Effect Unit
+    newNameGroup groupName signature values = do
+      signatureRef ← Ref.new signature
+      valuesRaw ← STG.toEffect $ STA.unsafeThaw values
+      Ref.write (Just $ LetLoweringGroup groupName signatureRef valuesRaw) currentGroupRef
+
+    onLetSignature ∷ CST.SourceRange → CST.Ident → SST.Type → Effect Unit
+    onLetSignature sourceRange signatureName t = do
+      currentGroup ← Ref.read currentGroupRef
+      case currentGroup of
+        Just (LetLoweringGroup groupName signatureRef _) → do
+          if signatureName == groupName then do
+            Ref.write (Just { sourceRange, t }) signatureRef
+          else do
+            dischargeGroup
+            newNameGroup signatureName (Just { sourceRange, t }) []
+        Nothing → do
+          newNameGroup signatureName (Just { sourceRange, t }) []
+
+    onLetName ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → Effect Unit
+    onLetName sourceRange valueName v = do
+      currentGroup ← Ref.read currentGroupRef
+      case currentGroup of
+        Just (LetLoweringGroup groupName _ values) → do
+          if valueName == groupName then
+            void $ STG.toEffect $ STA.push { sourceRange, v } values
+          else do
+            dischargeGroup
+            newNameGroup valueName Nothing [ { sourceRange, v } ]
+        Nothing → do
+          newNameGroup valueName Nothing [ { sourceRange, v } ]
+
+  for_ cstLetBindings \cstLetBinding → do
     let
-      range ∷ CST.SourceRange
-      range = rangeOf l
-    index ← nextIndexWith range
-    let
-      annotation ∷ SST.LetBindingAnnotation
-      annotation = SST.Annotation { index }
-    insertLetBindingSourceRange state index range
-    case l of
-      CST.LetBindingSignature (CST.Labeled { label: cstLabel, value: cstType }) → do
-        SST.LetBindingSignature annotation cstLabel <$> lowerType state cstType
-      CST.LetBindingName { name: cstName, binders: cstBinders, guarded: cstGuarded } → do
-        SST.LetBindingName annotation cstName
-          <$> traverse (lowerBinder state) cstBinders
-          <*> lowerGuarded state cstGuarded
+      sourceRange ∷ CST.SourceRange
+      sourceRange = rangeOf cstLetBinding
+    case cstLetBinding of
+      CST.LetBindingSignature (CST.Labeled { label: CST.Name { name }, value }) → do
+        signature ← lowerType state value
+        onLetSignature sourceRange name signature
+      CST.LetBindingName { name: CST.Name { name }, binders: cstBinders, guarded: cstGuarded } → do
+        binders ← traverse (lowerBinder state) cstBinders
+        guarded ← lowerGuarded state cstGuarded
+        onLetName sourceRange name (SST.ValueEquation { binders, guarded })
       CST.LetBindingPattern cstBinder _ cstWhere → do
-        SST.LetBindingPattern annotation
-          <$> lowerBinder state cstBinder
-          <*> lowerWhere state cstWhere
+        dischargeGroup
+        let
+          letBindingSourceRange ∷ LetBindingSourceRange
+          letBindingSourceRange = LetBindingPatternSourceRange sourceRange
+        index ← nextLetBindingIndex state
+        let
+          annotation ∷ SST.LetBindingAnnotation
+          annotation = SST.Annotation { index }
+        insertLetBindingSourceRange state index letBindingSourceRange
+        sstBinder ← lowerBinder state cstBinder
+        sstWhere ← lowerWhere state cstWhere
+        let
+          letBinding ∷ SST.LetBinding
+          letBinding = SST.LetBindingPattern annotation sstBinder sstWhere
+        void $ STG.toEffect $ STA.push letBinding letBindingsRaw
       CST.LetBindingError v →
         absurd v
+
+  dischargeGroup
+  letBindings ← STG.toEffect $ STA.unsafeFreeze letBindingsRaw
+  pure $ NonEmptyArray letBindings
 
 -- TODO: It might be useful to assign indices to do statements, like we do with let bindings,
 -- so we keep the shape similar to other lowerX functions. For instance, indices could improve
@@ -553,7 +637,7 @@ lowerDoStatement state = runEffectFn1 go
   go = mkEffectFn1 \d → do
     case d of
       CST.DoLet _ cstLetBindings → do
-        SST.DoLet <$> traverse (lowerLetBinding state) cstLetBindings
+        SST.DoLet <$> lowerLetBindings state cstLetBindings
       CST.DoDiscard cstExpr → do
         SST.DoDiscard <$> lowerExpr state cstExpr
       CST.DoBind cstBinder _ cstExpr → do

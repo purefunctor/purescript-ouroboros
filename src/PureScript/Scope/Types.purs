@@ -1,15 +1,10 @@
 module PureScript.Scope.Types where
 
-import Data.Maybe (Maybe)
 import Foreign.Object (Object)
 import PureScript.Surface.Types as SST
 
 type BinderRef = SST.BinderIndex
-
-type LetBindingRef =
-  { signatureIndex ∷ Maybe SST.LetBindingIndex
-  , nameIndices ∷ Array SST.LetBindingIndex
-  }
+type LetBindingRef = SST.LetBindingIndex
 
 data ScopeNode
   = RootScope
