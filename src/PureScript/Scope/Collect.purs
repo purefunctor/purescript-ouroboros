@@ -2,6 +2,7 @@ module PureScript.Scope.Collect where
 
 import Prelude
 
+import Control.Monad.ST as ST
 import Control.Monad.ST.Global (Global)
 import Control.Monad.ST.Global as STG
 import Data.Array as Array
@@ -18,9 +19,10 @@ import Effect.Uncurried (EffectFn1, mkEffectFn1, runEffectFn1)
 import Foreign.Object as O
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
+import Foreign.Object.ST.Unsafe as STOU
 import Partial.Unsafe (unsafeCrashWith, unsafePartial)
 import PureScript.CST.Types as CST
-import PureScript.Scope.Types (ScopeNode(..))
+import PureScript.Scope.Types (ScopeNode(..), TopLevelRefs)
 import PureScript.Surface.Types as SST
 import Safe.Coerce (coerce)
 
@@ -329,7 +331,28 @@ collectPushLetBindings state letBindings = do
 
   pure unit
 
+collectTopLevel ∷ Array SST.Declaration → TopLevelRefs
+collectTopLevel declarations = ST.run do
+  valuesRaw ← STO.new
+
+  for_ declarations case _ of
+    SST.DeclarationValue (SST.Annotation { index }) name _ _ →
+      void $ STO.poke (coerce name) index valuesRaw
+    SST.DeclarationNotImplemented _ →
+      pure unit
+
+  values ← STOU.unsafeFreeze valuesRaw
+  pure $ { values }
+
 collectModule ∷ SST.Module → Effect Unit
 collectModule (SST.Module { declarations }) = do
   state ← defaultState
+
+  let
+    topLevel ∷ TopLevelRefs
+    topLevel = collectTopLevel declarations
+
+  parentScope ← currentScope state
+  pushScope state (TopLevel parentScope topLevel)
+
   traverse_ (collectDeclaration state) declarations
