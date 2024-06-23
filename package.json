@@ -1,7 +1,14 @@
 {
   "private": "true",
   "type": "module",
+  "scripts": {
+    "test:bundle": "spago bundle --module Test.Main --platform node --minify --outfile bundle/test.js",
+    "test:run": "node bundle/test.js",
+    "test": "pnpm test:bundle && pnpm test:run"
+  },
   "devDependencies": {
+    "diff": "^5.2.0",
+    "esbuild": "^0.21.5",
     "purescript": "^0.15.15",
     "purs-backend-es": "^1.4.2",
     "purs-tidy": "^0.11.0",

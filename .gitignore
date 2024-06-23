@@ -10,3 +10,4 @@ generated-docs/
 .purs*
 .psa*
 .spago
+bundle/

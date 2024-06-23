@@ -1,6 +1,7 @@
 package:
   name: compiler
   dependencies:
+    - argparse-basic
     - console
     - debug
     - effect
@@ -10,7 +11,12 @@ package:
     - refs
   test:
     main: Test.Main
-    dependencies: []
+    dependencies:
+      - aff
+      - heterogeneous
+      - node-fs
+      - node-glob-basic
+      - spec
 workspace:
   packageSet:
     registry: 51.2.0
