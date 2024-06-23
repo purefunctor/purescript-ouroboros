@@ -10,7 +10,7 @@ Ouroboros aims to provide a modernized compiler implementation with a strong foc
 
 Rather than large compiler phases which imperatively accumulate information, it consists of small functions which derive information. For instance, rather than mutating an environment when type-checking with local bindings, Ouroboros uses a [scope graph](https://pl.ewi.tudelft.nl/research/projects/scope-graphs/) to model name resolution rules in the language.
 
-Consequently, its declarative design makes way for incremental recomputation. Ouroboros' party of small functions is designed to compute information that is tolerant to changes that won't affect semantics. For example, adding a comment should not cause the entire file to be type-checked, though it might be useful to recomptue information such as source spans for hover tooltips in the editor.
+Consequently, its declarative design makes way for incremental recomputation. Ouroboros' party of small functions is designed to compute information that is tolerant to changes that won't affect semantics. For example, adding a comment should not cause the entire file to be type-checked, though it might be useful to recompute information such as source spans for hover tooltips in the editor.
 
 The [DESIGN.md](./DESIGN.md) document talks these design choices and inspirations in-depth.
 
