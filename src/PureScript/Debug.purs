@@ -4,6 +4,11 @@ import Prelude
 
 import Data.Function.Uncurried (Fn2, runFn2)
 
+foreign import inspectImpl ∷ ∀ a. a → String
+
+inspect ∷ ∀ a. a → String
+inspect = inspectImpl
+
 trace ∷ ∀ a b. a → (Unit → b) → b
 trace a k = runFn2 _trace a k
 
