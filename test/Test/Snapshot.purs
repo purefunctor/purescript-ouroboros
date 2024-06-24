@@ -61,7 +61,7 @@ expectSnapshot (Options { overwrite }) mTestName inputPath action = do
         FSA.writeTextFile UTF8 outputPath testOutput
       else
         unless (testOutput == outputFile') do
-          patchText <- liftEffect $ diffPatch outputFile' testOutput
+          patchText ← liftEffect $ diffPatch outputFile' testOutput
           throwError $ error $ "Outputs did not match: \n\n" <> patchText
     Nothing → do
       FSA.writeTextFile UTF8 outputPath testOutput

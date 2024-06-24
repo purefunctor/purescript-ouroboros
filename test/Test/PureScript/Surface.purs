@@ -13,9 +13,9 @@ glob = Path.concat [ "test", "snapshots", "surface", "*.input" ]
 
 spec ∷ SnapshotSpec Unit
 spec = do
-  inputPaths <- findInputs glob
+  inputPaths ← findInputs glob
   describe "PureScript.Surface" do
     makeSnapshotsNamed inputPaths $
-      [ "lowerModule" /\ \inputFile ->
+      [ "lowerModule" /\ \inputFile →
           pure inputFile
       ]
