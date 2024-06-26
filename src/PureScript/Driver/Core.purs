@@ -171,12 +171,8 @@ editModule state@{ moduleNameInterner, moduleContents } filePath fileSource = do
       updateImportEdges state moduleNameIndex newModuleImports
 
 deleteModule ∷ State → String → Effect Unit
-deleteModule { moduleNameInterner, moduleContents, pathToModule } filePath = do
-  moduleNameIndex ← MutableObject.peek filePath pathToModule >>= case _ of
-    Just moduleNameIndex →
-      pure moduleNameIndex
-    Nothing →
-      throw $ "invariant violated: filePath does not exist"
+deleteModule state@{ moduleNameInterner, moduleContents, pathToModule } filePath = do
+  moduleNameIndex <- getModuleFromPath state filePath
 
   changeModuleName moduleNameInterner moduleNameIndex (coerce "?")
   removeModuleName moduleNameInterner moduleNameIndex
