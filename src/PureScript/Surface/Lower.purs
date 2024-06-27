@@ -9,7 +9,6 @@ import Data.Array.NonEmpty as NEA
 import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
-import Data.Array.ST.Partial as STAP
 import Data.Maybe (Maybe(..), isJust)
 import Data.Traversable (for_, traverse)
 import Data.Tuple (Tuple(..))
@@ -18,14 +17,15 @@ import Effect (Effect)
 import Effect.Ref (Ref)
 import Effect.Ref as Ref
 import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn1, mkEffectFn2, runEffectFn1, runEffectFn2)
-import Partial.Unsafe (unsafePartial)
 import PureScript.CST.Range (rangeOf)
 import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
+import PureScript.Utils.Mutable.Array (MutableArray)
+import PureScript.Utils.Mutable.Array as MutableArray
 
 type StateIndex = Ref Int
 
-type StateSourceRange = STArray Global CST.SourceRange
+type StateSourceRange = MutableArray CST.SourceRange
 
 type SigDefSourceRange =
   { signature ∷ Maybe CST.SourceRange
@@ -36,11 +36,11 @@ data LetBindingSourceRange
   = LetBindingNameSourceRange SigDefSourceRange
   | LetBindingPatternSourceRange CST.SourceRange
 
-type StateLetBindingSourceRange = STArray Global LetBindingSourceRange
+type StateLetBindingSourceRange = MutableArray LetBindingSourceRange
 
 data DeclarationSourceRange = DeclarationValueSourceRange SigDefSourceRange
 
-type StateDeclarationSourceRange = STArray Global DeclarationSourceRange
+type StateDeclarationSourceRange = MutableArray DeclarationSourceRange
 
 type State =
   { exprIndex ∷ StateIndex
@@ -62,11 +62,11 @@ defaultState = do
   typeIndex ← Ref.new 0
   letBindingIndex ← Ref.new 0
   declarationIndex ← Ref.new 0
-  exprSourceRange ← STG.toEffect $ STA.new
-  binderSourceRange ← STG.toEffect $ STA.new
-  typeSourceRange ← STG.toEffect $ STA.new
-  letBindingSourceRange ← STG.toEffect $ STA.new
-  declarationSourceRange ← STG.toEffect $ STA.new
+  exprSourceRange ← MutableArray.empty
+  binderSourceRange ← MutableArray.empty
+  typeSourceRange ← MutableArray.empty
+  letBindingSourceRange ← MutableArray.empty
+  declarationSourceRange ← MutableArray.empty
   pure
     { exprIndex
     , binderIndex
@@ -111,27 +111,24 @@ nextDeclarationIndex { declarationIndex } = do
   pure $ SST.Index index
 
 insertExprSourceRange ∷ State → SST.ExprIndex → CST.SourceRange → Effect Unit
-insertExprSourceRange { exprSourceRange } (SST.Index exprIndex) exprRange = do
-  unsafePartial $ STG.toEffect $ STAP.poke exprIndex exprRange exprSourceRange
+insertExprSourceRange { exprSourceRange } exprIndex exprRange =
+  MutableArray.poke exprIndex exprRange exprSourceRange
 
 insertBinderSourceRange ∷ State → SST.BinderIndex → CST.SourceRange → Effect Unit
-insertBinderSourceRange { binderSourceRange } (SST.Index binderIndex) binderRange = do
-  unsafePartial $ STG.toEffect $ STAP.poke binderIndex binderRange binderSourceRange
+insertBinderSourceRange { binderSourceRange } binderIndex binderRange =
+  MutableArray.poke binderIndex binderRange binderSourceRange
 
 insertTypeSourceRange ∷ State → SST.TypeIndex → CST.SourceRange → Effect Unit
-insertTypeSourceRange { typeSourceRange } (SST.Index typeIndex) typeRange = do
-  unsafePartial $ STG.toEffect $ STAP.poke typeIndex typeRange typeSourceRange
+insertTypeSourceRange { typeSourceRange } typeIndex typeRange =
+  MutableArray.poke typeIndex typeRange typeSourceRange
 
 insertLetBindingSourceRange ∷ State → SST.LetBindingIndex → LetBindingSourceRange → Effect Unit
-insertLetBindingSourceRange { letBindingSourceRange } (SST.Index letBindingIndex) letBindingRange =
-  unsafePartial $ STG.toEffect $ STAP.poke letBindingIndex letBindingRange letBindingSourceRange
+insertLetBindingSourceRange { letBindingSourceRange } letBindingIndex letBindingRange =
+  MutableArray.poke letBindingIndex letBindingRange letBindingSourceRange
 
 insertDeclarationSourceRange ∷ State → SST.DeclarationIndex → DeclarationSourceRange → Effect Unit
-insertDeclarationSourceRange
-  { declarationSourceRange }
-  (SST.Index declarationIndex)
-  declarationRange =
-  unsafePartial $ STG.toEffect $ STAP.poke declarationIndex declarationRange declarationSourceRange
+insertDeclarationSourceRange { declarationSourceRange } declarationIndex declarationRange =
+  MutableArray.poke declarationIndex declarationRange declarationSourceRange
 
 unName ∷ CST.Name CST.Label → CST.Label
 unName (CST.Name { name }) = name
