@@ -11,10 +11,10 @@ import PureScript.Driver.Core
   , editModule
   , getModuleContents
   , getModuleFromPath
-  , getModuleName
   , renameModule
   )
 import PureScript.Driver.GraphMap (hasNode)
+import PureScript.Driver.Interner (getModuleName)
 import Safe.Coerce (coerce)
 import Test.Snapshot (SnapshotSpec)
 import Test.Spec (describe, it)
