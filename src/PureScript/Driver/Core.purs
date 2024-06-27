@@ -172,7 +172,7 @@ editModule state@{ moduleNameInterner, moduleContents } filePath fileSource = do
 
 deleteModule ∷ State → String → Effect Unit
 deleteModule state@{ moduleNameInterner, moduleContents, pathToModule } filePath = do
-  moduleNameIndex <- getModuleFromPath state filePath
+  moduleNameIndex ← getModuleFromPath state filePath
 
   changeModuleName moduleNameInterner moduleNameIndex (coerce "?")
   removeModuleName moduleNameInterner moduleNameIndex
