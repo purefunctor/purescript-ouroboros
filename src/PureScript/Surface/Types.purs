@@ -22,7 +22,12 @@ newtype Annotation a = Annotation
 
 newtype Module = Module
   { name ∷ ModuleName
+  , imports ∷ Array Import
   , declarations ∷ Array Declaration
+  }
+
+newtype Import = Import
+  { name ∷ ModuleName
   }
 
 type DeclarationAnnotation = Annotation Declaration

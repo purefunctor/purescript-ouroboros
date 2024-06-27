@@ -668,11 +668,31 @@ data LoweringGroup = LoweringGroupValue
 lowerModule ∷ CST.Module Void → Effect SST.Module
 lowerModule
   ( CST.Module
-      { header: CST.ModuleHeader { name: CST.Name { name } }
+      { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }
       , body: CST.ModuleBody { decls: cstDeclarations }
       }
   ) = do
   state ← defaultState
+  imports ← lowerImportDecls cstImports
+  declarations ← lowerDeclarations state cstDeclarations
+  pure $ SST.Module { name, imports, declarations }
+
+lowerImportDecls ∷ Array (CST.ImportDecl Void) → Effect (Array SST.Import)
+lowerImportDecls cstImports = do
+  importsRaw ← STG.toEffect $ STA.new
+
+  for_ cstImports \cstImport →
+    case cstImport of
+      CST.ImportDecl { module: CST.Name { name: importName } } → do
+        let
+          sstImport ∷ SST.Import
+          sstImport = SST.Import { name: importName }
+        void $ STG.toEffect $ STA.push sstImport importsRaw
+
+  STG.toEffect $ STA.unsafeFreeze importsRaw
+
+lowerDeclarations ∷ State → Array (CST.Declaration Void) → Effect (Array SST.Declaration)
+lowerDeclarations state cstDeclarations = do
   currentGroupRef ← Ref.new Nothing
   declarationsRaw ← STG.toEffect STA.new
 
@@ -758,5 +778,4 @@ lowerModule
         pure unit
 
   dischargeGroup
-  declarations ← STG.toEffect $ STA.unsafeFreeze declarationsRaw
-  pure $ SST.Module { name, declarations }
+  STG.toEffect $ STA.unsafeFreeze declarationsRaw
