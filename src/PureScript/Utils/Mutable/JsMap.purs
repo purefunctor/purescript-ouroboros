@@ -2,49 +2,49 @@ module PureScript.Utils.Mutable.JsMap where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Effect (Effect)
-import Effect.Uncurried
-  ( EffectFn1
-  , EffectFn2
-  , EffectFn3
-  , EffectFn4
-  , runEffectFn1
-  , runEffectFn2
-  , runEffectFn3
-  , runEffectFn4
+import Control.Monad.ST (Region, ST)
+import Control.Monad.ST.Uncurried
+  ( STFn1
+  , STFn2
+  , STFn3
+  , STFn4
+  , runSTFn1
+  , runSTFn2
+  , runSTFn3
+  , runSTFn4
   )
+import Data.Maybe (Maybe(..))
 
-foreign import data JsMap ∷ Type → Type → Type
+foreign import data JsMap ∷ Region → Type → Type → Type
 
-foreign import empty ∷ ∀ k v. Effect (JsMap k v)
+foreign import empty ∷ ∀ r k v. ST r (JsMap r k v)
 
-foreign import setImpl ∷ ∀ k v. EffectFn3 k v (JsMap k v) Unit
+foreign import setImpl ∷ ∀ r k v. STFn3 k v (JsMap r k v) r Unit
 
-foreign import getImpl ∷ ∀ k v r. EffectFn4 (v → r) r k (JsMap k v) r
+foreign import getImpl ∷ ∀ r k v m. STFn4 (v → m) m k (JsMap r k v) r m
 
-foreign import hasImpl ∷ ∀ k v. EffectFn2 k (JsMap k v) Boolean
+foreign import hasImpl ∷ ∀ r k v. STFn2 k (JsMap r k v) r Boolean
 
-foreign import deleteImpl ∷ ∀ k v. EffectFn2 k (JsMap k v) Unit
+foreign import deleteImpl ∷ ∀ r k v. STFn2 k (JsMap r k v) r Unit
 
-foreign import clearImpl ∷ ∀ k v. EffectFn1 (JsMap k v) Unit
+foreign import clearImpl ∷ ∀ r k v. STFn1 (JsMap r k v) r Unit
 
-foreign import forEachImpl ∷ ∀ k v. EffectFn2 (JsMap k v) (k → v → Effect Unit) Unit
+foreign import forEachImpl ∷ ∀ r k v. STFn2 (JsMap r k v) (k → v → ST r Unit) r Unit
 
-set ∷ ∀ k v. k → v → JsMap k v → Effect Unit
-set = runEffectFn3 setImpl
+set ∷ ∀ r k v. k → v → JsMap r k v → ST r Unit
+set = runSTFn3 setImpl
 
-get ∷ ∀ k v. k → JsMap k v → Effect (Maybe v)
-get = runEffectFn4 getImpl Just Nothing
+get ∷ ∀ r k v. k → JsMap r k v → ST r (Maybe v)
+get = runSTFn4 getImpl Just Nothing
 
-has ∷ ∀ k v. k → JsMap k v → Effect Boolean
-has = runEffectFn2 hasImpl
+has ∷ ∀ r k v. k → JsMap r k v → ST r Boolean
+has = runSTFn2 hasImpl
 
-delete ∷ ∀ k v. k → JsMap k v → Effect Unit
-delete = runEffectFn2 deleteImpl
+delete ∷ ∀ r k v. k → JsMap r k v → ST r Unit
+delete = runSTFn2 deleteImpl
 
-clear ∷ ∀ k v. JsMap k v → Effect Unit
-clear = runEffectFn1 clearImpl
+clear ∷ ∀ r k v. JsMap r k v → ST r Unit
+clear = runSTFn1 clearImpl
 
-forEach ∷ ∀ k v. JsMap k v → (k → v → Effect Unit) → Effect Unit
-forEach = runEffectFn2 forEachImpl
+forEach ∷ ∀ r k v. JsMap r k v → (k → v → ST r Unit) → ST r Unit
+forEach = runSTFn2 forEachImpl

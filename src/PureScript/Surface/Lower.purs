@@ -2,8 +2,10 @@ module PureScript.Surface.Lower where
 
 import Prelude
 
-import Control.Monad.ST.Global (Global)
-import Control.Monad.ST.Global as STG
+import Control.Monad.ST (ST)
+import Control.Monad.ST.Internal (STRef)
+import Control.Monad.ST.Ref as STRef
+import Control.Monad.ST.Uncurried (STFn1, STFn2, mkSTFn1, mkSTFn2, runSTFn1, runSTFn2)
 import Data.Array as Array
 import Data.Array.NonEmpty as NEA
 import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
@@ -13,19 +15,15 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Traversable (for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
-import Effect (Effect)
-import Effect.Ref (Ref)
-import Effect.Ref as Ref
-import Effect.Uncurried (EffectFn1, EffectFn2, mkEffectFn1, mkEffectFn2, runEffectFn1, runEffectFn2)
 import PureScript.CST.Range (rangeOf)
 import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 
-type StateIndex = Ref Int
+type StateIndex r = STRef r Int
 
-type StateSourceRange = MutableArray CST.SourceRange
+type StateSourceRange r = MutableArray r CST.SourceRange
 
 type SigDefSourceRange =
   { signature ∷ Maybe CST.SourceRange
@@ -36,32 +34,32 @@ data LetBindingSourceRange
   = LetBindingNameSourceRange SigDefSourceRange
   | LetBindingPatternSourceRange CST.SourceRange
 
-type StateLetBindingSourceRange = MutableArray LetBindingSourceRange
+type StateLetBindingSourceRange r = MutableArray r LetBindingSourceRange
 
 data DeclarationSourceRange = DeclarationValueSourceRange SigDefSourceRange
 
-type StateDeclarationSourceRange = MutableArray DeclarationSourceRange
+type StateDeclarationSourceRange r = MutableArray r DeclarationSourceRange
 
-type State =
-  { exprIndex ∷ StateIndex
-  , binderIndex ∷ StateIndex
-  , typeIndex ∷ StateIndex
-  , letBindingIndex ∷ StateIndex
-  , declarationIndex ∷ StateIndex
-  , exprSourceRange ∷ StateSourceRange
-  , binderSourceRange ∷ StateSourceRange
-  , typeSourceRange ∷ StateSourceRange
-  , letBindingSourceRange ∷ StateLetBindingSourceRange
-  , declarationSourceRange ∷ StateDeclarationSourceRange
+type State r =
+  { exprIndex ∷ StateIndex r
+  , binderIndex ∷ StateIndex r
+  , typeIndex ∷ StateIndex r
+  , letBindingIndex ∷ StateIndex r
+  , declarationIndex ∷ StateIndex r
+  , exprSourceRange ∷ StateSourceRange r
+  , binderSourceRange ∷ StateSourceRange r
+  , typeSourceRange ∷ StateSourceRange r
+  , letBindingSourceRange ∷ StateLetBindingSourceRange r
+  , declarationSourceRange ∷ StateDeclarationSourceRange r
   }
 
-defaultState ∷ Effect State
+defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
-  exprIndex ← Ref.new 0
-  binderIndex ← Ref.new 0
-  typeIndex ← Ref.new 0
-  letBindingIndex ← Ref.new 0
-  declarationIndex ← Ref.new 0
+  exprIndex ← STRef.new 0
+  binderIndex ← STRef.new 0
+  typeIndex ← STRef.new 0
+  letBindingIndex ← STRef.new 0
+  declarationIndex ← STRef.new 0
   exprSourceRange ← MutableArray.empty
   binderSourceRange ← MutableArray.empty
   typeSourceRange ← MutableArray.empty
@@ -80,53 +78,54 @@ defaultState = do
     , declarationSourceRange
     }
 
-nextExprIndex ∷ State → Effect SST.ExprIndex
+nextExprIndex ∷ ∀ r. State r → ST r SST.ExprIndex
 nextExprIndex { exprIndex } = do
-  index ← Ref.read exprIndex
-  Ref.modify_ (_ + 1) exprIndex
+  index ← STRef.read exprIndex
+  void $ STRef.modify (_ + 1) exprIndex
   pure $ SST.Index index
 
-nextBinderIndex ∷ State → Effect SST.BinderIndex
+nextBinderIndex ∷ ∀ r. State r → ST r SST.BinderIndex
 nextBinderIndex { binderIndex } = do
-  index ← Ref.read binderIndex
-  Ref.modify_ (_ + 1) binderIndex
+  index ← STRef.read binderIndex
+  void $ STRef.modify (_ + 1) binderIndex
   pure $ SST.Index index
 
-nextTypeIndex ∷ State → Effect SST.TypeIndex
+nextTypeIndex ∷ ∀ r. State r → ST r SST.TypeIndex
 nextTypeIndex { typeIndex } = do
-  index ← Ref.read typeIndex
-  Ref.modify_ (_ + 1) typeIndex
+  index ← STRef.read typeIndex
+  void $ STRef.modify (_ + 1) typeIndex
   pure $ SST.Index index
 
-nextLetBindingIndex ∷ State → Effect SST.LetBindingIndex
+nextLetBindingIndex ∷ ∀ r. State r → ST r SST.LetBindingIndex
 nextLetBindingIndex { letBindingIndex } = do
-  index ← Ref.read letBindingIndex
-  Ref.modify_ (_ + 1) letBindingIndex
+  index ← STRef.read letBindingIndex
+  void $ STRef.modify (_ + 1) letBindingIndex
   pure $ SST.Index index
 
-nextDeclarationIndex ∷ State → Effect SST.DeclarationIndex
+nextDeclarationIndex ∷ ∀ r. State r → ST r SST.DeclarationIndex
 nextDeclarationIndex { declarationIndex } = do
-  index ← Ref.read declarationIndex
-  Ref.modify_ (_ + 1) declarationIndex
+  index ← STRef.read declarationIndex
+  void $ STRef.modify (_ + 1) declarationIndex
   pure $ SST.Index index
 
-insertExprSourceRange ∷ State → SST.ExprIndex → CST.SourceRange → Effect Unit
+insertExprSourceRange ∷ ∀ r. State r → SST.ExprIndex → CST.SourceRange → ST r Unit
 insertExprSourceRange { exprSourceRange } exprIndex exprRange =
   MutableArray.poke exprIndex exprRange exprSourceRange
 
-insertBinderSourceRange ∷ State → SST.BinderIndex → CST.SourceRange → Effect Unit
+insertBinderSourceRange ∷ ∀ r. State r → SST.BinderIndex → CST.SourceRange → ST r Unit
 insertBinderSourceRange { binderSourceRange } binderIndex binderRange =
   MutableArray.poke binderIndex binderRange binderSourceRange
 
-insertTypeSourceRange ∷ State → SST.TypeIndex → CST.SourceRange → Effect Unit
+insertTypeSourceRange ∷ ∀ r. State r → SST.TypeIndex → CST.SourceRange → ST r Unit
 insertTypeSourceRange { typeSourceRange } typeIndex typeRange =
   MutableArray.poke typeIndex typeRange typeSourceRange
 
-insertLetBindingSourceRange ∷ State → SST.LetBindingIndex → LetBindingSourceRange → Effect Unit
+insertLetBindingSourceRange ∷ ∀ r. State r → SST.LetBindingIndex → LetBindingSourceRange → ST r Unit
 insertLetBindingSourceRange { letBindingSourceRange } letBindingIndex letBindingRange =
   MutableArray.poke letBindingIndex letBindingRange letBindingSourceRange
 
-insertDeclarationSourceRange ∷ State → SST.DeclarationIndex → DeclarationSourceRange → Effect Unit
+insertDeclarationSourceRange
+  ∷ ∀ r. State r → SST.DeclarationIndex → DeclarationSourceRange → ST r Unit
 insertDeclarationSourceRange { declarationSourceRange } declarationIndex declarationRange =
   MutableArray.poke declarationIndex declarationRange declarationSourceRange
 
@@ -137,12 +136,12 @@ lowerQualifiedName ∷ ∀ a. CST.QualifiedName a → SST.QualifiedName a
 lowerQualifiedName (CST.QualifiedName { module: moduleName, name }) =
   SST.QualifiedName { moduleName, name }
 
-lowerGuarded ∷ State → CST.Guarded Void → Effect SST.Guarded
+lowerGuarded ∷ ∀ r. State r → CST.Guarded Void → ST r SST.Guarded
 lowerGuarded state = case _ of
   CST.Unconditional _ w → SST.Unconditional <$> lowerWhere state w
   CST.Guarded g → SST.Guarded <$> traverse (lowerGuardedExpr state) g
 
-lowerGuardedExpr ∷ State → CST.GuardedExpr Void → Effect SST.GuardedExpr
+lowerGuardedExpr ∷ ∀ r. State r → CST.GuardedExpr Void → ST r SST.GuardedExpr
 lowerGuardedExpr
   state
   ( CST.GuardedExpr
@@ -159,14 +158,14 @@ lowerGuardedExpr
   sstWhere ← lowerWhere state cstWhere
   pure $ SST.GuardedExpr patterns sstWhere
 
-lowerPatternGuard ∷ State → CST.PatternGuard Void → Effect SST.PatternGuard
+lowerPatternGuard ∷ ∀ r. State r → CST.PatternGuard Void → ST r SST.PatternGuard
 lowerPatternGuard state (CST.PatternGuard { binder: cstBinder, expr: cstExpr }) = do
   binder ← cstBinder # traverse case _ of
     Tuple cstBinder' _ → lowerBinder state cstBinder'
   expr ← lowerExpr state cstExpr
   pure $ SST.PatternGuard binder expr
 
-lowerWhere ∷ State → CST.Where Void → Effect SST.Where
+lowerWhere ∷ ∀ r. State r → CST.Where Void → ST r SST.Where
 lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
   expr ← lowerExpr state cstExpr
   bindings ← case cstBindings of
@@ -176,51 +175,52 @@ lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
       pure []
   pure $ SST.Where expr bindings
 
-lowerExpr ∷ State → CST.Expr Void → Effect SST.Expr
-lowerExpr state = runEffectFn1 go
+lowerExpr ∷ ∀ r. State r → CST.Expr Void → ST r SST.Expr
+lowerExpr state = runSTFn1 go
   where
-  nextIndexWith ∷ CST.SourceRange → Effect SST.ExprIndex
+  nextIndexWith ∷ CST.SourceRange → ST r SST.ExprIndex
   nextIndexWith range = do
     index ← nextExprIndex state
     insertExprSourceRange state index range
     pure index
 
-  goAppSpine ∷ EffectFn1 (CST.AppSpine CST.Expr Void) SST.AppSpine
-  goAppSpine = mkEffectFn1 case _ of
-    CST.AppTerm e → SST.AppTerm <$> runEffectFn1 go e
+  goAppSpine ∷ STFn1 (CST.AppSpine CST.Expr Void) r SST.AppSpine
+  goAppSpine = mkSTFn1 case _ of
+    CST.AppTerm e → SST.AppTerm <$> runSTFn1 go e
     CST.AppType _ t → SST.AppType <$> lowerType state t
 
-  goRecordLabeled ∷ EffectFn1 (CST.RecordLabeled (CST.Expr Void)) (SST.RecordLabeled SST.Expr)
-  goRecordLabeled = mkEffectFn1 case _ of
+  goRecordLabeled ∷ STFn1 (CST.RecordLabeled (CST.Expr Void)) r (SST.RecordLabeled SST.Expr)
+  goRecordLabeled = mkSTFn1 case _ of
     CST.RecordPun (CST.Name { name }) → pure $ SST.RecordPun name
-    CST.RecordField (CST.Name { name }) _ e → SST.RecordField name <$> runEffectFn1 go e
+    CST.RecordField (CST.Name { name }) _ e → SST.RecordField name <$> runSTFn1 go e
 
-  goChain ∷ ∀ a b. EffectFn2 (EffectFn1 a b) (Tuple a (CST.Expr Void)) (Tuple b SST.Expr)
-  goChain = mkEffectFn2 \onOperator (Tuple operator operand) →
-    Tuple <$> runEffectFn1 onOperator operator <*> runEffectFn1 go operand
+  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Expr Void)) r (Tuple b SST.Expr)
+  goChain = mkSTFn2 \onOperator (Tuple operator operand) →
+    Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
 
-  goInfixOperator ∷ EffectFn1 (CST.Wrapped (CST.Expr Void)) SST.Expr
-  goInfixOperator = mkEffectFn1 case _ of
-    CST.Wrapped { value } → runEffectFn1 go value
+  goInfixOperator ∷ STFn1 (CST.Wrapped (CST.Expr Void)) r SST.Expr
+  goInfixOperator = mkSTFn1 case _ of
+    CST.Wrapped { value } → runSTFn1 go value
 
-  goOperator ∷ EffectFn1 (CST.QualifiedName CST.Operator) (SST.QualifiedName CST.Operator)
-  goOperator = mkEffectFn1 $ lowerQualifiedName >>> pure
+  goOperator ∷ STFn1 (CST.QualifiedName CST.Operator) r (SST.QualifiedName CST.Operator)
+  goOperator = mkSTFn1 $ lowerQualifiedName >>> pure
 
-  goRecordUpdate ∷ EffectFn1 (CST.RecordUpdate Void) SST.RecordUpdate
-  goRecordUpdate = mkEffectFn1 case _ of
+  goRecordUpdate ∷ STFn1 (CST.RecordUpdate Void) r SST.RecordUpdate
+  goRecordUpdate = mkSTFn1 case _ of
     CST.RecordUpdateLeaf (CST.Name { name }) _ e →
-      SST.RecordUpdateLeaf name <$> runEffectFn1 go e
+      SST.RecordUpdateLeaf name <$> runSTFn1 go e
     CST.RecordUpdateBranch (CST.Name { name })
       (CST.Wrapped { value: (CST.Separated { head: cstHead, tail: cstTail }) }) → do
-      head ← runEffectFn1 goRecordUpdate cstHead
-      tail ← traverse (Tuple.snd >>> runEffectFn1 goRecordUpdate) cstTail
+      head ← runSTFn1 goRecordUpdate cstHead
+      tail ← traverse (Tuple.snd >>> runSTFn1 goRecordUpdate) cstTail
       pure $ SST.RecordUpdateBranch name $ NEA.cons' head tail
 
   goCaseBranch
-    ∷ EffectFn1
+    ∷ STFn1
         (Tuple (CST.Separated (CST.Binder Void)) (CST.Guarded Void))
+        r
         (Tuple (NonEmptyArray SST.Binder) SST.Guarded)
-  goCaseBranch = mkEffectFn1 case _ of
+  goCaseBranch = mkSTFn1 case _ of
     Tuple (CST.Separated { head: cstHead, tail: cstTail }) cstGuarded → do
       bindersHead ← lowerBinder state cstHead
       bindersTail ← traverse (Tuple.snd >>> lowerBinder state) cstTail
@@ -228,8 +228,8 @@ lowerExpr state = runEffectFn1 go
       guarded ← lowerGuarded state cstGuarded
       pure $ Tuple binders guarded
 
-  go ∷ EffectFn1 (CST.Expr Void) SST.Expr
-  go = mkEffectFn1 \e → do
+  go ∷ STFn1 (CST.Expr Void) r SST.Expr
+  go = mkSTFn1 \e → do
     let
       range ∷ CST.SourceRange
       range = rangeOf e
@@ -260,8 +260,8 @@ lowerExpr state = runEffectFn1 go
       CST.ExprArray (CST.Wrapped { value }) → do
         values ← case value of
           Just (CST.Separated { head: cstHead, tail: cstTail }) → do
-            head ← runEffectFn1 go cstHead
-            tail ← traverse (Tuple.snd >>> runEffectFn1 go) cstTail
+            head ← runSTFn1 go cstHead
+            tail ← traverse (Tuple.snd >>> runSTFn1 go) cstTail
             pure $ Array.cons head tail
           Nothing →
             pure []
@@ -269,99 +269,99 @@ lowerExpr state = runEffectFn1 go
       CST.ExprRecord (CST.Wrapped { value }) → do
         values ← case value of
           Just (CST.Separated { head: cstHead, tail: cstTail }) → do
-            head ← runEffectFn1 goRecordLabeled cstHead
-            tail ← traverse (Tuple.snd >>> runEffectFn1 goRecordLabeled) cstTail
+            head ← runSTFn1 goRecordLabeled cstHead
+            tail ← traverse (Tuple.snd >>> runSTFn1 goRecordLabeled) cstTail
             pure $ Array.cons head tail
           Nothing → do
             pure []
         pure $ SST.ExprRecord annotation values
       CST.ExprParens (CST.Wrapped { value }) → do
-        SST.ExprParens annotation <$> runEffectFn1 go value
+        SST.ExprParens annotation <$> runSTFn1 go value
       CST.ExprTyped tm _ ty → do
-        tm' ← runEffectFn1 go tm
+        tm' ← runSTFn1 go tm
         ty' ← lowerType state ty
         pure $ SST.ExprTyped annotation tm' ty'
       CST.ExprInfix cstTerm cstChain → do
-        term ← runEffectFn1 go cstTerm
-        chain ← traverse (runEffectFn2 goChain goInfixOperator) cstChain
+        term ← runSTFn1 go cstTerm
+        chain ← traverse (runSTFn2 goChain goInfixOperator) cstChain
         pure $ SST.ExprInfix annotation term chain
       CST.ExprOp cstTerm cstChain → do
-        term ← runEffectFn1 go cstTerm
-        chain ← traverse (runEffectFn2 goChain goOperator) cstChain
+        term ← runSTFn1 go cstTerm
+        chain ← traverse (runSTFn2 goChain goOperator) cstChain
         pure $ SST.ExprOp annotation term chain
       CST.ExprOpName n → do
         pure $ SST.ExprOpName annotation $ lowerQualifiedName n
       CST.ExprNegate _ n → do
-        SST.ExprNegate annotation <$> runEffectFn1 go n
+        SST.ExprNegate annotation <$> runSTFn1 go n
       CST.ExprRecordAccessor { expr: cstExpr, path: CST.Separated { head: cstHead, tail: cstTail } } →
         do
-          expr ← runEffectFn1 go cstExpr
+          expr ← runSTFn1 go cstExpr
           let
             path ∷ NonEmptyArray CST.Label
             path = NEA.cons' (unName cstHead) (map (Tuple.snd >>> unName) cstTail)
           pure $ SST.ExprRecordAccessor annotation expr path
       CST.ExprRecordUpdate cstExpr
         (CST.Wrapped { value: (CST.Separated { head: cstHead, tail: cstTail }) }) → do
-        expr ← runEffectFn1 go cstExpr
-        head ← runEffectFn1 goRecordUpdate cstHead
-        tail ← traverse (Tuple.snd >>> runEffectFn1 goRecordUpdate) cstTail
+        expr ← runSTFn1 go cstExpr
+        head ← runSTFn1 goRecordUpdate cstHead
+        tail ← traverse (Tuple.snd >>> runSTFn1 goRecordUpdate) cstTail
         pure $ SST.ExprRecordUpdate annotation expr $ NEA.cons' head tail
       CST.ExprApp cstHead cstSpine → do
-        head ← runEffectFn1 go cstHead
-        spine ← traverse (runEffectFn1 goAppSpine) cstSpine
+        head ← runSTFn1 go cstHead
+        spine ← traverse (runSTFn1 goAppSpine) cstSpine
         pure $ SST.ExprApplication annotation head spine
       CST.ExprLambda { binders: cstBinders, body: cstBody } → do
         binders ← traverse (lowerBinder state) cstBinders
-        body ← runEffectFn1 go cstBody
+        body ← runSTFn1 go cstBody
         pure $ SST.ExprLambda annotation binders body
       CST.ExprIf { cond: cstCond, true: cstWhen, false: cstUnless } → do
-        cond ← runEffectFn1 go cstCond
-        when ← runEffectFn1 go cstWhen
-        unless ← runEffectFn1 go cstUnless
+        cond ← runSTFn1 go cstCond
+        when ← runSTFn1 go cstWhen
+        unless ← runSTFn1 go cstUnless
         pure $ SST.ExprIfThenElse annotation cond when unless
       CST.ExprCase { head: CST.Separated { head: cstHead, tail: cstTail }, branches: cstBranches } →
         do
-          headHead ← runEffectFn1 go cstHead
-          headTail ← traverse (Tuple.snd >>> runEffectFn1 go) cstTail
+          headHead ← runSTFn1 go cstHead
+          headTail ← traverse (Tuple.snd >>> runSTFn1 go) cstTail
           let head = NEA.cons' headHead headTail
-          branches ← traverse (runEffectFn1 goCaseBranch) cstBranches
+          branches ← traverse (runSTFn1 goCaseBranch) cstBranches
           pure $ SST.ExprCase annotation head branches
       CST.ExprLet { bindings: cstBindings, body: cstBody } → do
         bindings ← lowerLetBindings state cstBindings
-        body ← runEffectFn1 go cstBody
+        body ← runSTFn1 go cstBody
         pure $ SST.ExprLet annotation bindings body
       CST.ExprDo { statements: cstStatements } → do
         SST.ExprDo annotation <$> traverse (lowerDoStatement state) cstStatements
       CST.ExprAdo { statements: cstStatements, result: cstResult } → do
-        SST.ExprAdo annotation <$> traverse (lowerDoStatement state) cstStatements <*> runEffectFn1
+        SST.ExprAdo annotation <$> traverse (lowerDoStatement state) cstStatements <*> runSTFn1
           go
           cstResult
       CST.ExprError v → do
         absurd v
 
-lowerBinder ∷ State → CST.Binder Void → Effect SST.Binder
-lowerBinder state = runEffectFn1 go
+lowerBinder ∷ ∀ r. State r → CST.Binder Void → ST r SST.Binder
+lowerBinder state = runSTFn1 go
   where
-  nextIndexWith ∷ CST.SourceRange → Effect SST.BinderIndex
+  nextIndexWith ∷ CST.SourceRange → ST r SST.BinderIndex
   nextIndexWith range = do
     index ← nextBinderIndex state
     insertBinderSourceRange state index range
     pure index
 
-  goRecordLabeled ∷ EffectFn1 (CST.RecordLabeled (CST.Binder Void)) (SST.RecordLabeled SST.Binder)
-  goRecordLabeled = mkEffectFn1 case _ of
+  goRecordLabeled ∷ STFn1 (CST.RecordLabeled (CST.Binder Void)) r (SST.RecordLabeled SST.Binder)
+  goRecordLabeled = mkSTFn1 case _ of
     CST.RecordPun (CST.Name { name }) → pure $ SST.RecordPun name
-    CST.RecordField (CST.Name { name }) _ e → SST.RecordField name <$> runEffectFn1 go e
+    CST.RecordField (CST.Name { name }) _ e → SST.RecordField name <$> runSTFn1 go e
 
-  goChain ∷ ∀ a b. EffectFn2 (EffectFn1 a b) (Tuple a (CST.Binder Void)) (Tuple b SST.Binder)
-  goChain = mkEffectFn2 \onOperator (Tuple operator operand) →
-    Tuple <$> runEffectFn1 onOperator operator <*> runEffectFn1 go operand
+  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Binder Void)) r (Tuple b SST.Binder)
+  goChain = mkSTFn2 \onOperator (Tuple operator operand) →
+    Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
 
-  goOperator ∷ EffectFn1 (CST.QualifiedName CST.Operator) (SST.QualifiedName CST.Operator)
-  goOperator = mkEffectFn1 $ lowerQualifiedName >>> pure
+  goOperator ∷ STFn1 (CST.QualifiedName CST.Operator) r (SST.QualifiedName CST.Operator)
+  goOperator = mkSTFn1 $ lowerQualifiedName >>> pure
 
-  go ∷ EffectFn1 (CST.Binder Void) SST.Binder
-  go = mkEffectFn1 \b → do
+  go ∷ STFn1 (CST.Binder Void) r SST.Binder
+  go = mkSTFn1 \b → do
     let
       range ∷ CST.SourceRange
       range = rangeOf b
@@ -376,9 +376,9 @@ lowerBinder state = runEffectFn1 go
       CST.BinderVar (CST.Name { name }) →
         pure $ SST.BinderVar annotation name
       CST.BinderNamed (CST.Name { name }) _ i →
-        SST.BinderNamed annotation name <$> runEffectFn1 go i
+        SST.BinderNamed annotation name <$> runSTFn1 go i
       CST.BinderConstructor n a →
-        SST.BinderConstructor annotation (lowerQualifiedName n) <$> traverse (runEffectFn1 go) a
+        SST.BinderConstructor annotation (lowerQualifiedName n) <$> traverse (runSTFn1 go) a
       CST.BinderBoolean _ v →
         pure $ SST.BinderBoolean annotation v
       CST.BinderChar _ c →
@@ -392,8 +392,8 @@ lowerBinder state = runEffectFn1 go
       CST.BinderArray (CST.Wrapped { value: cstValues }) → do
         values ← case cstValues of
           Just (CST.Separated { head: cstValueHead, tail: cstValueTail }) → do
-            valueHead ← runEffectFn1 go cstValueHead
-            valueTail ← traverse (Tuple.snd >>> runEffectFn1 go) cstValueTail
+            valueHead ← runSTFn1 go cstValueHead
+            valueTail ← traverse (Tuple.snd >>> runSTFn1 go) cstValueTail
             pure $ Array.cons valueHead valueTail
           Nothing →
             pure []
@@ -401,47 +401,48 @@ lowerBinder state = runEffectFn1 go
       CST.BinderRecord (CST.Wrapped { value: cstValues }) → do
         values ← case cstValues of
           Just (CST.Separated { head: cstValueHead, tail: cstValueTail }) → do
-            valueHead ← runEffectFn1 goRecordLabeled cstValueHead
-            valueTail ← traverse (Tuple.snd >>> runEffectFn1 goRecordLabeled) cstValueTail
+            valueHead ← runSTFn1 goRecordLabeled cstValueHead
+            valueTail ← traverse (Tuple.snd >>> runSTFn1 goRecordLabeled) cstValueTail
             pure $ Array.cons valueHead valueTail
           Nothing →
             pure []
         pure $ SST.BinderRecord annotation values
       CST.BinderParens (CST.Wrapped { value }) → do
-        SST.BinderParens annotation <$> runEffectFn1 go value
+        SST.BinderParens annotation <$> runSTFn1 go value
       CST.BinderTyped i _ t → do
-        SST.BinderTyped annotation <$> runEffectFn1 go i <*> lowerType state t
+        SST.BinderTyped annotation <$> runSTFn1 go i <*> lowerType state t
       CST.BinderOp cstHead cstChain →
         SST.BinderOp annotation
-          <$> runEffectFn1 go cstHead
-          <*> traverse (runEffectFn2 goChain goOperator) cstChain
+          <$> runSTFn1 go cstHead
+          <*> traverse (runSTFn2 goChain goOperator) cstChain
       CST.BinderError v →
         absurd v
 
-lowerType ∷ State → CST.Type Void → Effect SST.Type
-lowerType state = runEffectFn1 go
+lowerType ∷ ∀ r. State r → CST.Type Void → ST r SST.Type
+lowerType state = runSTFn1 go
   where
-  nextIndexWith ∷ CST.SourceRange → Effect SST.TypeIndex
+  nextIndexWith ∷ CST.SourceRange → ST r SST.TypeIndex
   nextIndexWith range = do
     index ← nextTypeIndex state
     insertTypeSourceRange state index range
     pure index
 
   goRowPair
-    ∷ EffectFn1
+    ∷ STFn1
         (CST.Labeled (CST.Name CST.Label) (CST.Type Void))
+        r
         (Tuple CST.Label SST.Type)
-  goRowPair = mkEffectFn1 case _ of
+  goRowPair = mkSTFn1 case _ of
     CST.Labeled { label: (CST.Name { name: cstLabel }), value: cstValue } →
-      Tuple cstLabel <$> runEffectFn1 go cstValue
+      Tuple cstLabel <$> runSTFn1 go cstValue
 
-  goRow ∷ EffectFn1 (CST.Wrapped (CST.Row Void)) SST.Row
-  goRow = mkEffectFn1 case _ of
+  goRow ∷ STFn1 (CST.Wrapped (CST.Row Void)) r SST.Row
+  goRow = mkSTFn1 case _ of
     CST.Wrapped { value: CST.Row { labels: cstLabels, tail: cstTail } } → do
       labels ← case cstLabels of
         Just (CST.Separated { head: cstLabelsHead, tail: cstLabelsTail }) → do
-          labelsHead ← runEffectFn1 goRowPair cstLabelsHead
-          labelsTail ← traverse (Tuple.snd >>> runEffectFn1 goRowPair) cstLabelsTail
+          labelsHead ← runSTFn1 goRowPair cstLabelsHead
+          labelsTail ← traverse (Tuple.snd >>> runSTFn1 goRowPair) cstLabelsTail
           pure $ Array.cons labelsHead labelsTail
         Nothing →
           pure []
@@ -449,34 +450,36 @@ lowerType state = runEffectFn1 go
       pure $ SST.Row labels tail
 
   goTypeVar
-    ∷ EffectFn1
+    ∷ STFn1
         (CST.Labeled (CST.Prefixed (CST.Name CST.Ident)) (CST.Type Void))
+        r
         { visible ∷ Boolean, name ∷ CST.Ident, value ∷ SST.Type }
-  goTypeVar = mkEffectFn1 case _ of
+  goTypeVar = mkSTFn1 case _ of
     CST.Labeled
       { label: (CST.Prefixed { prefix, value: (CST.Name { name: cstLabel }) }), value: cstValue } →
       { visible: isJust prefix, name: cstLabel, value: _ } <$> lowerType state cstValue
 
   goBinding
-    ∷ EffectFn1
+    ∷ STFn1
         (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) Void)
+        r
         (SST.TypeVarBinding CST.Ident)
-  goBinding = mkEffectFn1 case _ of
+  goBinding = mkSTFn1 case _ of
     CST.TypeVarKinded (CST.Wrapped { value: cstValue }) → do
-      { visible, name, value } ← runEffectFn1 goTypeVar cstValue
+      { visible, name, value } ← runSTFn1 goTypeVar cstValue
       pure $ SST.TypeVarKinded visible name value
     CST.TypeVarName (CST.Prefixed { prefix, value: CST.Name { name } }) →
       pure $ SST.TypeVarName (isJust prefix) name
 
-  goChain ∷ ∀ a b. EffectFn2 (EffectFn1 a b) (Tuple a (CST.Type Void)) (Tuple b SST.Type)
-  goChain = mkEffectFn2 \onOperator (Tuple operator operand) →
-    Tuple <$> runEffectFn1 onOperator operator <*> runEffectFn1 go operand
+  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Type Void)) r (Tuple b SST.Type)
+  goChain = mkSTFn2 \onOperator (Tuple operator operand) →
+    Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
 
-  goOperator ∷ EffectFn1 (CST.QualifiedName CST.Operator) (SST.QualifiedName CST.Operator)
-  goOperator = mkEffectFn1 $ lowerQualifiedName >>> pure
+  goOperator ∷ STFn1 (CST.QualifiedName CST.Operator) r (SST.QualifiedName CST.Operator)
+  goOperator = mkSTFn1 $ lowerQualifiedName >>> pure
 
-  go ∷ EffectFn1 (CST.Type Void) SST.Type
-  go = mkEffectFn1 \t → do
+  go ∷ STFn1 (CST.Type Void) r SST.Type
+  go = mkSTFn1 \t → do
     let
       range ∷ CST.SourceRange
       range = rangeOf t
@@ -499,61 +502,61 @@ lowerType state = runEffectFn1 go
       CST.TypeInt n _ i →
         pure $ SST.TypeInt annotation (isJust n) i
       CST.TypeRow r → do
-        SST.TypeRow annotation <$> runEffectFn1 goRow r
+        SST.TypeRow annotation <$> runSTFn1 goRow r
       CST.TypeRecord r → do
-        SST.TypeRecord annotation <$> runEffectFn1 goRow r
+        SST.TypeRecord annotation <$> runSTFn1 goRow r
       CST.TypeForall _ cstBindings _ cstBody → do
-        bindings ← traverse (runEffectFn1 goBinding) cstBindings
-        body ← runEffectFn1 go cstBody
+        bindings ← traverse (runSTFn1 goBinding) cstBindings
+        body ← runSTFn1 go cstBody
         pure $ SST.TypeForall annotation bindings body
       CST.TypeKinded cstType _ cstKind →
         SST.TypeKinded annotation
-          <$> runEffectFn1 go cstType
-          <*> runEffectFn1 go cstKind
+          <$> runSTFn1 go cstType
+          <*> runSTFn1 go cstKind
       CST.TypeApp cstType cstArguments →
         SST.TypeApp annotation
-          <$> runEffectFn1 go cstType
-          <*> traverse (runEffectFn1 go) cstArguments
+          <$> runSTFn1 go cstType
+          <*> traverse (runSTFn1 go) cstArguments
       CST.TypeOp cstHead cstChain →
         SST.TypeOp annotation
-          <$> runEffectFn1 go cstHead
-          <*> traverse (runEffectFn2 goChain goOperator) cstChain
+          <$> runSTFn1 go cstHead
+          <*> traverse (runSTFn2 goChain goOperator) cstChain
       CST.TypeOpName n →
         pure $ SST.TypeOpName annotation $ lowerQualifiedName n
       CST.TypeArrow cstArgument _ cstReturn →
         SST.TypeArrow annotation
-          <$> runEffectFn1 go cstArgument
-          <*> runEffectFn1 go cstReturn
+          <$> runSTFn1 go cstArgument
+          <*> runSTFn1 go cstReturn
       CST.TypeArrowName _ →
         pure $ SST.TypeArrowName annotation
       CST.TypeConstrained cstConstraint _ cstConstrained →
         SST.TypeConstrained annotation
-          <$> runEffectFn1 go cstConstraint
-          <*> runEffectFn1 go cstConstrained
+          <$> runSTFn1 go cstConstraint
+          <*> runSTFn1 go cstConstrained
       CST.TypeParens (CST.Wrapped { value }) →
-        SST.TypeParens annotation <$> runEffectFn1 go value
+        SST.TypeParens annotation <$> runSTFn1 go value
       CST.TypeError v →
         absurd v
 
-data LetLoweringGroup = LetLoweringGroup
+data LetLoweringGroup r = LetLoweringGroup
   CST.Ident
-  (Ref (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
-  (STArray Global { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
+  (STRef r (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
+  (STArray r { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
 
 lowerLetBindings
-  ∷ State → NonEmptyArray (CST.LetBinding Void) → Effect (NonEmptyArray SST.LetBinding)
+  ∷ ∀ r. State r → NonEmptyArray (CST.LetBinding Void) → ST r (NonEmptyArray SST.LetBinding)
 lowerLetBindings state cstLetBindings = do
-  currentGroupRef ← Ref.new Nothing
-  letBindingsRaw ← STG.toEffect STA.new
+  currentGroupRef ← STRef.new Nothing
+  letBindingsRaw ← STA.new
 
   let
-    dischargeGroup ∷ Effect Unit
+    dischargeGroup ∷ ST r Unit
     dischargeGroup = do
-      currentGroup ← Ref.read currentGroupRef
+      currentGroup ← STRef.read currentGroupRef
       case currentGroup of
         Just (LetLoweringGroup groupName signatureRef valuesRaw) → do
-          signature ← Ref.read signatureRef
-          values ← STG.toEffect $ STA.unsafeFreeze valuesRaw
+          signature ← STRef.read signatureRef
+          values ← STA.unsafeFreeze valuesRaw
           let
             letBindingSourceRange ∷ LetBindingSourceRange
             letBindingSourceRange = LetBindingNameSourceRange
@@ -569,37 +572,37 @@ lowerLetBindings state cstLetBindings = do
             letBinding ∷ SST.LetBinding
             letBinding =
               SST.LetBindingValue annotation groupName (signature <#> _.t) (values <#> _.v)
-          void $ STG.toEffect $ STA.push letBinding letBindingsRaw
+          void $ STA.push letBinding letBindingsRaw
         Nothing →
           pure unit
-      Ref.write Nothing currentGroupRef
+      void $ STRef.write Nothing currentGroupRef
 
-    newNameGroup ∷ CST.Ident → _ → _ → Effect Unit
+    newNameGroup ∷ CST.Ident → _ → _ → ST r Unit
     newNameGroup groupName signature values = do
-      signatureRef ← Ref.new signature
-      valuesRaw ← STG.toEffect $ STA.unsafeThaw values
-      Ref.write (Just $ LetLoweringGroup groupName signatureRef valuesRaw) currentGroupRef
+      signatureRef ← STRef.new signature
+      valuesRaw ← STA.unsafeThaw values
+      void $ STRef.write (Just $ LetLoweringGroup groupName signatureRef valuesRaw) currentGroupRef
 
-    onLetSignature ∷ CST.SourceRange → CST.Ident → SST.Type → Effect Unit
+    onLetSignature ∷ CST.SourceRange → CST.Ident → SST.Type → ST r Unit
     onLetSignature sourceRange signatureName t = do
-      currentGroup ← Ref.read currentGroupRef
+      currentGroup ← STRef.read currentGroupRef
       case currentGroup of
         Just (LetLoweringGroup groupName signatureRef _) → do
           if signatureName == groupName then do
-            Ref.write (Just { sourceRange, t }) signatureRef
+            void $ STRef.write (Just { sourceRange, t }) signatureRef
           else do
             dischargeGroup
             newNameGroup signatureName (Just { sourceRange, t }) []
         Nothing → do
           newNameGroup signatureName (Just { sourceRange, t }) []
 
-    onLetName ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → Effect Unit
+    onLetName ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → ST r Unit
     onLetName sourceRange valueName v = do
-      currentGroup ← Ref.read currentGroupRef
+      currentGroup ← STRef.read currentGroupRef
       case currentGroup of
         Just (LetLoweringGroup groupName _ values) → do
           if valueName == groupName then
-            void $ STG.toEffect $ STA.push { sourceRange, v } values
+            void $ STA.push { sourceRange, v } values
           else do
             dischargeGroup
             newNameGroup valueName Nothing [ { sourceRange, v } ]
@@ -633,23 +636,23 @@ lowerLetBindings state cstLetBindings = do
         let
           letBinding ∷ SST.LetBinding
           letBinding = SST.LetBindingPattern annotation sstBinder sstWhere
-        void $ STG.toEffect $ STA.push letBinding letBindingsRaw
+        void $ STA.push letBinding letBindingsRaw
       CST.LetBindingError v →
         absurd v
 
   dischargeGroup
-  letBindings ← STG.toEffect $ STA.unsafeFreeze letBindingsRaw
+  letBindings ← STA.unsafeFreeze letBindingsRaw
   pure $ NonEmptyArray letBindings
 
 -- TODO: It might be useful to assign indices to do statements, like we do with let bindings,
 -- so we keep the shape similar to other lowerX functions. For instance, indices could improve
 -- error reporting for do blocks since we can recover the entire statement rather than just the
 -- let binding.
-lowerDoStatement ∷ State → CST.DoStatement Void → Effect SST.DoStatement
-lowerDoStatement state = runEffectFn1 go
+lowerDoStatement ∷ ∀ r. State r → CST.DoStatement Void → ST r SST.DoStatement
+lowerDoStatement state = runSTFn1 go
   where
-  go ∷ EffectFn1 (CST.DoStatement Void) SST.DoStatement
-  go = mkEffectFn1 \d → do
+  go ∷ STFn1 (CST.DoStatement Void) r SST.DoStatement
+  go = mkSTFn1 \d → do
     case d of
       CST.DoLet _ cstLetBindings → do
         SST.DoLet <$> lowerLetBindings state cstLetBindings
@@ -660,12 +663,12 @@ lowerDoStatement state = runEffectFn1 go
       CST.DoError e →
         absurd e
 
-data LoweringGroup = LoweringGroupValue
+data LoweringGroup r = LoweringGroupValue
   CST.Ident
-  (Ref (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
-  (STArray Global { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
+  (STRef r (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
+  (STArray r { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
 
-lowerModule ∷ CST.Module Void → Effect SST.Module
+lowerModule ∷ ∀ r. CST.Module Void → ST r SST.Module
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }
@@ -677,9 +680,9 @@ lowerModule
   declarations ← lowerDeclarations state cstDeclarations
   pure $ SST.Module { name, imports, declarations }
 
-lowerImportDecls ∷ Array (CST.ImportDecl Void) → Effect (Array SST.Import)
+lowerImportDecls ∷ ∀ r. Array (CST.ImportDecl Void) → ST r (Array SST.Import)
 lowerImportDecls cstImports = do
-  importsRaw ← STG.toEffect $ STA.new
+  importsRaw ← STA.new
 
   for_ cstImports \cstImport →
     case cstImport of
@@ -687,23 +690,23 @@ lowerImportDecls cstImports = do
         let
           sstImport ∷ SST.Import
           sstImport = SST.Import { name: importName }
-        void $ STG.toEffect $ STA.push sstImport importsRaw
+        void $ STA.push sstImport importsRaw
 
-  STG.toEffect $ STA.unsafeFreeze importsRaw
+  STA.unsafeFreeze importsRaw
 
-lowerDeclarations ∷ State → Array (CST.Declaration Void) → Effect (Array SST.Declaration)
+lowerDeclarations ∷ ∀ r. State r → Array (CST.Declaration Void) → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
-  currentGroupRef ← Ref.new Nothing
-  declarationsRaw ← STG.toEffect STA.new
+  currentGroupRef ← STRef.new Nothing
+  declarationsRaw ← STA.new
 
   let
-    dischargeGroup ∷ Effect Unit
+    dischargeGroup ∷ ST r Unit
     dischargeGroup = do
-      currentGroup ← Ref.read currentGroupRef
+      currentGroup ← STRef.read currentGroupRef
       case currentGroup of
         Just (LoweringGroupValue groupName signatureRef valuesRaw) → do
-          signature ← Ref.read signatureRef
-          values ← STG.toEffect $ STA.unsafeFreeze valuesRaw
+          signature ← STRef.read signatureRef
+          values ← STA.unsafeFreeze valuesRaw
           let
             declarationSourceRange ∷ DeclarationSourceRange
             declarationSourceRange = DeclarationValueSourceRange
@@ -719,37 +722,38 @@ lowerDeclarations state cstDeclarations = do
             declaration ∷ SST.Declaration
             declaration =
               SST.DeclarationValue annotation groupName (signature <#> _.t) (values <#> _.v)
-          void $ STG.toEffect $ STA.push declaration declarationsRaw
+          void $ STA.push declaration declarationsRaw
         Nothing →
           pure unit
-      Ref.write Nothing currentGroupRef
+      void $ STRef.write Nothing currentGroupRef
 
-    newValueGroup ∷ CST.Ident → _ → _ → Effect Unit
+    newValueGroup ∷ CST.Ident → _ → _ → ST r Unit
     newValueGroup groupName signature values = do
-      signatureRef ← Ref.new signature
-      valuesRaw ← STG.toEffect $ STA.unsafeThaw values
-      Ref.write (Just $ LoweringGroupValue groupName signatureRef valuesRaw) currentGroupRef
+      signatureRef ← STRef.new signature
+      valuesRaw ← STA.unsafeThaw values
+      void $ STRef.write (Just $ LoweringGroupValue groupName signatureRef valuesRaw)
+        currentGroupRef
 
-    onDeclSignature ∷ CST.SourceRange → CST.Ident → SST.Type → Effect Unit
+    onDeclSignature ∷ CST.SourceRange → CST.Ident → SST.Type → ST r Unit
     onDeclSignature sourceRange signatureName t = do
-      currentGroup ← Ref.read currentGroupRef
+      currentGroup ← STRef.read currentGroupRef
       case currentGroup of
         Just (LoweringGroupValue groupName signatureRef _) → do
           if signatureName == groupName then do
-            Ref.write (Just { sourceRange, t }) signatureRef
+            void $ STRef.write (Just { sourceRange, t }) signatureRef
           else do
             dischargeGroup
             newValueGroup signatureName (Just { sourceRange, t }) []
         Nothing → do
           newValueGroup signatureName (Just { sourceRange, t }) []
 
-    onDeclValue ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → Effect Unit
+    onDeclValue ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → ST r Unit
     onDeclValue sourceRange valueName v = do
-      currentGroup ← Ref.read currentGroupRef
+      currentGroup ← STRef.read currentGroupRef
       case currentGroup of
         Just (LoweringGroupValue groupName _ values) → do
           if valueName == groupName then
-            void $ STG.toEffect $ STA.push { sourceRange, v } values
+            void $ STA.push { sourceRange, v } values
           else do
             dischargeGroup
             newValueGroup valueName Nothing [ { sourceRange, v } ]
@@ -778,4 +782,4 @@ lowerDeclarations state cstDeclarations = do
         pure unit
 
   dischargeGroup
-  STG.toEffect $ STA.unsafeFreeze declarationsRaw
+  STA.unsafeFreeze declarationsRaw

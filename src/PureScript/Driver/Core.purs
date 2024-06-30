@@ -2,6 +2,7 @@ module PureScript.Driver.Core where
 
 import Prelude
 
+import Control.Monad.ST.Global (Global, toEffect)
 import Data.Either (Either(..))
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
@@ -33,36 +34,36 @@ type Contents =
   }
 
 type State =
-  { moduleNameInterner ∷ ModuleNameInterner
-  , moduleGraph ∷ GraphMap ModuleNameIndex
-  , moduleContents ∷ JsMap ModuleNameIndex Contents
-  , pathToModule ∷ MutableObject String ModuleNameIndex
+  { moduleNameInterner ∷ ModuleNameInterner Global
+  , moduleGraph ∷ GraphMap Global ModuleNameIndex
+  , moduleContents ∷ JsMap Global ModuleNameIndex Contents
+  , pathToModule ∷ MutableObject Global String ModuleNameIndex
   }
 
 defaultState ∷ Effect State
 defaultState = do
-  moduleNameInterner ← emptyInterner
-  moduleGraph ← emptyGraphMap
-  moduleContents ← JsMap.empty
-  pathToModule ← MutableObject.empty
+  moduleNameInterner ← toEffect emptyInterner
+  moduleGraph ← toEffect emptyGraphMap
+  moduleContents ← toEffect JsMap.empty
+  pathToModule ← toEffect MutableObject.empty
   pure { moduleNameInterner, moduleGraph, moduleContents, pathToModule }
 
 createModuleNode ∷ State → ModuleName → Effect ModuleNameIndex
-createModuleNode { moduleNameInterner, moduleGraph } moduleName = do
+createModuleNode { moduleNameInterner, moduleGraph } moduleName = toEffect do
   moduleNameIndex ← internModuleName moduleNameInterner moduleName
   addNode moduleGraph moduleNameIndex
   pure moduleNameIndex
 
 updateImportEdges ∷ State → ModuleNameIndex → Set ModuleName → Effect Unit
 updateImportEdges state@{ moduleGraph } moduleNameIndex moduleImports = do
-  clearEdges moduleGraph moduleNameIndex
+  toEffect $ clearEdges moduleGraph moduleNameIndex
   for_ moduleImports \moduleImport → do
     importedIndex ← createModuleNode state moduleImport
-    addEdge moduleGraph moduleNameIndex importedIndex
+    toEffect $ addEdge moduleGraph moduleNameIndex importedIndex
 
 getModuleFromPath ∷ State → String → Effect ModuleNameIndex
 getModuleFromPath { pathToModule } filePath = do
-  MutableObject.peek filePath pathToModule >>= case _ of
+  toEffect (MutableObject.peek filePath pathToModule) >>= case _ of
     Just moduleNameIndex →
       pure moduleNameIndex
     Nothing →
@@ -70,7 +71,7 @@ getModuleFromPath { pathToModule } filePath = do
 
 getModuleContents ∷ State → ModuleNameIndex → Effect Contents
 getModuleContents { moduleContents } moduleNameIndex = do
-  JsMap.get moduleNameIndex moduleContents >>= case _ of
+  toEffect (JsMap.get moduleNameIndex moduleContents) >>= case _ of
     Just oldContents →
       pure oldContents
     Nothing →
@@ -96,9 +97,9 @@ createModule state@{ moduleContents, pathToModule } filePath fileSource = do
         contents = { filePath, fileSource, fileParsed: parsedFile }
 
       moduleNameIndex ← createModuleNode state moduleName
-      MutableObject.poke filePath moduleNameIndex pathToModule
+      toEffect $ MutableObject.poke filePath moduleNameIndex pathToModule
 
-      JsMap.set moduleNameIndex contents moduleContents
+      toEffect $ JsMap.set moduleNameIndex contents moduleContents
       updateImportEdges state moduleNameIndex moduleImports
 
 editModule ∷ State → String → String → Effect Unit
@@ -127,27 +128,29 @@ editModule state@{ moduleNameInterner, moduleContents } filePath fileSource = do
         contents = { filePath, fileSource, fileParsed: newParsed }
 
       unless (oldModuleName == newModuleName) do
-        changeModuleName moduleNameInterner moduleNameIndex newModuleName
+        toEffect $ changeModuleName moduleNameInterner moduleNameIndex newModuleName
 
-      JsMap.set moduleNameIndex contents moduleContents
+      toEffect $ JsMap.set moduleNameIndex contents moduleContents
       updateImportEdges state moduleNameIndex newModuleImports
 
 deleteModule ∷ State → String → Effect Unit
 deleteModule state@{ moduleNameInterner, moduleContents, pathToModule } filePath = do
   moduleNameIndex ← getModuleFromPath state filePath
 
-  changeModuleName moduleNameInterner moduleNameIndex (coerce "?")
-  removeModuleName moduleNameInterner moduleNameIndex
+  toEffect do
+    changeModuleName moduleNameInterner moduleNameIndex (coerce "?")
+    removeModuleName moduleNameInterner moduleNameIndex
 
-  JsMap.delete moduleNameIndex moduleContents
-  MutableObject.delete filePath pathToModule
+    JsMap.delete moduleNameIndex moduleContents
+    MutableObject.delete filePath pathToModule
 
 renameModule ∷ State → String → String → Effect Unit
 renameModule state@{ moduleContents, pathToModule } oldFilePath newFilePath = do
   moduleNameIndex ← getModuleFromPath state oldFilePath
 
-  MutableObject.delete oldFilePath pathToModule
-  MutableObject.poke newFilePath moduleNameIndex pathToModule
+  toEffect do
+    MutableObject.delete oldFilePath pathToModule
+    MutableObject.poke newFilePath moduleNameIndex pathToModule
 
   contents ← getModuleContents state moduleNameIndex
-  JsMap.set moduleNameIndex (contents { filePath = newFilePath }) moduleContents
+  toEffect $ JsMap.set moduleNameIndex (contents { filePath = newFilePath }) moduleContents

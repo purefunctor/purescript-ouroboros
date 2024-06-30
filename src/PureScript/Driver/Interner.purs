@@ -2,9 +2,9 @@ module PureScript.Driver.Interner where
 
 import Prelude
 
+import Control.Monad.ST (ST)
 import Data.Maybe (Maybe(..))
-import Effect (Effect)
-import Effect.Exception (throw)
+import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
@@ -14,18 +14,18 @@ import Safe.Coerce (coerce)
 
 newtype ModuleNameIndex = ModuleNameIndex Int
 
-newtype ModuleNameInterner = ModuleNameInterner
-  { array ∷ MutableArray ModuleName
-  , index ∷ MutableObject ModuleName ModuleNameIndex
+newtype ModuleNameInterner r = ModuleNameInterner
+  { array ∷ MutableArray r ModuleName
+  , index ∷ MutableObject r ModuleName ModuleNameIndex
   }
 
-emptyInterner ∷ Effect ModuleNameInterner
+emptyInterner ∷ ∀ r. ST r (ModuleNameInterner r)
 emptyInterner = do
   array ← MutableArray.empty
   index ← MutableObject.empty
   pure $ ModuleNameInterner { array, index }
 
-internModuleName ∷ ModuleNameInterner → ModuleName → Effect ModuleNameIndex
+internModuleName ∷ ∀ r. ModuleNameInterner r → ModuleName → ST r ModuleNameIndex
 internModuleName (ModuleNameInterner { array, index }) moduleName = do
   mModuleNameIndex ← MutableObject.peek moduleName index
   case mModuleNameIndex of
@@ -36,20 +36,20 @@ internModuleName (ModuleNameInterner { array, index }) moduleName = do
       MutableObject.poke moduleName moduleNameIndex index
       pure moduleNameIndex
 
-getModuleName ∷ ModuleNameInterner → ModuleNameIndex → Effect ModuleName
+getModuleName ∷ ∀ r. ModuleNameInterner r → ModuleNameIndex → ST r ModuleName
 getModuleName (ModuleNameInterner { array }) moduleNameIndex = do
   MutableArray.peek moduleNameIndex array >>= case _ of
     Just moduleName →
       pure moduleName
     Nothing →
-      throw $ "invariant violated: invalid moduleNameIndex"
+      unsafeCrashWith "invariant violated: invalid moduleNameIndex"
 
-removeModuleName ∷ ModuleNameInterner → ModuleNameIndex → Effect Unit
+removeModuleName ∷ ∀ r. ModuleNameInterner r → ModuleNameIndex → ST r Unit
 removeModuleName interner@(ModuleNameInterner { index }) moduleNameIndex = do
   moduleName ← getModuleName interner moduleNameIndex
   MutableObject.delete moduleName index
 
-changeModuleName ∷ ModuleNameInterner → ModuleNameIndex → ModuleName → Effect Unit
+changeModuleName ∷ ∀ r. ModuleNameInterner r → ModuleNameIndex → ModuleName → ST r Unit
 changeModuleName interner@(ModuleNameInterner { array, index }) moduleNameIndex newModuleName = do
   oldModuleName ← getModuleName interner moduleNameIndex
   MutableObject.delete oldModuleName index

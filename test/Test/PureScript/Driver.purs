@@ -2,6 +2,7 @@ module Test.PureScript.Driver where
 
 import Prelude
 
+import Control.Monad.ST.Global (toEffect)
 import Effect.Class (liftEffect)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.Core
@@ -37,7 +38,7 @@ spec = do
         contents ← getModuleContents state moduleIndex
         contents.filePath `shouldEqual` "Main.purs"
         contents.fileSource `shouldEqual` basicModule
-        hasBasicNode ← hasNode state.moduleGraph moduleIndex
+        hasBasicNode ← toEffect $ hasNode state.moduleGraph moduleIndex
         hasBasicNode `shouldEqual` true
     it "edits files" do
       void $ liftEffect do
@@ -48,7 +49,7 @@ spec = do
         contents ← getModuleContents state moduleIndex
         contents.filePath `shouldEqual` "Main.purs"
         contents.fileSource `shouldEqual` testModule
-        moduleName ← getModuleName state.moduleNameInterner moduleIndex
+        moduleName ← toEffect $ getModuleName state.moduleNameInterner moduleIndex
         coerce moduleName `shouldEqual` "Test"
     it "renames files" do
       void $ liftEffect do

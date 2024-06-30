@@ -2,9 +2,8 @@ module PureScript.Utils.Mutable.Object where
 
 import Prelude
 
-import Control.Monad.ST.Global (Global, toEffect)
+import Control.Monad.ST (Region, ST)
 import Data.Maybe (Maybe)
-import Effect (Effect)
 import Foreign.Object (Object)
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STObject
@@ -12,20 +11,20 @@ import Foreign.Object.ST.Unsafe as STObjectUnsafe
 import Prim.Coerce (class Coercible)
 import Safe.Coerce (coerce)
 
-newtype MutableObject ∷ Type → Type → Type
-newtype MutableObject k v = MutableObject (STObject Global v)
+newtype MutableObject ∷ Region → Type → Type → Type
+newtype MutableObject r k v = MutableObject (STObject r v)
 
-empty ∷ ∀ k v. Effect (MutableObject k v)
-empty = toEffect $ MutableObject <$> STObject.new
+empty ∷ ∀ r k v. ST r (MutableObject r k v)
+empty = MutableObject <$> STObject.new
 
-peek ∷ ∀ k v. Coercible k String ⇒ k → MutableObject k v → Effect (Maybe v)
-peek key (MutableObject inner) = toEffect $ STObject.peek (coerce key) inner
+peek ∷ ∀ r k v. Coercible k String ⇒ k → MutableObject r k v → ST r (Maybe v)
+peek key (MutableObject inner) = STObject.peek (coerce key) inner
 
-poke ∷ ∀ k v. Coercible k String ⇒ k → v → MutableObject k v → Effect Unit
-poke key value (MutableObject inner) = toEffect $ void $ STObject.poke (coerce key) value inner
+poke ∷ ∀ r k v. Coercible k String ⇒ k → v → MutableObject r k v → ST r Unit
+poke key value (MutableObject inner) = void $ STObject.poke (coerce key) value inner
 
-delete ∷ ∀ k v. Coercible k String ⇒ k → MutableObject k v → Effect Unit
-delete key (MutableObject inner) = toEffect $ void $ STObject.delete (coerce key) inner
+delete ∷ ∀ r k v. Coercible k String ⇒ k → MutableObject r k v → ST r Unit
+delete key (MutableObject inner) = void $ STObject.delete (coerce key) inner
 
-unsafeFreeze ∷ ∀ k v. Coercible k String ⇒ MutableObject k v → Effect (Object v)
-unsafeFreeze (MutableObject inner) = toEffect $ STObjectUnsafe.unsafeFreeze inner
+unsafeFreeze ∷ ∀ r k v. Coercible k String ⇒ MutableObject r k v → ST r (Object v)
+unsafeFreeze (MutableObject inner) = STObjectUnsafe.unsafeFreeze inner

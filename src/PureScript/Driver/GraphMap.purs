@@ -2,38 +2,37 @@ module PureScript.Driver.GraphMap where
 
 import Prelude
 
-import Control.Monad.ST as ST
+import Control.Monad.ST (ST)
 import Control.Monad.ST.Uncurried (STFn1, STFn3, mkSTFn1, runSTFn3)
 import Data.Array.ST as STArray
 import Data.Foldable (traverse_)
-import Effect (Effect)
 import PureScript.Utils.Mutable.JsMap (JsMap)
 import PureScript.Utils.Mutable.JsMap as JsMap
 
-newtype GraphMap a = GraphMap
-  { internal ∷ JsMap a { edges ∷ JsMap a Unit }
+newtype GraphMap r a = GraphMap
+  { internal ∷ JsMap r a { edges ∷ JsMap r a Unit }
   }
 
-emptyGraphMap ∷ ∀ a. Effect (GraphMap a)
+emptyGraphMap ∷ ∀ r a. ST r (GraphMap r a)
 emptyGraphMap = do
   internal ← JsMap.empty
   pure $ GraphMap { internal }
 
-addNode ∷ ∀ a. GraphMap a → a → Effect Unit
+addNode ∷ ∀ r a. GraphMap r a → a → ST r Unit
 addNode (GraphMap { internal }) node = do
   edges ← JsMap.empty
   JsMap.set node { edges } internal
 
-hasNode ∷ ∀ a. GraphMap a → a → Effect Boolean
+hasNode ∷ ∀ r a. GraphMap r a → a → ST r Boolean
 hasNode (GraphMap { internal }) node =
   JsMap.has node internal
 
-addEdge ∷ ∀ a. GraphMap a → a → a → Effect Unit
+addEdge ∷ ∀ r a. GraphMap r a → a → a → ST r Unit
 addEdge (GraphMap { internal }) from to = do
   JsMap.get from internal >>= traverse_ \{ edges } →
     JsMap.set to unit edges
 
-clearEdges ∷ ∀ a. GraphMap a → a → Effect Unit
+clearEdges ∷ ∀ r a. GraphMap r a → a → ST r Unit
 clearEdges (GraphMap { internal }) node = do
   JsMap.get node internal >>= traverse_ \{ edges } →
     JsMap.clear edges
@@ -50,14 +49,14 @@ instance Show a ⇒ Show (SCC a) where
 foreign import tarjanImpl
   ∷ ∀ a r
   . STFn3
-      (JsMap a { edges ∷ JsMap a Unit })
+      (JsMap r a { edges ∷ JsMap r a Unit })
       (STFn1 a r Unit)
       (STFn1 (Array a) r Unit)
       r
       Unit
 
-tarjan ∷ ∀ a. GraphMap a → Array (SCC a)
-tarjan (GraphMap { internal }) = ST.run do
+tarjan ∷ ∀ r a. GraphMap r a → ST r (Array (SCC a))
+tarjan (GraphMap { internal }) = do
   scc ← STArray.new
 
   let
