@@ -14,6 +14,9 @@ import Safe.Coerce (coerce)
 
 newtype ModuleNameIndex = ModuleNameIndex Int
 
+derive newtype instance Eq ModuleNameIndex
+derive newtype instance Ord ModuleNameIndex
+
 newtype ModuleNameInterner r = ModuleNameInterner
   { array ∷ MutableArray r ModuleName
   , index ∷ MutableObject r ModuleName ModuleNameIndex

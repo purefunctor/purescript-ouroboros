@@ -1,5 +1,6 @@
 module PureScript.Surface.Types where
 
+import Prelude
 import Prim hiding (Row, Type)
 
 import Data.Array.NonEmpty (NonEmptyArray)
@@ -13,12 +14,18 @@ newtype QualifiedName a = QualifiedName
   , name ∷ a
   }
 
+derive newtype instance Eq a ⇒ Eq (QualifiedName a)
+
 newtype Index ∷ Prim.Type → Prim.Type
 newtype Index a = Index Int
+
+derive newtype instance Eq (Index a)
 
 newtype Annotation a = Annotation
   { index ∷ Index a
   }
+
+derive newtype instance Eq (Annotation a)
 
 newtype Module = Module
   { name ∷ ModuleName
@@ -26,9 +33,13 @@ newtype Module = Module
   , declarations ∷ Array Declaration
   }
 
+derive newtype instance Eq Module
+
 newtype Import = Import
   { name ∷ ModuleName
   }
+
+derive newtype instance Eq Import
 
 type DeclarationAnnotation = Annotation Declaration
 type DeclarationIndex = Index Declaration
@@ -38,21 +49,33 @@ newtype ValueEquation = ValueEquation
   , guarded ∷ Guarded
   }
 
+derive newtype instance Eq ValueEquation
+
 data Declaration
   = DeclarationValue DeclarationAnnotation Ident (Maybe Type) (Array ValueEquation)
   | DeclarationNotImplemented DeclarationAnnotation
+
+derive instance Eq Declaration
 
 data TypeVarBinding a
   = TypeVarKinded Boolean a Type
   | TypeVarName Boolean a
 
+derive instance Eq a ⇒ Eq (TypeVarBinding a)
+
 data Guarded
   = Unconditional Where
   | Guarded (NonEmptyArray GuardedExpr)
 
+derive instance Eq Guarded
+
 data GuardedExpr = GuardedExpr (NonEmptyArray PatternGuard) Where
 
+derive instance Eq GuardedExpr
+
 data PatternGuard = PatternGuard (Maybe Binder) Expr
+
+derive instance Eq PatternGuard
 
 type LetBindingAnnotation = Annotation LetBinding
 type LetBindingIndex = Index LetBinding
@@ -62,7 +85,11 @@ data LetBinding
   | LetBindingPattern LetBindingAnnotation Binder Where
   | LetBindingNotImplemented LetBindingAnnotation
 
+derive instance Eq LetBinding
+
 data Where = Where Expr (Array LetBinding)
+
+derive instance Eq Where
 
 type ExprAnnotation = Annotation Expr
 type ExprIndex = Index Expr
@@ -99,23 +126,33 @@ data Expr
   | ExprAdo ExprAnnotation (Array DoStatement) Expr
   | ExprNotImplemented ExprAnnotation
 
+derive instance Eq Expr
+
 data AppSpine
   = AppTerm Expr
   | AppType Type
+
+derive instance Eq AppSpine
 
 data RecordLabeled a
   = RecordPun Ident
   | RecordField Label a
 
+derive instance Eq a ⇒ Eq (RecordLabeled a)
+
 data RecordUpdate
   = RecordUpdateLeaf Label Expr
   | RecordUpdateBranch Label (NonEmptyArray RecordUpdate)
+
+derive instance Eq RecordUpdate
 
 data DoStatement
   = DoLet (NonEmptyArray LetBinding)
   | DoDiscard Expr
   | DoBind Binder Expr
   | DoNotImplemented
+
+derive instance Eq DoStatement
 
 type BinderAnnotation = Annotation Binder
 type BinderIndex = Index Binder
@@ -136,6 +173,8 @@ data Binder
   | BinderTyped BinderAnnotation Binder Type
   | BinderOp BinderAnnotation Binder (NonEmptyArray (Tuple (QualifiedName Operator) Binder))
   | BinderNotImplemented BinderAnnotation
+
+derive instance Eq Binder
 
 type TypeAnnotation = Annotation Type
 type TypeIndex = Index Type
@@ -160,4 +199,8 @@ data Type
   | TypeParens TypeAnnotation Type
   | TypeNotImplemented TypeAnnotation
 
+derive instance Eq Type
+
 data Row = Row (Array (Tuple Label Type)) (Maybe Type)
+
+derive instance Eq Row
