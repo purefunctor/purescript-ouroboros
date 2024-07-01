@@ -19,9 +19,11 @@ import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (error)
 import Node.Process as Process
+import PureScript.Query.Core as QueryCore
 import Test.PureScript.Driver as TestDriver
 import Test.PureScript.Surface as TestSurface
 import Test.Snapshot (Options(..), runSnapshotSpec)
+import Test.Spec (describe, it)
 
 optionsParser ∷ ArgParser Options
 optionsParser = Options
@@ -47,3 +49,7 @@ main = launchAff_ do
       runSnapshotSpec o do
         TestDriver.spec
         TestSurface.spec
+        describe "PureScript.Query" do
+          it "works" do
+            liftEffect do
+              QueryCore.example

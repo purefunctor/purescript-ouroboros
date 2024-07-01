@@ -6,74 +6,69 @@ import Control.Monad.ST (ST)
 import Control.Monad.ST.Global (toEffect)
 import Control.Monad.ST.Ref (STRef)
 import Control.Monad.ST.Ref as STRef
+import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
-import Data.String as String
 import Data.Traversable (traverse_)
 import Effect (Effect)
 import Partial.Unsafe (unsafeCrashWith)
-import PureScript.Debug (traceM)
+import PureScript.Driver.Files (ParsedFile(..), parseFile)
+import PureScript.Driver.Interner (ModuleNameIndex(..))
+import PureScript.Scope.Collect as Scope
+import PureScript.Surface.Lower (lowerModule) as Surface
+import PureScript.Surface.Types (Module) as Surface
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 
-newtype RootKey = RootKey { name ∷ String }
-
-derive newtype instance Eq RootKey
-derive newtype instance Ord RootKey
-
-newtype OneKey = OneKey { name ∷ String }
-
-derive newtype instance Eq OneKey
-derive newtype instance Ord OneKey
-
-newtype ManyKey = ManyKey {}
-
-derive newtype instance Eq ManyKey
-derive newtype instance Ord ManyKey
-
 data Query
-  = OnRoot RootKey
-  | OnOne OneKey
-  | OnMany ManyKey
+  = OnParsedFile ModuleNameIndex
+  | OnSurfaceLower ModuleNameIndex
+  | OnScopeGraph ModuleNameIndex
 
 derive instance Eq Query
 derive instance Ord Query
 
-type InputValue r v =
-  { changedRef ∷ STRef r Int
-  , value ∷ v
-  }
+type InputStorage r k v =
+  STRef r
+    ( Map k
+        { changedRef ∷ STRef r Int
+        , value ∷ v
+        }
+    )
 
-type QueryValue r v =
-  { changedRef ∷ STRef r Int
-  , verifiedRef ∷ STRef r Int
-  , dependencies ∷ Set Query
-  , value ∷ v
-  }
+type QueryStorage r k v =
+  STRef r
+    ( Map k
+        { changedRef ∷ STRef r Int
+        , verifiedRef ∷ STRef r Int
+        , dependencies ∷ Set Query
+        , value ∷ v
+        }
+    )
 
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
-  , rootStorage ∷ STRef r (Map RootKey (InputValue r String))
-  , oneStorage ∷ STRef r (Map OneKey (QueryValue r String))
-  , manyStorage ∷ STRef r (Map ManyKey (QueryValue r String))
+  , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
+  , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Surface.Module
+  , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex Unit
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   }
 
 emptyStorage ∷ ∀ r. ST r (Storage r)
 emptyStorage = do
   revisionRef ← STRef.new 0
-  rootStorage ← STRef.new Map.empty
-  oneStorage ← STRef.new Map.empty
-  manyStorage ← STRef.new Map.empty
+  parsedFileStorage ← STRef.new Map.empty
+  surfaceLowerStorage ← STRef.new Map.empty
+  scopeGraphStorage ← STRef.new Map.empty
   activeQuery ← MutableArray.empty
   pure $ Storage
     { revisionRef
-    , rootStorage
-    , oneStorage
-    , manyStorage
+    , parsedFileStorage
+    , surfaceLowerStorage
+    , scopeGraphStorage
     , activeQuery
     }
 
@@ -99,7 +94,7 @@ inputGet
   ∷ ∀ r k v
   . Ord k
   ⇒ (k → Query)
-  → (Storage r → STRef r (Map k (InputValue r v)))
+  → (Storage r → InputStorage r k v)
   → Storage r
   → k
   → ST r v
@@ -115,14 +110,14 @@ inputGet getQuery getStorage storage key = do
 inputSet
   ∷ ∀ r k v
   . Ord k
-  ⇒ (Storage r → STRef r (Map k (InputValue r v)))
+  ⇒ (Storage r → InputStorage r k v)
   → Storage r
   → k
   → v
   → ST r Unit
 inputSet getStorage storage@(Storage { revisionRef }) key value = do
   let
-    mapRef ∷ STRef r (Map k (InputValue r v))
+    mapRef ∷ InputStorage r k v
     mapRef = getStorage storage
   changedRef ← STRef.read revisionRef >>= STRef.new
   void $ STRef.modify (_ + 1) revisionRef
@@ -132,7 +127,7 @@ queryGet
   ∷ ∀ r k v
   . Ord k
   ⇒ (k → Query)
-  → (Storage r → STRef r (Map k (QueryValue r v)))
+  → (Storage r → QueryStorage r k v)
   → (Storage r → k → ST r v)
   → Storage r
   → k
@@ -144,9 +139,9 @@ queryGet
   storage@
     ( Storage
         { revisionRef
-        , rootStorage
-        , oneStorage
-        , manyStorage
+        , parsedFileStorage
+        , surfaceLowerStorage
+        , scopeGraphStorage
         }
     )
   key = do
@@ -154,7 +149,7 @@ queryGet
     query ∷ Query
     query = getQuery key
 
-    mapRef ∷ STRef r (Map k (QueryValue r v))
+    mapRef ∷ QueryStorage r k v
     mapRef = getStorage storage
 
     freshValue ∷ ST r v
@@ -176,7 +171,7 @@ queryGet
           ∷ ∀ ik iv
           . Ord ik
           ⇒ ik
-          → STRef r (Map ik (InputValue r iv))
+          → InputStorage r ik iv
           → ST r Unit
         checkInput k inputStorage = do
           m ← STRef.read inputStorage
@@ -193,7 +188,7 @@ queryGet
           ⇒ Eq iv
           ⇒ ik
           → (Storage r → ik → ST r iv)
-          → STRef r (Map ik (QueryValue r iv))
+          → QueryStorage r ik iv
           → ST r Unit
         checkDependency k getV innerStorage = do
           m ← STRef.read innerStorage
@@ -209,12 +204,12 @@ queryGet
 
         onQuery ∷ Query → ST r Unit
         onQuery = case _ of
-          OnRoot k →
-            checkInput k rootStorage
-          OnOne k → do
-            checkDependency k getOne oneStorage
-          OnMany k → do
-            checkDependency k getMany manyStorage
+          OnParsedFile k →
+            checkInput k parsedFileStorage
+          OnSurfaceLower k →
+            checkDependency k getSurfaceLower surfaceLowerStorage
+          OnScopeGraph k →
+            checkDependency k getScopeGraph scopeGraphStorage
 
       traverse_ onQuery dependencies
       STRef.read isClean
@@ -239,48 +234,72 @@ queryGet
 
   pure value
 
-getRoot ∷ ∀ r. Storage r → RootKey → ST r String
-getRoot = inputGet OnRoot \(Storage storage) → storage.rootStorage
+getParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ST r ParsedFile
+getParsedFile = inputGet OnParsedFile \(Storage { parsedFileStorage }) → parsedFileStorage
 
-setRoot ∷ ∀ r. Storage r → RootKey → String → ST r Unit
-setRoot = inputSet \(Storage storage) → storage.rootStorage
+setParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ParsedFile → ST r Unit
+setParsedFile = inputSet \(Storage { parsedFileStorage }) → parsedFileStorage
 
-computeOne ∷ ∀ r. Storage r → OneKey → ST r String
-computeOne storage (OneKey { name }) = do
-  traceM { fn: "computeOne" }
-  String.toUpper <$> getRoot storage (RootKey { name })
+computeSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r Surface.Module
+computeSurfaceLower storage moduleNameIndex = do
+  parsedFile ← getParsedFile storage moduleNameIndex
+  case parsedFile of
+    ParsedTotal m →
+      Surface.lowerModule m
+    ParsedPartial _ _ →
+      unsafeCrashWith "todo: support partial lowering"
 
-getOne ∷ ∀ r. Storage r → OneKey → ST r String
-getOne = do
+getSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r Surface.Module
+getSurfaceLower = do
   let
-    getStorage ∷ Storage r → _
-    getStorage (Storage { oneStorage }) = oneStorage
-  queryGet OnOne getStorage computeOne
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Surface.Module
+    getStorage (Storage { surfaceLowerStorage }) = surfaceLowerStorage
+  queryGet OnSurfaceLower getStorage computeSurfaceLower
 
-computeMany ∷ ∀ r. Storage r → ManyKey → ST r String
-computeMany storage (ManyKey {}) = do
-  traceM { fn: "computeMany" }
-  a ← getOne storage (OneKey { name: "A.purs" })
-  b ← getOne storage (OneKey { name: "B.purs" })
-  pure $ a <> " " <> b
+computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
+computeScopeGraph storage moduleNameIndex = do
+  surfaceLower ← getSurfaceLower storage moduleNameIndex
+  Scope.collectModule surfaceLower
 
-getMany ∷ ∀ r. Storage r → ManyKey → ST r String
-getMany = do
+getScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
+getScopeGraph = do
   let
-    getStorage ∷ Storage r → _
-    getStorage (Storage { manyStorage }) = manyStorage
-  queryGet OnMany getStorage computeMany
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Unit
+    getStorage (Storage { scopeGraphStorage }) = scopeGraphStorage
+  queryGet OnScopeGraph getStorage computeScopeGraph
 
 example ∷ Effect Unit
 example = toEffect do
-  storage ← emptyStorage
+  let
+    parseTotal ∷ String → ParsedFile
+    parseTotal source = parseFile source # case _ of
+      Left _ →
+        unsafeCrashWith "Oops!"
+      Right p →
+        p
 
-  setRoot storage (RootKey { name: "A.purs" }) "Hello"
-  setRoot storage (RootKey { name: "B.purs" }) "World"
-  getMany storage (ManyKey {}) >>= traceM
+    a = parseTotal "module A where\n"
+    b = parseTotal "module A where\n\n\n"
+    c = parseTotal "module B where\n"
 
-  setRoot storage (RootKey { name: "A.purs" }) "hello"
-  setRoot storage (RootKey { name: "B.purs" }) "world"
-  getMany storage (ManyKey {}) >>= traceM
+    i = ModuleNameIndex 0
 
-  pure unit
+  do
+    storage ← emptyStorage
+    setParsedFile storage i a
+    getScopeGraph storage i
+    getScopeGraph storage i
+
+  do
+    storage ← emptyStorage
+    setParsedFile storage i a
+    getScopeGraph storage i
+    setParsedFile storage i b
+    getScopeGraph storage i
+
+  do
+    storage ← emptyStorage
+    setParsedFile storage i a
+    getScopeGraph storage i
+    setParsedFile storage i c
+    getScopeGraph storage i
