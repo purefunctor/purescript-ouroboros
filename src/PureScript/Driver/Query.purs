@@ -240,8 +240,8 @@ queryGet
     freshValue = do
       pushActive storage query
       value ← getValue storage key
-      changedRef ← STRef.read revisionRef >>= STRef.new
       void $ STRef.modify (_ + 1) revisionRef
+      changedRef ← STRef.read revisionRef >>= STRef.new
       verifiedRef ← STRef.read revisionRef >>= STRef.new
       dependencies ← Set.fromFoldable <$> popActive storage
       void $ STRef.modify (Map.insert key { changedRef, verifiedRef, dependencies, value }) mapRef
