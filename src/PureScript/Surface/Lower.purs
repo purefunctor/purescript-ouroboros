@@ -20,10 +20,7 @@ import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
-
-type StateIndex r = STRef r Int
-
-type StateSourceRange r = MutableArray r CST.SourceRange
+import Safe.Coerce (coerce)
 
 type SigDefSourceRange =
   { signature ∷ Maybe CST.SourceRange
@@ -34,10 +31,15 @@ data LetBindingSourceRange
   = LetBindingNameSourceRange SigDefSourceRange
   | LetBindingPatternSourceRange CST.SourceRange
 
-type StateLetBindingSourceRange r = MutableArray r LetBindingSourceRange
+derive instance Eq LetBindingSourceRange
 
 data DeclarationSourceRange = DeclarationValueSourceRange SigDefSourceRange
 
+derive instance Eq DeclarationSourceRange
+
+type StateIndex r = STRef r Int
+type StateSourceRange r = MutableArray r CST.SourceRange
+type StateLetBindingSourceRange r = MutableArray r LetBindingSourceRange
 type StateDeclarationSourceRange r = MutableArray r DeclarationSourceRange
 
 type State r =
@@ -51,6 +53,14 @@ type State r =
   , typeSourceRange ∷ StateSourceRange r
   , letBindingSourceRange ∷ StateLetBindingSourceRange r
   , declarationSourceRange ∷ StateDeclarationSourceRange r
+  }
+
+type SourceRange =
+  { exprSourceRange ∷ SST.SparseMap SST.Expr CST.SourceRange
+  , binderSourceRange ∷ SST.SparseMap SST.Binder CST.SourceRange
+  , typeSourceRange ∷ SST.SparseMap SST.Type CST.SourceRange
+  , letBindingSourceRange ∷ SST.SparseMap SST.LetBinding LetBindingSourceRange
+  , declarationSourceRange ∷ SST.SparseMap SST.Declaration DeclarationSourceRange
   }
 
 defaultState ∷ ∀ r. ST r (State r)
@@ -72,6 +82,21 @@ defaultState = do
     , letBindingIndex
     , declarationIndex
     , exprSourceRange
+    , binderSourceRange
+    , typeSourceRange
+    , letBindingSourceRange
+    , declarationSourceRange
+    }
+
+freezeState ∷ ∀ r. State r → ST r SourceRange
+freezeState state = do
+  exprSourceRange ← coerce $ MutableArray.unsafeFreeze state.exprSourceRange
+  binderSourceRange ← coerce $ MutableArray.unsafeFreeze state.binderSourceRange
+  typeSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeSourceRange
+  letBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.letBindingSourceRange
+  declarationSourceRange ← coerce $ MutableArray.unsafeFreeze state.declarationSourceRange
+  pure
+    { exprSourceRange
     , binderSourceRange
     , typeSourceRange
     , letBindingSourceRange
@@ -663,23 +688,6 @@ lowerDoStatement state = runSTFn1 go
       CST.DoError e →
         absurd e
 
-data LoweringGroup r = LoweringGroupValue
-  CST.Ident
-  (STRef r (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
-  (STArray r { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
-
-lowerModule ∷ ∀ r. CST.Module Void → ST r SST.Module
-lowerModule
-  ( CST.Module
-      { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }
-      , body: CST.ModuleBody { decls: cstDeclarations }
-      }
-  ) = do
-  state ← defaultState
-  imports ← lowerImportDecls cstImports
-  declarations ← lowerDeclarations state cstDeclarations
-  pure $ SST.Module { name, imports, declarations }
-
 lowerImportDecls ∷ ∀ r. Array (CST.ImportDecl Void) → ST r (Array SST.Import)
 lowerImportDecls cstImports = do
   importsRaw ← STA.new
@@ -693,6 +701,11 @@ lowerImportDecls cstImports = do
         void $ STA.push sstImport importsRaw
 
   STA.unsafeFreeze importsRaw
+
+data LoweringGroup r = LoweringGroupValue
+  CST.Ident
+  (STRef r (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
+  (STArray r { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
 
 lowerDeclarations ∷ ∀ r. State r → Array (CST.Declaration Void) → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
@@ -783,3 +796,23 @@ lowerDeclarations state cstDeclarations = do
 
   dischargeGroup
   STA.unsafeFreeze declarationsRaw
+
+type Result =
+  { surface ∷ SST.Module
+  , sourceRange ∷ SourceRange
+  }
+
+lowerModule ∷ ∀ r. CST.Module Void → ST r Result
+lowerModule
+  ( CST.Module
+      { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }
+      , body: CST.ModuleBody { decls: cstDeclarations }
+      }
+  ) = do
+  state ← defaultState
+  surface ← do
+    imports ← lowerImportDecls cstImports
+    declarations ← lowerDeclarations state cstDeclarations
+    pure $ SST.Module { name, imports, declarations }
+  sourceRange ← freezeState state
+  pure { surface, sourceRange }

@@ -27,6 +27,11 @@ newtype Annotation a = Annotation
 
 derive newtype instance Eq (Annotation a)
 
+newtype SparseMap ∷ Prim.Type → Prim.Type → Prim.Type
+newtype SparseMap k v = SparseMap (Array v)
+
+derive newtype instance Eq v ⇒ Eq (SparseMap k v)
+
 newtype Module = Module
   { name ∷ ModuleName
   , imports ∷ Array Import

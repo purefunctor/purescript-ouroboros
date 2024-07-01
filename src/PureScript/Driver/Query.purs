@@ -14,9 +14,9 @@ import Data.Traversable (traverse_)
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex)
-import PureScript.Scope.Collect as Scope
-import PureScript.Surface.Lower (lowerModule) as Surface
-import PureScript.Surface.Types (Module) as Surface
+import PureScript.Scope.Collect as ScopeCollect
+import PureScript.Surface.Lower as SurfaceLower
+import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 
@@ -49,7 +49,7 @@ type QueryStorage r k v =
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Surface.Module
+  , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex SST.Module
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex Unit
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   }
@@ -237,26 +237,27 @@ getParsedFile = inputGet OnParsedFile \(Storage { parsedFileStorage }) → parse
 setParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(Storage { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r Surface.Module
+computeSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r SST.Module
 computeSurfaceLower storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
-    ParsedTotal m →
-      Surface.lowerModule m
+    ParsedTotal m → do
+      { surface } ← SurfaceLower.lowerModule m
+      pure surface
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r Surface.Module
+getSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r SST.Module
 getSurfaceLower = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Surface.Module
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex SST.Module
     getStorage (Storage { surfaceLowerStorage }) = surfaceLowerStorage
   queryGet OnSurfaceLower getStorage computeSurfaceLower
 
 computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
 computeScopeGraph storage moduleNameIndex = do
   surfaceLower ← getSurfaceLower storage moduleNameIndex
-  Scope.collectModule surfaceLower
+  ScopeCollect.collectModule surfaceLower
 
 getScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
 getScopeGraph = do
