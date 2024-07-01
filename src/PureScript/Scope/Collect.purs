@@ -9,30 +9,29 @@ import Control.Monad.ST.Ref as STRef
 import Control.Monad.ST.Uncurried (STFn1, mkSTFn1, runSTFn1)
 import Data.Array as Array
 import Data.Array.NonEmpty as NEA
-import Data.Array.ST (STArray)
-import Data.Array.ST as STA
-import Data.Array.ST.Partial as STAP
 import Data.Traversable (for_, traverse_)
 import Data.Tuple (Tuple(..))
 import Foreign.Object as O
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
 import Foreign.Object.ST.Unsafe as STOU
-import Partial.Unsafe (unsafeCrashWith, unsafePartial)
+import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
 import PureScript.Scope.Types (ScopeNode(..), TopLevelRefs)
 import PureScript.Surface.Types as SST
+import PureScript.Utils.Mutable.Array (MutableArray)
+import PureScript.Utils.Mutable.Array as MutableArray
 import Safe.Coerce (coerce)
 
 type State r =
   { scope ∷ STRef r ScopeNode
-  , exprScopeNode ∷ STArray r ScopeNode
+  , exprScopeNode ∷ MutableArray r ScopeNode
   }
 
 defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
   scope ← STRef.new RootScope
-  exprScopeNode ← STA.new
+  exprScopeNode ← MutableArray.empty
   pure { scope, exprScopeNode }
 
 currentScope ∷ ∀ r. State r → ST r ScopeNode
@@ -42,9 +41,9 @@ pushScope ∷ ∀ r. State r → ScopeNode → ST r Unit
 pushScope state scope = void $ STRef.write scope state.scope
 
 pushExprScopeNode ∷ ∀ r. State r → SST.ExprIndex → ST r Unit
-pushExprScopeNode state (SST.Index index) = do
+pushExprScopeNode state@{ exprScopeNode } index = do
   scope ← currentScope state
-  unsafePartial $ STAP.poke index scope state.exprScopeNode
+  MutableArray.poke index scope exprScopeNode
 
 withRevertingScope ∷ ∀ r a. State r → ST r a → ST r a
 withRevertingScope state action = do
