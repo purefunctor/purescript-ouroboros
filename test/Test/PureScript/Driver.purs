@@ -7,18 +7,18 @@ import Control.Monad.ST.Global (Global, toEffect)
 import Effect.Class (liftEffect)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.Core
-  ( State(..)
+  ( Driver(..)
   , createModule
-  , defaultState
   , deleteModule
   , editModule
+  , emptyDriver
   , getModuleContents
   , getModuleFromPath
   , renameModule
   )
 import PureScript.Driver.Interner (ModuleNameIndex)
 import PureScript.Driver.Interner as ModuleNameInterner
-import PureScript.Driver.Query (Storage(..))
+import PureScript.Driver.Query (QueryEngine(..))
 import PureScript.Utils.Mutable.GraphMap as GraphMap
 import Safe.Coerce (coerce)
 import Test.Snapshot (SnapshotSpec)
@@ -31,11 +31,11 @@ basicModule = "module Main where\n"
 testModule ∷ String
 testModule = "module Test where\n"
 
-hasNode ∷ State → ModuleNameIndex → ST Global Boolean
-hasNode (State { moduleGraph }) = GraphMap.hasNode moduleGraph
+hasNode ∷ Driver → ModuleNameIndex → ST Global Boolean
+hasNode (Driver { moduleGraph }) = GraphMap.hasNode moduleGraph
 
-getModuleName ∷ State → ModuleNameIndex → ST Global ModuleName
-getModuleName (State { queryEngine: Storage { moduleNameInterner } }) =
+getModuleName ∷ Driver → ModuleNameIndex → ST Global ModuleName
+getModuleName (Driver { queryEngine: QueryEngine { moduleNameInterner } }) =
   ModuleNameInterner.getModuleName moduleNameInterner
 
 spec ∷ SnapshotSpec Unit
@@ -43,7 +43,7 @@ spec = do
   describe "PureScript.Driver.Core" do
     it "creates files" do
       void $ liftEffect do
-        state ← defaultState
+        state ← emptyDriver
         createModule state "Main.purs" basicModule
         moduleIndex ← getModuleFromPath state "Main.purs"
         contents ← getModuleContents state moduleIndex
@@ -53,7 +53,7 @@ spec = do
         hasBasicNode `shouldEqual` true
     it "edits files" do
       void $ liftEffect do
-        state ← defaultState
+        state ← emptyDriver
         createModule state "Main.purs" basicModule
         editModule state "Main.purs" testModule
         moduleIndex ← getModuleFromPath state "Main.purs"
@@ -64,7 +64,7 @@ spec = do
         coerce moduleName `shouldEqual` "Test"
     it "renames files" do
       void $ liftEffect do
-        state ← defaultState
+        state ← emptyDriver
         createModule state "Main.purs" basicModule
         renameModule state "Main.purs" "Test.purs"
         moduleIndex ← getModuleFromPath state "Test.purs"
@@ -73,7 +73,7 @@ spec = do
         contents.fileSource `shouldEqual` basicModule
     it "removes files" do
       void $ liftEffect do
-        state ← defaultState
+        state ← emptyDriver
         createModule state "Main.purs" basicModule
         deleteModule state "Main.purs"
         expectError $ getModuleFromPath state "Main.purs"

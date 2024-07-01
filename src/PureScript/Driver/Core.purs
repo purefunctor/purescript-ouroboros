@@ -18,7 +18,7 @@ import PureScript.Driver.Interner
   , internModuleName
   , removeModuleName
   )
-import PureScript.Driver.Query (Storage(..), emptyStorage)
+import PureScript.Driver.Query (QueryEngine(..), emptyQueryEngine)
 import PureScript.Utils.Mutable.GraphMap (GraphMap, addEdge, addNode, clearEdges, emptyGraphMap)
 import PureScript.Utils.Mutable.JsMap (JsMap)
 import PureScript.Utils.Mutable.JsMap as JsMap
@@ -32,54 +32,56 @@ type Contents =
   , fileParsed ∷ ParsedFile
   }
 
-newtype State = State
-  { queryEngine ∷ Storage Global
+newtype Driver = Driver
+  { queryEngine ∷ QueryEngine Global
   , moduleGraph ∷ GraphMap Global ModuleNameIndex
   , moduleContents ∷ JsMap Global ModuleNameIndex Contents
   , pathToModule ∷ MutableObject Global String ModuleNameIndex
   }
 
-defaultState ∷ Effect State
-defaultState = do
-  queryEngine ← toEffect emptyStorage
+emptyDriver ∷ Effect Driver
+emptyDriver = do
+  queryEngine ← toEffect emptyQueryEngine
   moduleGraph ← toEffect emptyGraphMap
   moduleContents ← toEffect JsMap.empty
   pathToModule ← toEffect MutableObject.empty
-  pure $ State
+  pure $ Driver
     { queryEngine, moduleGraph, moduleContents, pathToModule }
 
-createModuleNode ∷ State → ModuleName → Effect ModuleNameIndex
-createModuleNode (State { queryEngine: Storage { moduleNameInterner }, moduleGraph }) moduleName =
+createModuleNode ∷ Driver → ModuleName → Effect ModuleNameIndex
+createModuleNode
+  (Driver { queryEngine: QueryEngine { moduleNameInterner }, moduleGraph })
+  moduleName =
   toEffect do
     moduleNameIndex ← internModuleName moduleNameInterner moduleName
     addNode moduleGraph moduleNameIndex
     pure moduleNameIndex
 
-updateImportEdges ∷ State → ModuleNameIndex → Set ModuleName → Effect Unit
-updateImportEdges state@(State { moduleGraph }) moduleNameIndex moduleImports = do
+updateImportEdges ∷ Driver → ModuleNameIndex → Set ModuleName → Effect Unit
+updateImportEdges driver@(Driver { moduleGraph }) moduleNameIndex moduleImports = do
   toEffect $ clearEdges moduleGraph moduleNameIndex
   for_ moduleImports \moduleImport → do
-    importedIndex ← createModuleNode state moduleImport
+    importedIndex ← createModuleNode driver moduleImport
     toEffect $ addEdge moduleGraph moduleNameIndex importedIndex
 
-getModuleFromPath ∷ State → String → Effect ModuleNameIndex
-getModuleFromPath (State { pathToModule }) filePath = do
+getModuleFromPath ∷ Driver → String → Effect ModuleNameIndex
+getModuleFromPath (Driver { pathToModule }) filePath = do
   toEffect (MutableObject.peek filePath pathToModule) >>= case _ of
     Just moduleNameIndex →
       pure moduleNameIndex
     Nothing →
       throw $ "invariant violated: filePath does not exist"
 
-getModuleContents ∷ State → ModuleNameIndex → Effect Contents
-getModuleContents (State { moduleContents }) moduleNameIndex = do
+getModuleContents ∷ Driver → ModuleNameIndex → Effect Contents
+getModuleContents (Driver { moduleContents }) moduleNameIndex = do
   toEffect (JsMap.get moduleNameIndex moduleContents) >>= case _ of
     Just oldContents →
       pure oldContents
     Nothing →
       throw $ "invariant violated: moduleNameIndex does not exist"
 
-createModule ∷ State → String → String → Effect Unit
-createModule state@(State { moduleContents, pathToModule }) filePath fileSource = do
+createModule ∷ Driver → String → String → Effect Unit
+createModule driver@(Driver { moduleContents, pathToModule }) filePath fileSource = do
   let
     parseResult ∷ Either PositionedError ParsedFile
     parseResult = parseFile fileSource
@@ -97,15 +99,15 @@ createModule state@(State { moduleContents, pathToModule }) filePath fileSource 
         contents ∷ Contents
         contents = { filePath, fileSource, fileParsed: parsedFile }
 
-      moduleNameIndex ← createModuleNode state moduleName
+      moduleNameIndex ← createModuleNode driver moduleName
       toEffect $ MutableObject.poke filePath moduleNameIndex pathToModule
 
       toEffect $ JsMap.set moduleNameIndex contents moduleContents
-      updateImportEdges state moduleNameIndex moduleImports
+      updateImportEdges driver moduleNameIndex moduleImports
 
-editModule ∷ State → String → String → Effect Unit
+editModule ∷ Driver → String → String → Effect Unit
 editModule
-  state@(State { queryEngine: Storage { moduleNameInterner }, moduleContents })
+  driver@(Driver { queryEngine: QueryEngine { moduleNameInterner }, moduleContents })
   filePath
   fileSource = do
   let
@@ -115,8 +117,8 @@ editModule
     Left _ →
       pure unit
     Right newParsed → do
-      moduleNameIndex ← getModuleFromPath state filePath
-      { fileParsed: oldParsed } ← getModuleContents state moduleNameIndex
+      moduleNameIndex ← getModuleFromPath driver filePath
+      { fileParsed: oldParsed } ← getModuleContents driver moduleNameIndex
 
       let
         oldModuleName ∷ ModuleName
@@ -135,13 +137,13 @@ editModule
         toEffect $ changeModuleName moduleNameInterner moduleNameIndex newModuleName
 
       toEffect $ JsMap.set moduleNameIndex contents moduleContents
-      updateImportEdges state moduleNameIndex newModuleImports
+      updateImportEdges driver moduleNameIndex newModuleImports
 
-deleteModule ∷ State → String → Effect Unit
+deleteModule ∷ Driver → String → Effect Unit
 deleteModule
-  state@(State { queryEngine: Storage { moduleNameInterner }, moduleContents, pathToModule })
+  driver@(Driver { queryEngine: QueryEngine { moduleNameInterner }, moduleContents, pathToModule })
   filePath = do
-  moduleNameIndex ← getModuleFromPath state filePath
+  moduleNameIndex ← getModuleFromPath driver filePath
 
   toEffect do
     changeModuleName moduleNameInterner moduleNameIndex (coerce "?")
@@ -150,13 +152,13 @@ deleteModule
     JsMap.delete moduleNameIndex moduleContents
     MutableObject.delete filePath pathToModule
 
-renameModule ∷ State → String → String → Effect Unit
-renameModule state@(State { moduleContents, pathToModule }) oldFilePath newFilePath = do
-  moduleNameIndex ← getModuleFromPath state oldFilePath
+renameModule ∷ Driver → String → String → Effect Unit
+renameModule driver@(Driver { moduleContents, pathToModule }) oldFilePath newFilePath = do
+  moduleNameIndex ← getModuleFromPath driver oldFilePath
 
   toEffect do
     MutableObject.delete oldFilePath pathToModule
     MutableObject.poke newFilePath moduleNameIndex pathToModule
 
-  contents ← getModuleContents state moduleNameIndex
+  contents ← getModuleContents driver moduleNameIndex
   toEffect $ JsMap.set moduleNameIndex (contents { filePath = newFilePath }) moduleContents

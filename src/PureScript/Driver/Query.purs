@@ -103,7 +103,7 @@ emptyQueryStats = { surfaceFull: _, surface: _, scopeGraph: _ }
   <*> emptyHitMiss
   <*> emptyHitMiss
 
-newtype Storage r = Storage
+newtype QueryEngine r = QueryEngine
   { revisionRef ∷ STRef r Int
   , moduleNameInterner ∷ ModuleNameInterner r
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
@@ -114,8 +114,8 @@ newtype Storage r = Storage
   , queryStats ∷ QueryStats r
   }
 
-emptyStorage ∷ ∀ r. ST r (Storage r)
-emptyStorage = do
+emptyQueryEngine ∷ ∀ r. ST r (QueryEngine r)
+emptyQueryEngine = do
   revisionRef ← STRef.new 0
   moduleNameInterner ← ModuleNameInterner.emptyInterner
   parsedFileStorage ← STRef.new Map.empty
@@ -124,7 +124,7 @@ emptyStorage = do
   scopeGraphStorage ← STRef.new Map.empty
   activeQuery ← MutableArray.empty
   queryStats ← emptyQueryStats
-  pure $ Storage
+  pure $ QueryEngine
     { revisionRef
     , moduleNameInterner
     , parsedFileStorage
@@ -135,21 +135,21 @@ emptyStorage = do
     , queryStats
     }
 
-pushActive ∷ ∀ r. Storage r → Query → ST r Unit
-pushActive (Storage { activeQuery }) query = do
+pushActive ∷ ∀ r. QueryEngine r → Query → ST r Unit
+pushActive (QueryEngine { activeQuery }) query = do
   dependencies ← MutableArray.empty
   void $ MutableArray.push { query, dependencies } activeQuery
 
-popActive ∷ ∀ r. Storage r → ST r (Array Query)
-popActive (Storage { activeQuery }) = do
+popActive ∷ ∀ r. QueryEngine r → ST r (Array Query)
+popActive (QueryEngine { activeQuery }) = do
   MutableArray.pop activeQuery >>= case _ of
     Just { dependencies } →
       MutableArray.unsafeFreeze dependencies
     Nothing →
       pure []
 
-pushDependency ∷ ∀ r. Storage r → Query → ST r Unit
-pushDependency (Storage { activeQuery }) dependency =
+pushDependency ∷ ∀ r. QueryEngine r → Query → ST r Unit
+pushDependency (QueryEngine { activeQuery }) dependency =
   MutableArray.last activeQuery >>= traverse_ \{ dependencies } →
     void $ MutableArray.push dependency dependencies
 
@@ -157,8 +157,8 @@ inputGet
   ∷ ∀ r k v
   . Ord k
   ⇒ (k → Query)
-  → (Storage r → InputStorage r k v)
-  → Storage r
+  → (QueryEngine r → InputStorage r k v)
+  → QueryEngine r
   → k
   → ST r v
 inputGet getQuery getStorage storage key = do
@@ -173,15 +173,15 @@ inputGet getQuery getStorage storage key = do
 inputSet
   ∷ ∀ r k v
   . Ord k
-  ⇒ (Storage r → InputStorage r k v)
-  → Storage r
+  ⇒ (QueryEngine r → InputStorage r k v)
+  → QueryEngine r
   → k
   → v
   → ST r Unit
-inputSet getStorage storage@(Storage { revisionRef }) key value = do
+inputSet getStorage engine@(QueryEngine { revisionRef }) key value = do
   let
     mapRef ∷ InputStorage r k v
-    mapRef = getStorage storage
+    mapRef = getStorage engine
   changedRef ← STRef.read revisionRef >>= STRef.new
   void $ STRef.modify (_ + 1) revisionRef
   void $ STRef.modify (Map.insert key { changedRef, value }) mapRef
@@ -190,17 +190,17 @@ queryGet
   ∷ ∀ r k v
   . Ord k
   ⇒ (k → Query)
-  → (Storage r → QueryStorage r k v)
-  → (Storage r → k → ST r v)
-  → Storage r
+  → (QueryEngine r → QueryStorage r k v)
+  → (QueryEngine r → k → ST r v)
+  → QueryEngine r
   → k
   → ST r v
 queryGet
   getQuery
   getStorage
   getValue
-  storage@
-    ( Storage
+  engine@
+    ( QueryEngine
         { revisionRef
         , parsedFileStorage
         , surfaceFullStorage
@@ -238,16 +238,16 @@ queryGet
           pure unit
 
     mapRef ∷ QueryStorage r k v
-    mapRef = getStorage storage
+    mapRef = getStorage engine
 
     freshValue ∷ ST r v
     freshValue = do
-      pushActive storage query
-      value ← getValue storage key
+      pushActive engine query
+      value ← getValue engine key
       void $ STRef.modify (_ + 1) revisionRef
       changedRef ← STRef.read revisionRef >>= STRef.new
       verifiedRef ← STRef.read revisionRef >>= STRef.new
-      dependencies ← Set.fromFoldable <$> popActive storage
+      dependencies ← Set.fromFoldable <$> popActive engine
       void $ STRef.modify (Map.insert key { changedRef, verifiedRef, dependencies, value }) mapRef
       pure value
 
@@ -275,14 +275,14 @@ queryGet
           . Ord ik
           ⇒ Eq iv
           ⇒ ik
-          → (Storage r → ik → ST r iv)
+          → (QueryEngine r → ik → ST r iv)
           → QueryStorage r ik iv
           → ST r Unit
         checkDependency k getV innerStorage = do
           m ← STRef.read innerStorage
           case Map.lookup k m of
             Just { value: cacheV } → do
-              freshV ← getV storage k
+              freshV ← getV engine k
               unless (freshV == cacheV) do
                 void $ STRef.write false isClean
             Nothing →
@@ -302,7 +302,7 @@ queryGet
       traverse_ onQuery dependencies
       STRef.read isClean
 
-  pushDependency storage query
+  pushDependency engine query
   map ← STRef.read mapRef
   value ← case Map.lookup key map of
     Just { verifiedRef, dependencies, value } → do
@@ -326,13 +326,13 @@ queryGet
 
   pure value
 
-getParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ST r ParsedFile
-getParsedFile = inputGet OnParsedFile \(Storage { parsedFileStorage }) → parsedFileStorage
+getParsedFile ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ParsedFile
+getParsedFile = inputGet OnParsedFile \(QueryEngine { parsedFileStorage }) → parsedFileStorage
 
-setParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ParsedFile → ST r Unit
-setParsedFile = inputSet \(Storage { parsedFileStorage }) → parsedFileStorage
+setParsedFile ∷ ∀ r. QueryEngine r → ModuleNameIndex → ParsedFile → ST r Unit
+setParsedFile = inputSet \(QueryEngine { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r ModuleWithSourceRanges
+computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleWithSourceRanges
 computeSurfaceFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
@@ -341,29 +341,29 @@ computeSurfaceFull storage moduleNameIndex = do
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r ModuleWithSourceRanges
+getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleWithSourceRanges
 getSurfaceFull = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex ModuleWithSourceRanges
-    getStorage (Storage { surfaceFullStorage }) = surfaceFullStorage
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ModuleWithSourceRanges
+    getStorage (QueryEngine { surfaceFullStorage }) = surfaceFullStorage
   queryGet OnSurfaceFull getStorage computeSurfaceFull
 
-getSurface ∷ ∀ r. Storage r → ModuleNameIndex → ST r Module
+getSurface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r Module
 getSurface = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Module
-    getStorage (Storage { surfaceStorage }) = surfaceStorage
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex Module
+    getStorage (QueryEngine { surfaceStorage }) = surfaceStorage
   queryGet OnSurface getStorage \storage moduleNameIndex → do
     getSurfaceFull storage moduleNameIndex <#> _.surface
 
-computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r ScopeNodes
+computeScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
 computeScopeGraph storage moduleNameIndex = do
   m ← getSurface storage moduleNameIndex
   ScopeCollect.collectModule m
 
-getScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r ScopeNodes
+getScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
 getScopeGraph = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex ScopeNodes
-    getStorage (Storage { scopeGraphStorage }) = scopeGraphStorage
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ScopeNodes
+    getStorage (QueryEngine { scopeGraphStorage }) = scopeGraphStorage
   queryGet OnScopeGraph getStorage computeScopeGraph

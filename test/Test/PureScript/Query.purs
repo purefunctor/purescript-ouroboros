@@ -12,9 +12,9 @@ import PureScript.Driver.Files (ParsedFile, parseFile)
 import PureScript.Driver.Interner (ModuleNameIndex(..))
 import PureScript.Driver.Query
   ( HitMiss
+  , QueryEngine(..)
   , QueryStats
-  , Storage(..)
-  , emptyStorage
+  , emptyQueryEngine
   , getScopeGraph
   , getSurface
   , getSurfaceFull
@@ -51,11 +51,11 @@ runQuery ∷ ∀ m a. MonadEffect m ⇒ ST Global a → m a
 runQuery = liftEffect <<< toEffect
 
 getHitMiss
-  ∷ Storage Global
+  ∷ QueryEngine Global
   → (QueryStats Global → HitMiss Global)
   → ST Global { hit ∷ Int, miss ∷ Int }
-getHitMiss (Storage storage) innerStats = do
-  case innerStats storage.queryStats of
+getHitMiss (QueryEngine { queryStats }) innerStats = do
+  case innerStats queryStats of
     { hit, miss } → do
       { hit: _, miss: _ } <$> STRef.read hit <*> STRef.read miss
 
@@ -67,54 +67,54 @@ spec = do
       -- Will always miss because of modified SourceRanges
       it "misses on full lowering" do
         hitMiss ← runQuery do
-          storage ← emptyStorage
-          setParsedFile storage i a1
-          void $ getSurfaceFull storage i
-          setParsedFile storage i a2
-          void $ getSurfaceFull storage i
-          getHitMiss storage _.surfaceFull
+          engine ← emptyQueryEngine
+          setParsedFile engine i a1
+          void $ getSurfaceFull engine i
+          setParsedFile engine i a2
+          void $ getSurfaceFull engine i
+          getHitMiss engine _.surfaceFull
         hitMiss `shouldEqual` { hit: 0, miss: 2 }
       -- Will always miss because of modified SourceRanges
       it "misses on partial lowering" do
         hitMiss ← runQuery do
-          storage ← emptyStorage
-          setParsedFile storage i a1
-          void $ getSurface storage i
-          setParsedFile storage i a2
-          void $ getSurface storage i
-          getHitMiss storage _.surface
+          engine ← emptyQueryEngine
+          setParsedFile engine i a1
+          void $ getSurface engine i
+          setParsedFile engine i a2
+          void $ getSurface engine i
+          getHitMiss engine _.surface
         hitMiss `shouldEqual` { hit: 0, miss: 2 }
       -- Since getSurface hides SourceRanges, we get a
       -- cache hit on getScopeGraph despite the former
       -- having misses.
       it "caches on scope graphs v1" do
         hitMiss ← runQuery do
-          storage ← emptyStorage
-          setParsedFile storage i a1
-          void $ getScopeGraph storage i
-          setParsedFile storage i a2
-          void $ getScopeGraph storage i
-          getHitMiss storage _.scopeGraph
+          engine ← emptyQueryEngine
+          setParsedFile engine i a1
+          void $ getScopeGraph engine i
+          setParsedFile engine i a2
+          void $ getScopeGraph engine i
+          getHitMiss engine _.scopeGraph
         hitMiss `shouldEqual` { hit: 1, miss: 1 }
       -- Editing a different input should not miss.
       it "caches on scope graphs v2" do
         hitMiss ← runQuery do
-          storage ← emptyStorage
-          setParsedFile storage i a1
-          void $ getScopeGraph storage i
-          setParsedFile storage j b1
-          void $ getScopeGraph storage i
-          getHitMiss storage _.scopeGraph
+          engine ← emptyQueryEngine
+          setParsedFile engine i a1
+          void $ getScopeGraph engine i
+          setParsedFile engine j b1
+          void $ getScopeGraph engine i
+          getHitMiss engine _.scopeGraph
         hitMiss `shouldEqual` { hit: 1, miss: 1 }
     -- Tests on edits that do change semantics.
     describe "Semantic Edits" do
       -- different module = different scope graph
       it "misses on scope graphs" do
         hitMiss ← runQuery do
-          storage ← emptyStorage
-          setParsedFile storage i a1
-          void $ getScopeGraph storage i
-          setParsedFile storage i b1
-          void $ getScopeGraph storage i
-          getHitMiss storage _.scopeGraph
+          engine ← emptyQueryEngine
+          setParsedFile engine i a1
+          void $ getScopeGraph engine i
+          setParsedFile engine i b1
+          void $ getScopeGraph engine i
+          getHitMiss engine _.scopeGraph
         hitMiss `shouldEqual` { hit: 0, miss: 2 }
