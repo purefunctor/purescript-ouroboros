@@ -197,12 +197,10 @@ queryGet
         checkDependency k getV innerStorage = do
           m ← STRef.read innerStorage
           case Map.lookup k m of
-            Just { dependencies: innerDependencies, changedRef, value: cacheV } → do
+            Just { value: cacheV } → do
               freshV ← getV storage k
               unless (freshV == cacheV) do
-                changed ← STRef.read changedRef
-                void $ STRef.modify (_ && (changed < verified)) isClean
-                traverse_ onQuery innerDependencies
+                void $ STRef.write false isClean
             Nothing →
               unsafeCrashWith "impossible."
 
