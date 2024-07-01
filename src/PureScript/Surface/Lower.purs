@@ -797,12 +797,12 @@ lowerDeclarations state cstDeclarations = do
   dischargeGroup
   STA.unsafeFreeze declarationsRaw
 
-type Result =
+type LowerResult =
   { surface ∷ SST.Module
   , sourceRange ∷ SourceRange
   }
 
-lowerModule ∷ ∀ r. CST.Module Void → ST r Result
+lowerModule ∷ ∀ r. CST.Module Void → ST r LowerResult
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }

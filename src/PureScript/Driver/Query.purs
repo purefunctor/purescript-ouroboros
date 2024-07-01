@@ -15,13 +15,15 @@ import Partial.Unsafe (unsafeCrashWith)
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex)
 import PureScript.Scope.Collect as ScopeCollect
+import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Lower as SurfaceLower
-import PureScript.Surface.Types as SST
+import PureScript.Surface.Types (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 
 data Query
   = OnParsedFile ModuleNameIndex
+  | OnSurfaceLowerFull ModuleNameIndex
   | OnSurfaceLower ModuleNameIndex
   | OnScopeGraph ModuleNameIndex
 
@@ -49,7 +51,8 @@ type QueryStorage r k v =
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex SST.Module
+  , surfaceLowerFullStorage ∷ QueryStorage r ModuleNameIndex LowerResult
+  , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Module
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex Unit
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   }
@@ -58,12 +61,14 @@ emptyStorage ∷ ∀ r. ST r (Storage r)
 emptyStorage = do
   revisionRef ← STRef.new 0
   parsedFileStorage ← STRef.new Map.empty
+  surfaceLowerFullStorage ← STRef.new Map.empty
   surfaceLowerStorage ← STRef.new Map.empty
   scopeGraphStorage ← STRef.new Map.empty
   activeQuery ← MutableArray.empty
   pure $ Storage
     { revisionRef
     , parsedFileStorage
+    , surfaceLowerFullStorage
     , surfaceLowerStorage
     , scopeGraphStorage
     , activeQuery
@@ -137,6 +142,7 @@ queryGet
     ( Storage
         { revisionRef
         , parsedFileStorage
+        , surfaceLowerFullStorage
         , surfaceLowerStorage
         , scopeGraphStorage
         }
@@ -203,6 +209,8 @@ queryGet
         onQuery = case _ of
           OnParsedFile k →
             checkInput k parsedFileStorage
+          OnSurfaceLowerFull k →
+            checkDependency k getSurfaceLowerFull surfaceLowerFullStorage
           OnSurfaceLower k →
             checkDependency k getSurfaceLower surfaceLowerStorage
           OnScopeGraph k →
@@ -226,7 +234,7 @@ queryGet
           pure value
         else do
           freshValue
-    Nothing →
+    Nothing → do
       freshValue
 
   pure value
@@ -237,22 +245,29 @@ getParsedFile = inputGet OnParsedFile \(Storage { parsedFileStorage }) → parse
 setParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(Storage { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r SST.Module
-computeSurfaceLower storage moduleNameIndex = do
+computeSurfaceLowerFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
+computeSurfaceLowerFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
     ParsedTotal m → do
-      { surface } ← SurfaceLower.lowerModule m
-      pure surface
+      SurfaceLower.lowerModule m
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r SST.Module
+getSurfaceLowerFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
+getSurfaceLowerFull = do
+  let
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex LowerResult
+    getStorage (Storage { surfaceLowerFullStorage }) = surfaceLowerFullStorage
+  queryGet OnSurfaceLowerFull getStorage computeSurfaceLowerFull
+
+getSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r Module
 getSurfaceLower = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex SST.Module
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Module
     getStorage (Storage { surfaceLowerStorage }) = surfaceLowerStorage
-  queryGet OnSurfaceLower getStorage computeSurfaceLower
+  queryGet OnSurfaceLower getStorage \storage moduleNameIndex → do
+    getSurfaceLowerFull storage moduleNameIndex <#> _.surface
 
 computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
 computeScopeGraph storage moduleNameIndex = do
