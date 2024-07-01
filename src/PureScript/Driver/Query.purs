@@ -23,8 +23,8 @@ import PureScript.Utils.Mutable.Array as MutableArray
 
 data Query
   = OnParsedFile ModuleNameIndex
-  | OnSurfaceLowerFull ModuleNameIndex
-  | OnSurfaceLower ModuleNameIndex
+  | OnSurfaceFull ModuleNameIndex
+  | OnSurface ModuleNameIndex
   | OnScopeGraph ModuleNameIndex
 
 derive instance Eq Query
@@ -209,10 +209,10 @@ queryGet
         onQuery = case _ of
           OnParsedFile k →
             checkInput k parsedFileStorage
-          OnSurfaceLowerFull k →
-            checkDependency k getSurfaceLowerFull surfaceLowerFullStorage
-          OnSurfaceLower k →
-            checkDependency k getSurfaceLower surfaceLowerStorage
+          OnSurfaceFull k →
+            checkDependency k getSurfaceFull surfaceLowerFullStorage
+          OnSurface k →
+            checkDependency k getSurface surfaceLowerStorage
           OnScopeGraph k →
             checkDependency k getScopeGraph scopeGraphStorage
 
@@ -245,8 +245,8 @@ getParsedFile = inputGet OnParsedFile \(Storage { parsedFileStorage }) → parse
 setParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(Storage { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceLowerFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
-computeSurfaceLowerFull storage moduleNameIndex = do
+computeSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
+computeSurfaceFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
     ParsedTotal m → do
@@ -254,25 +254,25 @@ computeSurfaceLowerFull storage moduleNameIndex = do
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceLowerFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
-getSurfaceLowerFull = do
+getSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
+getSurfaceFull = do
   let
     getStorage ∷ Storage r → QueryStorage r ModuleNameIndex LowerResult
     getStorage (Storage { surfaceLowerFullStorage }) = surfaceLowerFullStorage
-  queryGet OnSurfaceLowerFull getStorage computeSurfaceLowerFull
+  queryGet OnSurfaceFull getStorage computeSurfaceFull
 
-getSurfaceLower ∷ ∀ r. Storage r → ModuleNameIndex → ST r Module
-getSurfaceLower = do
+getSurface ∷ ∀ r. Storage r → ModuleNameIndex → ST r Module
+getSurface = do
   let
     getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Module
     getStorage (Storage { surfaceLowerStorage }) = surfaceLowerStorage
-  queryGet OnSurfaceLower getStorage \storage moduleNameIndex → do
-    getSurfaceLowerFull storage moduleNameIndex <#> _.surface
+  queryGet OnSurface getStorage \storage moduleNameIndex → do
+    getSurfaceFull storage moduleNameIndex <#> _.surface
 
 computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
 computeScopeGraph storage moduleNameIndex = do
-  surfaceLower ← getSurfaceLower storage moduleNameIndex
-  ScopeCollect.collectModule surfaceLower
+  m ← getSurface storage moduleNameIndex
+  ScopeCollect.collectModule m
 
 getScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
 getScopeGraph = do
