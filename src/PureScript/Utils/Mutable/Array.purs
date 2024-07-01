@@ -26,3 +26,14 @@ poke index value (MutableArray inner) =
 
 push ∷ ∀ r v. v → MutableArray r v → ST r Int
 push value (MutableArray inner) = (_ - 1) <$> STArray.push value inner
+
+pop ∷ ∀ r v. MutableArray r v → ST r (Maybe v)
+pop (MutableArray inner) = STArray.pop inner
+
+last ∷ ∀ r v. MutableArray r v → ST r (Maybe v)
+last (MutableArray inner) = do
+  length ← STArray.length inner
+  STArray.peek (length - 1) inner
+
+unsafeFreeze ∷ ∀ r v. MutableArray r v → ST r (Array v)
+unsafeFreeze (MutableArray inner) = STArray.unsafeFreeze inner
