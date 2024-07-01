@@ -1,4 +1,4 @@
-module PureScript.Query.Core where
+module PureScript.Driver.Query where
 
 import Prelude
 
