@@ -1,4 +1,4 @@
-module PureScript.Driver.GraphMap where
+module PureScript.Utils.Mutable.GraphMap where
 
 import Prelude
 

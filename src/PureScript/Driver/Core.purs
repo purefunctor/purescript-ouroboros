@@ -12,7 +12,6 @@ import Effect.Exception (throw)
 import PureScript.CST.Parser.Monad (PositionedError)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.Files (ParsedFile, parseFile, parsedImports, parsedModuleName)
-import PureScript.Driver.GraphMap (GraphMap, addEdge, addNode, clearEdges, emptyGraphMap)
 import PureScript.Driver.Interner
   ( ModuleNameIndex
   , ModuleNameInterner
@@ -21,6 +20,7 @@ import PureScript.Driver.Interner
   , internModuleName
   , removeModuleName
   )
+import PureScript.Utils.Mutable.GraphMap (GraphMap, addEdge, addNode, clearEdges, emptyGraphMap)
 import PureScript.Utils.Mutable.JsMap (JsMap)
 import PureScript.Utils.Mutable.JsMap as JsMap
 import PureScript.Utils.Mutable.Object (MutableObject)

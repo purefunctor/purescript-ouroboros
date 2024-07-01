@@ -14,8 +14,8 @@ import PureScript.Driver.Core
   , getModuleFromPath
   , renameModule
   )
-import PureScript.Driver.GraphMap (hasNode)
 import PureScript.Driver.Interner (getModuleName)
+import PureScript.Utils.Mutable.GraphMap (hasNode)
 import Safe.Coerce (coerce)
 import Test.Snapshot (SnapshotSpec)
 import Test.Spec (describe, it)
