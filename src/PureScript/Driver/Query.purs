@@ -105,8 +105,8 @@ emptyQueryStats = { surfaceFull: _, surface: _, scopeGraph: _ }
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceLowerFullStorage ∷ QueryStorage r ModuleNameIndex ModuleWithSourceRanges
-  , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Module
+  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex ModuleWithSourceRanges
+  , surfaceStorage ∷ QueryStorage r ModuleNameIndex Module
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   , queryStats ∷ QueryStats r
@@ -116,16 +116,16 @@ emptyStorage ∷ ∀ r. ST r (Storage r)
 emptyStorage = do
   revisionRef ← STRef.new 0
   parsedFileStorage ← STRef.new Map.empty
-  surfaceLowerFullStorage ← STRef.new Map.empty
-  surfaceLowerStorage ← STRef.new Map.empty
+  surfaceFullStorage ← STRef.new Map.empty
+  surfaceStorage ← STRef.new Map.empty
   scopeGraphStorage ← STRef.new Map.empty
   activeQuery ← MutableArray.empty
   queryStats ← emptyQueryStats
   pure $ Storage
     { revisionRef
     , parsedFileStorage
-    , surfaceLowerFullStorage
-    , surfaceLowerStorage
+    , surfaceFullStorage
+    , surfaceStorage
     , scopeGraphStorage
     , activeQuery
     , queryStats
@@ -199,8 +199,8 @@ queryGet
     ( Storage
         { revisionRef
         , parsedFileStorage
-        , surfaceLowerFullStorage
-        , surfaceLowerStorage
+        , surfaceFullStorage
+        , surfaceStorage
         , scopeGraphStorage
         , queryStats
         }
@@ -289,9 +289,9 @@ queryGet
           OnParsedFile k →
             checkInput k parsedFileStorage
           OnSurfaceFull k →
-            checkDependency k getSurfaceFull surfaceLowerFullStorage
+            checkDependency k getSurfaceFull surfaceFullStorage
           OnSurface k →
-            checkDependency k getSurface surfaceLowerStorage
+            checkDependency k getSurface surfaceStorage
           OnScopeGraph k →
             checkDependency k getScopeGraph scopeGraphStorage
 
@@ -341,14 +341,14 @@ getSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r ModuleWithSourc
 getSurfaceFull = do
   let
     getStorage ∷ Storage r → QueryStorage r ModuleNameIndex ModuleWithSourceRanges
-    getStorage (Storage { surfaceLowerFullStorage }) = surfaceLowerFullStorage
+    getStorage (Storage { surfaceFullStorage }) = surfaceFullStorage
   queryGet OnSurfaceFull getStorage computeSurfaceFull
 
 getSurface ∷ ∀ r. Storage r → ModuleNameIndex → ST r Module
 getSurface = do
   let
     getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Module
-    getStorage (Storage { surfaceLowerStorage }) = surfaceLowerStorage
+    getStorage (Storage { surfaceStorage }) = surfaceStorage
   queryGet OnSurface getStorage \storage moduleNameIndex → do
     getSurfaceFull storage moduleNameIndex <#> _.surface
 
