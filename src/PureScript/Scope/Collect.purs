@@ -6,6 +6,7 @@ import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
 import Control.Monad.ST.Ref (STRef)
 import Control.Monad.ST.Ref as STRef
+import Control.Monad.ST.Uncurried (STFn1, mkSTFn1, runSTFn1)
 import Data.Array as Array
 import Data.Array.NonEmpty as NEA
 import Data.Array.ST (STArray)
@@ -13,7 +14,6 @@ import Data.Array.ST as STA
 import Data.Array.ST.Partial as STAP
 import Data.Traversable (for_, traverse_)
 import Data.Tuple (Tuple(..))
-import Control.Monad.ST.Uncurried (STFn1, mkSTFn1, runSTFn1)
 import Foreign.Object as O
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
