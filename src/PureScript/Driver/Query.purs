@@ -1,3 +1,39 @@
+-- | Implements the incremental computation core for the compiler.
+-- |
+-- | Based on Niko Matsakis' notes on Salsa:
+-- |
+-- | https://gist.github.com/nikomatsakis/5b119a71465549b61743e8739a369b5e
+-- |
+-- | # Architecture
+-- |
+-- | At a high level, the query engine:
+-- | * consumes inputs from an external provider
+-- | * orchestrates computations operating on said inputs
+-- | * keeps track of when things should be recomputed
+-- |
+-- | More concretely, the query engine:
+-- | * consumes parsed files as inputs from the driver
+-- | * orchestrates compiler procedures such as lowering
+-- | * keeps track of which procedures need to be redone
+-- |
+-- | The query engine uses revisions as the primary mechanism for tracking
+-- | when to recompute compiler operations. It keeps track of the current
+-- | revision using an integer, which is incremented when inputs are changed
+-- | or when new values are produced from operations. This revision is then
+-- | attached to cache entries, providing a marker for "when" an input was
+-- | changed or "when" an operation was last recomputed.
+-- |
+-- | The query engine also automatically keeps track of dependencies between
+-- | computations, the idea being that if a computation's dependencies remain
+-- | unchanged, then there's no need to run the dependent computation. To
+-- | accommodate for this functionality, the engine also keeps track of when
+-- | computations were last "verified".
+-- |
+-- | The dependency checking algorithm goes as follows: for each dependency:
+-- | * if the dependency is an input: if it were changed more recently than
+-- |   the dependent was verified, then recomputation is required.
+-- | * if the dependency is a query: if its computation returns a value
+-- |   not equal to the cached value, then recomputation is required.
 module PureScript.Driver.Query where
 
 import Prelude
