@@ -3,20 +3,17 @@ module PureScript.Query.Core where
 import Prelude
 
 import Control.Monad.ST (ST)
-import Control.Monad.ST.Global (toEffect)
 import Control.Monad.ST.Ref (STRef)
 import Control.Monad.ST.Ref as STRef
-import Data.Either (Either(..))
 import Data.Map (Map)
 import Data.Map as Map
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse_)
-import Effect (Effect)
 import Partial.Unsafe (unsafeCrashWith)
-import PureScript.Driver.Files (ParsedFile(..), parseFile)
-import PureScript.Driver.Interner (ModuleNameIndex(..))
+import PureScript.Driver.Files (ParsedFile(..))
+import PureScript.Driver.Interner (ModuleNameIndex)
 import PureScript.Scope.Collect as Scope
 import PureScript.Surface.Lower (lowerModule) as Surface
 import PureScript.Surface.Types (Module) as Surface
@@ -267,39 +264,3 @@ getScopeGraph = do
     getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Unit
     getStorage (Storage { scopeGraphStorage }) = scopeGraphStorage
   queryGet OnScopeGraph getStorage computeScopeGraph
-
-example ∷ Effect Unit
-example = toEffect do
-  let
-    parseTotal ∷ String → ParsedFile
-    parseTotal source = parseFile source # case _ of
-      Left _ →
-        unsafeCrashWith "Oops!"
-      Right p →
-        p
-
-    a = parseTotal "module A where\n"
-    b = parseTotal "module A where\n\n\n"
-    c = parseTotal "module B where\n"
-
-    i = ModuleNameIndex 0
-
-  do
-    storage ← emptyStorage
-    setParsedFile storage i a
-    getScopeGraph storage i
-    getScopeGraph storage i
-
-  do
-    storage ← emptyStorage
-    setParsedFile storage i a
-    getScopeGraph storage i
-    setParsedFile storage i b
-    getScopeGraph storage i
-
-  do
-    storage ← emptyStorage
-    setParsedFile storage i a
-    getScopeGraph storage i
-    setParsedFile storage i c
-    getScopeGraph storage i
