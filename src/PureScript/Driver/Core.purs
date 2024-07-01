@@ -14,12 +14,11 @@ import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.Files (ParsedFile, parseFile, parsedImports, parsedModuleName)
 import PureScript.Driver.Interner
   ( ModuleNameIndex
-  , ModuleNameInterner
   , changeModuleName
-  , emptyInterner
   , internModuleName
   , removeModuleName
   )
+import PureScript.Driver.Query (Storage(..), emptyStorage)
 import PureScript.Utils.Mutable.GraphMap (GraphMap, addEdge, addNode, clearEdges, emptyGraphMap)
 import PureScript.Utils.Mutable.JsMap (JsMap)
 import PureScript.Utils.Mutable.JsMap as JsMap
@@ -33,8 +32,8 @@ type Contents =
   , fileParsed ∷ ParsedFile
   }
 
-type State =
-  { moduleNameInterner ∷ ModuleNameInterner Global
+newtype State = State
+  { queryEngine ∷ Storage Global
   , moduleGraph ∷ GraphMap Global ModuleNameIndex
   , moduleContents ∷ JsMap Global ModuleNameIndex Contents
   , pathToModule ∷ MutableObject Global String ModuleNameIndex
@@ -42,27 +41,29 @@ type State =
 
 defaultState ∷ Effect State
 defaultState = do
-  moduleNameInterner ← toEffect emptyInterner
+  queryEngine ← toEffect emptyStorage
   moduleGraph ← toEffect emptyGraphMap
   moduleContents ← toEffect JsMap.empty
   pathToModule ← toEffect MutableObject.empty
-  pure { moduleNameInterner, moduleGraph, moduleContents, pathToModule }
+  pure $ State
+    { queryEngine, moduleGraph, moduleContents, pathToModule }
 
 createModuleNode ∷ State → ModuleName → Effect ModuleNameIndex
-createModuleNode { moduleNameInterner, moduleGraph } moduleName = toEffect do
-  moduleNameIndex ← internModuleName moduleNameInterner moduleName
-  addNode moduleGraph moduleNameIndex
-  pure moduleNameIndex
+createModuleNode (State { queryEngine: Storage { moduleNameInterner }, moduleGraph }) moduleName =
+  toEffect do
+    moduleNameIndex ← internModuleName moduleNameInterner moduleName
+    addNode moduleGraph moduleNameIndex
+    pure moduleNameIndex
 
 updateImportEdges ∷ State → ModuleNameIndex → Set ModuleName → Effect Unit
-updateImportEdges state@{ moduleGraph } moduleNameIndex moduleImports = do
+updateImportEdges state@(State { moduleGraph }) moduleNameIndex moduleImports = do
   toEffect $ clearEdges moduleGraph moduleNameIndex
   for_ moduleImports \moduleImport → do
     importedIndex ← createModuleNode state moduleImport
     toEffect $ addEdge moduleGraph moduleNameIndex importedIndex
 
 getModuleFromPath ∷ State → String → Effect ModuleNameIndex
-getModuleFromPath { pathToModule } filePath = do
+getModuleFromPath (State { pathToModule }) filePath = do
   toEffect (MutableObject.peek filePath pathToModule) >>= case _ of
     Just moduleNameIndex →
       pure moduleNameIndex
@@ -70,7 +71,7 @@ getModuleFromPath { pathToModule } filePath = do
       throw $ "invariant violated: filePath does not exist"
 
 getModuleContents ∷ State → ModuleNameIndex → Effect Contents
-getModuleContents { moduleContents } moduleNameIndex = do
+getModuleContents (State { moduleContents }) moduleNameIndex = do
   toEffect (JsMap.get moduleNameIndex moduleContents) >>= case _ of
     Just oldContents →
       pure oldContents
@@ -78,7 +79,7 @@ getModuleContents { moduleContents } moduleNameIndex = do
       throw $ "invariant violated: moduleNameIndex does not exist"
 
 createModule ∷ State → String → String → Effect Unit
-createModule state@{ moduleContents, pathToModule } filePath fileSource = do
+createModule state@(State { moduleContents, pathToModule }) filePath fileSource = do
   let
     parseResult ∷ Either PositionedError ParsedFile
     parseResult = parseFile fileSource
@@ -103,7 +104,10 @@ createModule state@{ moduleContents, pathToModule } filePath fileSource = do
       updateImportEdges state moduleNameIndex moduleImports
 
 editModule ∷ State → String → String → Effect Unit
-editModule state@{ moduleNameInterner, moduleContents } filePath fileSource = do
+editModule
+  state@(State { queryEngine: Storage { moduleNameInterner }, moduleContents })
+  filePath
+  fileSource = do
   let
     parseResult ∷ Either PositionedError ParsedFile
     parseResult = parseFile fileSource
@@ -134,7 +138,9 @@ editModule state@{ moduleNameInterner, moduleContents } filePath fileSource = do
       updateImportEdges state moduleNameIndex newModuleImports
 
 deleteModule ∷ State → String → Effect Unit
-deleteModule state@{ moduleNameInterner, moduleContents, pathToModule } filePath = do
+deleteModule
+  state@(State { queryEngine: Storage { moduleNameInterner }, moduleContents, pathToModule })
+  filePath = do
   moduleNameIndex ← getModuleFromPath state filePath
 
   toEffect do
@@ -145,7 +151,7 @@ deleteModule state@{ moduleNameInterner, moduleContents, pathToModule } filePath
     MutableObject.delete filePath pathToModule
 
 renameModule ∷ State → String → String → Effect Unit
-renameModule state@{ moduleContents, pathToModule } oldFilePath newFilePath = do
+renameModule state@(State { moduleContents, pathToModule }) oldFilePath newFilePath = do
   moduleNameIndex ← getModuleFromPath state oldFilePath
 
   toEffect do

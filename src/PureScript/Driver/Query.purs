@@ -49,7 +49,8 @@ import Data.Set as Set
 import Data.Traversable (traverse_)
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.Driver.Files (ParsedFile(..))
-import PureScript.Driver.Interner (ModuleNameIndex)
+import PureScript.Driver.Interner (ModuleNameIndex, ModuleNameInterner)
+import PureScript.Driver.Interner as ModuleNameInterner
 import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
 import PureScript.Surface.Lower (ModuleWithSourceRanges)
@@ -104,6 +105,7 @@ emptyQueryStats = { surfaceFull: _, surface: _, scopeGraph: _ }
 
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
+  , moduleNameInterner ∷ ModuleNameInterner r
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
   , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex ModuleWithSourceRanges
   , surfaceStorage ∷ QueryStorage r ModuleNameIndex Module
@@ -115,6 +117,7 @@ newtype Storage r = Storage
 emptyStorage ∷ ∀ r. ST r (Storage r)
 emptyStorage = do
   revisionRef ← STRef.new 0
+  moduleNameInterner ← ModuleNameInterner.emptyInterner
   parsedFileStorage ← STRef.new Map.empty
   surfaceFullStorage ← STRef.new Map.empty
   surfaceStorage ← STRef.new Map.empty
@@ -123,6 +126,7 @@ emptyStorage = do
   queryStats ← emptyQueryStats
   pure $ Storage
     { revisionRef
+    , moduleNameInterner
     , parsedFileStorage
     , surfaceFullStorage
     , surfaceStorage

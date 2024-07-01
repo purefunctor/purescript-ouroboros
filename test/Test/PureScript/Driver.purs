@@ -2,11 +2,13 @@ module Test.PureScript.Driver where
 
 import Prelude
 
-import Control.Monad.ST.Global (toEffect)
+import Control.Monad.ST (ST)
+import Control.Monad.ST.Global (Global, toEffect)
 import Effect.Class (liftEffect)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.Core
-  ( createModule
+  ( State(..)
+  , createModule
   , defaultState
   , deleteModule
   , editModule
@@ -14,8 +16,10 @@ import PureScript.Driver.Core
   , getModuleFromPath
   , renameModule
   )
-import PureScript.Driver.Interner (getModuleName)
-import PureScript.Utils.Mutable.GraphMap (hasNode)
+import PureScript.Driver.Interner (ModuleNameIndex)
+import PureScript.Driver.Interner as ModuleNameInterner
+import PureScript.Driver.Query (Storage(..))
+import PureScript.Utils.Mutable.GraphMap as GraphMap
 import Safe.Coerce (coerce)
 import Test.Snapshot (SnapshotSpec)
 import Test.Spec (describe, it)
@@ -26,6 +30,13 @@ basicModule = "module Main where\n"
 
 testModule ∷ String
 testModule = "module Test where\n"
+
+hasNode ∷ State → ModuleNameIndex → ST Global Boolean
+hasNode (State { moduleGraph }) = GraphMap.hasNode moduleGraph
+
+getModuleName ∷ State → ModuleNameIndex → ST Global ModuleName
+getModuleName (State { queryEngine: Storage { moduleNameInterner } }) =
+  ModuleNameInterner.getModuleName moduleNameInterner
 
 spec ∷ SnapshotSpec Unit
 spec = do
@@ -38,7 +49,7 @@ spec = do
         contents ← getModuleContents state moduleIndex
         contents.filePath `shouldEqual` "Main.purs"
         contents.fileSource `shouldEqual` basicModule
-        hasBasicNode ← toEffect $ hasNode state.moduleGraph moduleIndex
+        hasBasicNode ← toEffect $ hasNode state moduleIndex
         hasBasicNode `shouldEqual` true
     it "edits files" do
       void $ liftEffect do
@@ -49,7 +60,7 @@ spec = do
         contents ← getModuleContents state moduleIndex
         contents.filePath `shouldEqual` "Main.purs"
         contents.fileSource `shouldEqual` testModule
-        moduleName ← toEffect $ getModuleName state.moduleNameInterner moduleIndex
+        moduleName ← toEffect $ getModuleName state moduleIndex
         coerce moduleName `shouldEqual` "Test"
     it "renames files" do
       void $ liftEffect do
