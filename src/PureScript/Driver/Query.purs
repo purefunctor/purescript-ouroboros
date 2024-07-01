@@ -16,7 +16,7 @@ import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex)
 import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
-import PureScript.Surface.Lower (LowerResult)
+import PureScript.Surface.Lower (ModuleWithSourceRanges)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -52,7 +52,7 @@ type QueryStorage r k v =
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceLowerFullStorage ∷ QueryStorage r ModuleNameIndex LowerResult
+  , surfaceLowerFullStorage ∷ QueryStorage r ModuleNameIndex ModuleWithSourceRanges
   , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Module
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
@@ -246,7 +246,7 @@ getParsedFile = inputGet OnParsedFile \(Storage { parsedFileStorage }) → parse
 setParsedFile ∷ ∀ r. Storage r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(Storage { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
+computeSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r ModuleWithSourceRanges
 computeSurfaceFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
@@ -255,10 +255,10 @@ computeSurfaceFull storage moduleNameIndex = do
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r LowerResult
+getSurfaceFull ∷ ∀ r. Storage r → ModuleNameIndex → ST r ModuleWithSourceRanges
 getSurfaceFull = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex LowerResult
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex ModuleWithSourceRanges
     getStorage (Storage { surfaceLowerFullStorage }) = surfaceLowerFullStorage
   queryGet OnSurfaceFull getStorage computeSurfaceFull
 

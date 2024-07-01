@@ -55,7 +55,7 @@ type State r =
   , declarationSourceRange ∷ StateDeclarationSourceRange r
   }
 
-type SourceRange =
+type SourceRanges =
   { exprSourceRange ∷ SST.SparseMap SST.Expr CST.SourceRange
   , binderSourceRange ∷ SST.SparseMap SST.Binder CST.SourceRange
   , typeSourceRange ∷ SST.SparseMap SST.Type CST.SourceRange
@@ -88,7 +88,7 @@ defaultState = do
     , declarationSourceRange
     }
 
-freezeState ∷ ∀ r. State r → ST r SourceRange
+freezeState ∷ ∀ r. State r → ST r SourceRanges
 freezeState state = do
   exprSourceRange ← coerce $ MutableArray.unsafeFreeze state.exprSourceRange
   binderSourceRange ← coerce $ MutableArray.unsafeFreeze state.binderSourceRange
@@ -797,12 +797,12 @@ lowerDeclarations state cstDeclarations = do
   dischargeGroup
   STA.unsafeFreeze declarationsRaw
 
-type LowerResult =
+type ModuleWithSourceRanges =
   { surface ∷ SST.Module
-  , sourceRange ∷ SourceRange
+  , sourceRanges ∷ SourceRanges
   }
 
-lowerModule ∷ ∀ r. CST.Module Void → ST r LowerResult
+lowerModule ∷ ∀ r. CST.Module Void → ST r ModuleWithSourceRanges
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }
@@ -814,5 +814,5 @@ lowerModule
     imports ← lowerImportDecls cstImports
     declarations ← lowerDeclarations state cstDeclarations
     pure $ SST.Module { name, imports, declarations }
-  sourceRange ← freezeState state
-  pure { surface, sourceRange }
+  sourceRanges ← freezeState state
+  pure { surface, sourceRanges }
