@@ -1,5 +1,7 @@
 module PureScript.Scope.Types where
 
+import Prelude
+
 import Foreign.Object (Object)
 import PureScript.Surface.Types as SST
 
@@ -17,3 +19,5 @@ data ScopeNode
   | Binders ScopeNode (Object BinderRef)
   | LetBound ScopeNode (Object LetBindingRef)
   | JoinScope ScopeNode ScopeNode
+
+derive instance Eq ScopeNode

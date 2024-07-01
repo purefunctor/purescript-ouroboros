@@ -28,11 +28,20 @@ type State r =
   , exprScopeNode ∷ MutableArray r ScopeNode
   }
 
+type ScopeNodes =
+  { exprScopeNode ∷ SST.SparseMap SST.Expr ScopeNode
+  }
+
 defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
   scope ← STRef.new RootScope
   exprScopeNode ← MutableArray.empty
   pure { scope, exprScopeNode }
+
+freezeState ∷ ∀ r. State r → ST r ScopeNodes
+freezeState state = do
+  exprScopeNode ← coerce $ MutableArray.unsafeFreeze state.exprScopeNode
+  pure { exprScopeNode }
 
 currentScope ∷ ∀ r. State r → ST r ScopeNode
 currentScope state = STRef.read state.scope
@@ -341,7 +350,7 @@ collectTopLevel declarations = ST.run do
   values ← STOU.unsafeFreeze valuesRaw
   pure $ { values }
 
-collectModule ∷ ∀ r. SST.Module → ST r Unit
+collectModule ∷ ∀ r. SST.Module → ST r ScopeNodes
 collectModule (SST.Module { declarations }) = do
   state ← defaultState
 
@@ -351,5 +360,6 @@ collectModule (SST.Module { declarations }) = do
 
   parentScope ← currentScope state
   pushScope state (TopLevel parentScope topLevel)
-
   traverse_ (collectDeclaration state) declarations
+
+  freezeState state

@@ -14,6 +14,7 @@ import Data.Traversable (traverse_)
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex)
+import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
 import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Lower as SurfaceLower
@@ -53,7 +54,7 @@ newtype Storage r = Storage
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
   , surfaceLowerFullStorage ∷ QueryStorage r ModuleNameIndex LowerResult
   , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Module
-  , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex Unit
+  , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   }
 
@@ -269,14 +270,14 @@ getSurface = do
   queryGet OnSurface getStorage \storage moduleNameIndex → do
     getSurfaceFull storage moduleNameIndex <#> _.surface
 
-computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
+computeScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r ScopeNodes
 computeScopeGraph storage moduleNameIndex = do
   m ← getSurface storage moduleNameIndex
   ScopeCollect.collectModule m
 
-getScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r Unit
+getScopeGraph ∷ ∀ r. Storage r → ModuleNameIndex → ST r ScopeNodes
 getScopeGraph = do
   let
-    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex Unit
+    getStorage ∷ Storage r → QueryStorage r ModuleNameIndex ScopeNodes
     getStorage (Storage { scopeGraphStorage }) = scopeGraphStorage
   queryGet OnScopeGraph getStorage computeScopeGraph
