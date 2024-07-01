@@ -85,6 +85,23 @@ type QueryStorage r k v =
         }
     )
 
+type HitMiss r = { hit ∷ STRef r Int, miss ∷ STRef r Int }
+
+emptyHitMiss ∷ ∀ r. ST r (HitMiss r)
+emptyHitMiss = { hit: _, miss: _ } <$> STRef.new 0 <*> STRef.new 0
+
+type QueryStats r =
+  { surfaceFull ∷ HitMiss r
+  , surface ∷ HitMiss r
+  , scopeGraph ∷ HitMiss r
+  }
+
+emptyQueryStats ∷ ∀ r. ST r (QueryStats r)
+emptyQueryStats = { surfaceFull: _, surface: _, scopeGraph: _ }
+  <$> emptyHitMiss
+  <*> emptyHitMiss
+  <*> emptyHitMiss
+
 newtype Storage r = Storage
   { revisionRef ∷ STRef r Int
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
@@ -92,6 +109,7 @@ newtype Storage r = Storage
   , surfaceLowerStorage ∷ QueryStorage r ModuleNameIndex Module
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
+  , queryStats ∷ QueryStats r
   }
 
 emptyStorage ∷ ∀ r. ST r (Storage r)
@@ -102,6 +120,7 @@ emptyStorage = do
   surfaceLowerStorage ← STRef.new Map.empty
   scopeGraphStorage ← STRef.new Map.empty
   activeQuery ← MutableArray.empty
+  queryStats ← emptyQueryStats
   pure $ Storage
     { revisionRef
     , parsedFileStorage
@@ -109,6 +128,7 @@ emptyStorage = do
     , surfaceLowerStorage
     , scopeGraphStorage
     , activeQuery
+    , queryStats
     }
 
 pushActive ∷ ∀ r. Storage r → Query → ST r Unit
@@ -182,12 +202,36 @@ queryGet
         , surfaceLowerFullStorage
         , surfaceLowerStorage
         , scopeGraphStorage
+        , queryStats
         }
     )
   key = do
   let
     query ∷ Query
     query = getQuery key
+
+    addHitOrMiss ∷ Boolean → ST r Unit
+    addHitOrMiss isHit = do
+      let
+        hitMiss ∷ Maybe (HitMiss r)
+        hitMiss = case query of
+          OnParsedFile _ →
+            Nothing
+          OnSurfaceFull _ →
+            Just queryStats.surfaceFull
+          OnSurface _ →
+            Just queryStats.surface
+          OnScopeGraph _ →
+            Just queryStats.scopeGraph
+      case hitMiss of
+        Just { hit, miss } →
+          void $
+            if isHit then
+              STRef.modify (_ + 1) hit
+            else
+              STRef.modify (_ + 1) miss
+        _ →
+          pure unit
 
     mapRef ∷ QueryStorage r k v
     mapRef = getStorage storage
@@ -261,15 +305,19 @@ queryGet
       revision ← STRef.read revisionRef
       verified ← STRef.read verifiedRef
       if verified == revision then do
+        addHitOrMiss true
         pure value
       else do
         isClean ← checkDependencies dependencies verified
         if isClean then do
           void $ STRef.write revision verifiedRef
+          addHitOrMiss true
           pure value
         else do
+          addHitOrMiss false
           freshValue
     Nothing → do
+      addHitOrMiss false
       freshValue
 
   pure value
