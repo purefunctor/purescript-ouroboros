@@ -8,16 +8,7 @@ import Data.Maybe (fromJust)
 import Effect.Class (liftEffect)
 import Partial.Unsafe (unsafePartial)
 import PureScript.CST.Types (ModuleName(..))
-import PureScript.Driver.Core
-  ( Driver(..)
-  , createModule
-  , deleteModule
-  , editModule
-  , emptyDriver
-  , getModuleContents
-  , getModuleFromPath
-  , renameModule
-  )
+import PureScript.Driver.Core (Driver(..), createModule, deleteModule, editModule, emptyDriver, getModuleContents, getModuleFromPath, renameModule)
 import PureScript.Driver.Interner (ModuleNameIndex)
 import PureScript.Driver.Interner as ModuleNameInterner
 import PureScript.Driver.Query (QueryEngine(..))
@@ -93,22 +84,21 @@ spec = do
       void $ liftEffect do
         driver ← emptyDriver
 
-        aIdx ← toEffect $ getModuleIndex driver (ModuleName "A")
-        bIdx ← toEffect $ getModuleIndex driver (ModuleName "B")
-        cIdx ← toEffect $ getModuleIndex driver (ModuleName "C")
-        dIdx ← toEffect $ getModuleIndex driver (ModuleName "D")
-
         createModule driver "A.purs" "module A where\n"
+        aIdx <- getModuleFromPath driver "A.purs"
         aScc ← toEffect $ getScc driver aIdx
         aScc `shouldEqual` [ AcyclicSCC aIdx ]
 
         createModule driver "B.purs" "module B where\nimport A"
+        bIdx <- getModuleFromPath driver "B.purs"
         aScc' ← toEffect $ getScc driver aIdx
         aScc' `shouldEqual` [ AcyclicSCC aIdx, AcyclicSCC bIdx ]
         bScc ← toEffect $ getScc driver bIdx
         bScc `shouldEqual` [ AcyclicSCC aIdx, AcyclicSCC bIdx ]
 
         createModule driver "C.purs" "module C where\nimport D"
+        cIdx <- getModuleFromPath driver "C.purs"
+        dIdx ← toEffect $ getModuleIndex driver (ModuleName "D")
         cScc ← toEffect $ getScc driver cIdx
         cScc `shouldEqual` [ AcyclicSCC dIdx, AcyclicSCC cIdx ]
 
