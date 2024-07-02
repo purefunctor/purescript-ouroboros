@@ -12,7 +12,7 @@ import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Maybe (Maybe(..), isJust)
-import Data.Traversable (for_, traverse)
+import Data.Traversable (for, for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import PureScript.CST.Range (rangeOf)
@@ -154,7 +154,7 @@ insertDeclarationSourceRange
 insertDeclarationSourceRange { declarationSourceRange } declarationIndex declarationRange =
   MutableArray.poke declarationIndex declarationRange declarationSourceRange
 
-unName ∷ CST.Name CST.Label → CST.Label
+unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name
 
 lowerQualifiedName ∷ ∀ a. CST.QualifiedName a → SST.QualifiedName a
@@ -688,6 +688,52 @@ lowerDoStatement state = runSTFn1 go
       CST.DoError e →
         absurd e
 
+lowerDataMembers ∷ Maybe CST.DataMembers → Maybe SST.DataMembers
+lowerDataMembers cstDataMembers = cstDataMembers >>= case _ of
+  CST.DataAll _ →
+    pure SST.DataAll
+  CST.DataEnumerated (CST.Wrapped { value }) →
+    value <#> case _ of
+      CST.Separated { head, tail } → do
+        let
+          head' ∷ CST.Proper
+          head' = unName head
+
+          tail' ∷ Array CST.Proper
+          tail' = (Tuple.snd >>> unName) <$> tail
+        SST.DataEnumerated $ Array.cons head' tail'
+
+lowerExports
+  ∷ ∀ r. Maybe (CST.DelimitedNonEmpty (CST.Export Void)) → ST r (Maybe (NonEmptyArray SST.Export))
+lowerExports cstExports = for cstExports case _ of
+  CST.Wrapped { value: CST.Separated { head: headExport, tail } } → do
+    let
+      lowerExport ∷ CST.Export Void → SST.Export
+      lowerExport = case _ of
+        CST.ExportValue v →
+          SST.ExportValue (unName v)
+        CST.ExportOp o →
+          SST.ExportOp (unName o)
+        CST.ExportType p m → do
+          SST.ExportType (unName p) (lowerDataMembers m)
+        CST.ExportTypeOp _ o →
+          SST.ExportTypeOp (unName o)
+        CST.ExportClass _ n →
+          SST.ExportClass (unName n)
+        CST.ExportModule _ m →
+          SST.ExportModule (unName m)
+        CST.ExportError v →
+          absurd v
+
+    exportsRaw ← STA.new
+
+    void $ STA.push (lowerExport headExport) exportsRaw
+    for_ tail \(Tuple _ tailExport) → do
+      void $ STA.push (lowerExport tailExport) exportsRaw
+
+    exports ← STA.freeze exportsRaw
+    pure $ NonEmptyArray exports
+
 lowerImportDecls ∷ ∀ r. Array (CST.ImportDecl Void) → ST r (Array SST.Import)
 lowerImportDecls cstImports = do
   importsRaw ← STA.new
@@ -805,14 +851,19 @@ type ModuleWithSourceRanges =
 lowerModule ∷ ∀ r. CST.Module Void → ST r ModuleWithSourceRanges
 lowerModule
   ( CST.Module
-      { header: CST.ModuleHeader { name: CST.Name { name }, imports: cstImports }
+      { header: CST.ModuleHeader
+          { name: CST.Name { name }
+          , exports: cstExports
+          , imports: cstImports
+          }
       , body: CST.ModuleBody { decls: cstDeclarations }
       }
   ) = do
   state ← defaultState
   surface ← do
+    exports ← lowerExports cstExports
     imports ← lowerImportDecls cstImports
     declarations ← lowerDeclarations state cstDeclarations
-    pure $ SST.Module { name, imports, declarations }
+    pure $ SST.Module { name, exports, imports, declarations }
   sourceRanges ← freezeState state
   pure { surface, sourceRanges }

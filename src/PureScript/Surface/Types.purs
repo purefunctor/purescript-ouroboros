@@ -34,11 +34,29 @@ derive newtype instance Eq v ⇒ Eq (SparseMap k v)
 
 newtype Module = Module
   { name ∷ ModuleName
+  , exports ∷ Maybe (NonEmptyArray Export)
   , imports ∷ Array Import
   , declarations ∷ Array Declaration
   }
 
 derive newtype instance Eq Module
+
+data Export
+  = ExportValue Ident
+  | ExportOp Operator
+  | ExportType Proper (Maybe DataMembers)
+  | ExportTypeOp Operator
+  | ExportClass Proper
+  | ExportModule ModuleName
+  | ExportNotImplemented
+
+derive instance Eq Export
+
+data DataMembers
+  = DataAll
+  | DataEnumerated (Array Proper)
+
+derive instance Eq DataMembers
 
 newtype Import = Import
   { name ∷ ModuleName
