@@ -21,8 +21,10 @@ emptyGraphMap = do
 
 addNode ∷ ∀ r a. GraphMap r a → a → ST r Unit
 addNode (GraphMap { internal }) node = do
-  edges ← JsMap.empty
-  JsMap.set node { edges } internal
+  nodeExists ← JsMap.has node internal
+  unless nodeExists do
+    edges ← JsMap.empty
+    JsMap.set node { edges } internal
 
 hasNode ∷ ∀ r a. GraphMap r a → a → ST r Boolean
 hasNode (GraphMap { internal }) node =
