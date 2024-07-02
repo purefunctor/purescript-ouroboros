@@ -3,9 +3,7 @@
   "type": "module",
   "scripts": {
     "format": "purs-tidy format-in-place src test",
-    "test:bundle": "spago bundle --module Test.Main --platform node --minify --outfile bundle/test.js",
-    "test:run": "node bundle/test.js",
-    "test": "pnpm test:bundle && pnpm test:run"
+    "test": "spago test --"
   },
   "devDependencies": {
     "diff": "^5.2.0",
