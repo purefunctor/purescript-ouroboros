@@ -1,0 +1,43 @@
+name: Build and Test
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build_and_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+
+    - name: Cache PureScript Dependencies
+      uses: actions/cache@v4
+      with:
+        key: spago-${{ hashFiles('**/spago.yaml') }}
+        path: |
+          .spago
+          output
+
+    - name: Get pnpm store path
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV   
+
+    - name: Cache pnpm store path
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+   
+    - name: Install Dependencies
+      run: pnpm install
+
+    - name: Run Tests
+      run: pnpm test
