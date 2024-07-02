@@ -16,6 +16,7 @@ newtype ModuleNameIndex = ModuleNameIndex Int
 
 derive newtype instance Eq ModuleNameIndex
 derive newtype instance Ord ModuleNameIndex
+derive newtype instance Show ModuleNameIndex
 
 newtype ModuleNameInterner r = ModuleNameInterner
   { array ∷ MutableArray r ModuleName

@@ -19,7 +19,15 @@ import PureScript.Driver.Interner
   , removeModuleName
   )
 import PureScript.Driver.Query (QueryEngine(..), emptyQueryEngine)
-import PureScript.Utils.Mutable.GraphMap (GraphMap, addEdge, addNode, clearEdges, emptyGraphMap)
+import PureScript.Utils.Mutable.GraphMap
+  ( GraphMap
+  , SCC(..)
+  , addEdge
+  , addNode
+  , clearEdges
+  , emptyGraphMap
+  , tarjanOne
+  )
 import PureScript.Utils.Mutable.JsMap (JsMap)
 import PureScript.Utils.Mutable.JsMap as JsMap
 import PureScript.Utils.Mutable.Object (MutableObject)
@@ -36,6 +44,7 @@ newtype Driver = Driver
   { queryEngine ∷ QueryEngine Global
   , moduleGraph ∷ GraphMap Global ModuleNameIndex
   , moduleContents ∷ JsMap Global ModuleNameIndex Contents
+  , moduleScc ∷ JsMap Global ModuleNameIndex (Array (SCC ModuleNameIndex))
   , pathToModule ∷ MutableObject Global String ModuleNameIndex
   }
 
@@ -44,9 +53,15 @@ emptyDriver = do
   queryEngine ← toEffect emptyQueryEngine
   moduleGraph ← toEffect emptyGraphMap
   moduleContents ← toEffect JsMap.empty
+  moduleScc ← toEffect JsMap.empty
   pathToModule ← toEffect MutableObject.empty
   pure $ Driver
-    { queryEngine, moduleGraph, moduleContents, pathToModule }
+    { queryEngine
+    , moduleGraph
+    , moduleContents
+    , moduleScc
+    , pathToModule
+    }
 
 createModuleNode ∷ Driver → ModuleName → Effect ModuleNameIndex
 createModuleNode
@@ -58,11 +73,19 @@ createModuleNode
     pure moduleNameIndex
 
 updateImportEdges ∷ Driver → ModuleNameIndex → Set ModuleName → Effect Unit
-updateImportEdges driver@(Driver { moduleGraph }) moduleNameIndex moduleImports = do
+updateImportEdges driver@(Driver { moduleGraph, moduleScc }) moduleNameIndex moduleImports = do
   toEffect $ clearEdges moduleGraph moduleNameIndex
   for_ moduleImports \moduleImport → do
     importedIndex ← createModuleNode driver moduleImport
     toEffect $ addEdge moduleGraph moduleNameIndex importedIndex
+  toEffect do
+    stronglyConnectedComponents ← tarjanOne moduleGraph moduleNameIndex
+    for_ stronglyConnectedComponents case _ of
+      AcyclicSCC index →
+        JsMap.set index stronglyConnectedComponents moduleScc
+      CyclicSCC indices →
+        for_ indices \index →
+          JsMap.set index stronglyConnectedComponents moduleScc
 
 getModuleFromPath ∷ Driver → String → Effect ModuleNameIndex
 getModuleFromPath (Driver { pathToModule }) filePath = do

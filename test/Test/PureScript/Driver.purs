@@ -4,7 +4,9 @@ import Prelude
 
 import Control.Monad.ST (ST)
 import Control.Monad.ST.Global (Global, toEffect)
+import Data.Maybe (fromJust)
 import Effect.Class (liftEffect)
+import Partial.Unsafe (unsafePartial)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.Core
   ( Driver(..)
@@ -19,7 +21,9 @@ import PureScript.Driver.Core
 import PureScript.Driver.Interner (ModuleNameIndex)
 import PureScript.Driver.Interner as ModuleNameInterner
 import PureScript.Driver.Query (QueryEngine(..))
+import PureScript.Utils.Mutable.GraphMap (SCC(..))
 import PureScript.Utils.Mutable.GraphMap as GraphMap
+import PureScript.Utils.Mutable.JsMap as JsMap
 import Safe.Coerce (coerce)
 import Test.Snapshot (SnapshotSpec)
 import Test.Spec (describe, it)
@@ -37,6 +41,14 @@ hasNode (Driver { moduleGraph }) = GraphMap.hasNode moduleGraph
 getModuleName ∷ Driver → ModuleNameIndex → ST Global ModuleName
 getModuleName (Driver { queryEngine: QueryEngine { moduleNameInterner } }) =
   ModuleNameInterner.getModuleName moduleNameInterner
+
+getModuleIndex ∷ Driver → ModuleName → ST Global ModuleNameIndex
+getModuleIndex (Driver { queryEngine: QueryEngine { moduleNameInterner } }) =
+  ModuleNameInterner.internModuleName moduleNameInterner
+
+getScc ∷ Driver → ModuleNameIndex → ST Global (Array (SCC ModuleNameIndex))
+getScc (Driver { moduleScc }) moduleNameIndex =
+  unsafePartial $ fromJust <$> JsMap.get moduleNameIndex moduleScc
 
 spec ∷ SnapshotSpec Unit
 spec = do
@@ -77,3 +89,31 @@ spec = do
         createModule state "Main.purs" basicModule
         deleteModule state "Main.purs"
         expectError $ getModuleFromPath state "Main.purs"
+    it "tracks cycles" do
+      void $ liftEffect do
+        driver ← emptyDriver
+
+        aIdx ← toEffect $ getModuleIndex driver (ModuleName "A")
+        bIdx ← toEffect $ getModuleIndex driver (ModuleName "B")
+        cIdx ← toEffect $ getModuleIndex driver (ModuleName "C")
+        dIdx ← toEffect $ getModuleIndex driver (ModuleName "D")
+
+        createModule driver "A.purs" "module A where\n"
+        aScc ← toEffect $ getScc driver aIdx
+        aScc `shouldEqual` [ AcyclicSCC aIdx ]
+
+        createModule driver "B.purs" "module B where\nimport A"
+        aScc' ← toEffect $ getScc driver aIdx
+        aScc' `shouldEqual` [ AcyclicSCC aIdx, AcyclicSCC bIdx ]
+        bScc ← toEffect $ getScc driver bIdx
+        bScc `shouldEqual` [ AcyclicSCC aIdx, AcyclicSCC bIdx ]
+
+        createModule driver "C.purs" "module C where\nimport D"
+        cScc ← toEffect $ getScc driver cIdx
+        cScc `shouldEqual` [ AcyclicSCC dIdx, AcyclicSCC cIdx ]
+
+        createModule driver "D.purs" "module D where\nimport C"
+        cScc' ← toEffect $ getScc driver cIdx
+        cScc' `shouldEqual` [ CyclicSCC [ cIdx, dIdx ] ]
+        dScc ← toEffect $ getScc driver dIdx
+        dScc `shouldEqual` [ CyclicSCC [ cIdx, dIdx ] ]
