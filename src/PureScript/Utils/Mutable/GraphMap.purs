@@ -3,7 +3,8 @@ module PureScript.Utils.Mutable.GraphMap where
 import Prelude
 
 import Control.Monad.ST (ST)
-import Control.Monad.ST.Uncurried (STFn1, STFn3, mkSTFn1, runSTFn3)
+import Control.Monad.ST.Uncurried (STFn1, STFn3, mkSTFn1, runSTFn1, runSTFn3)
+import Data.Array.ST (STArray)
 import Data.Array.ST as STArray
 import Data.Foldable (traverse_)
 import PureScript.Utils.Mutable.JsMap (JsMap)
@@ -53,9 +54,18 @@ foreign import tarjanImpl
       (STFn1 a r Unit)
       (STFn1 (Array a) r Unit)
       r
-      Unit
+      { singular ∷ STFn1 a r Unit
+      , plural ∷ ST r Unit
+      }
 
-tarjan ∷ ∀ r a. GraphMap r a → ST r (Array (SCC a))
+tarjan
+  ∷ ∀ r a
+  . GraphMap r a
+  → ST r
+      { scc ∷ STArray r (SCC a)
+      , singular ∷ STFn1 a r Unit
+      , plural ∷ ST r Unit
+      }
 tarjan (GraphMap { internal }) = do
   scc ← STArray.new
 
@@ -68,5 +78,17 @@ tarjan (GraphMap { internal }) = do
     onCyclic = mkSTFn1 \component →
       void $ STArray.push (CyclicSCC component) scc
 
-  runSTFn3 tarjanImpl internal onAcyclic onCyclic
+  { singular, plural } ← runSTFn3 tarjanImpl internal onAcyclic onCyclic
+  pure { scc, singular, plural }
+
+tarjanOne ∷ ∀ r a. GraphMap r a → a → ST r (Array (SCC a))
+tarjanOne graphMap atKey = do
+  { scc, singular } ← tarjan graphMap
+  runSTFn1 singular atKey
+  STArray.freeze scc
+
+tarjanMany ∷ ∀ r a. GraphMap r a → ST r (Array (SCC a))
+tarjanMany graphMap = do
+  { scc, plural } ← tarjan graphMap
+  plural
   STArray.freeze scc

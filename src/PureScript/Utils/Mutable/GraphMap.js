@@ -48,9 +48,17 @@ export function tarjanImpl(internal, onAcyclic, onCyclic) {
     }
   }
 
-  for (const atKey of internal.keys()) {
-    if (indices.get(atKey) === undefined) {
-      strongConnect(atKey);
+  function singular(atKey) {
+    strongConnect(atKey);
+  }
+
+  function plural() {   
+    for (const atKey of internal.keys()) {
+      if (indices.get(atKey) === undefined) {
+        strongConnect(atKey);
+      }
     }
   }
+
+  return { singular, plural };
 }
