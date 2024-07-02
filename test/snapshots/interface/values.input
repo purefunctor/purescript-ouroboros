@@ -1,0 +1,11 @@
+module Main (a, b) where
+
+a = 0
+
+b :: Int
+b = 0
+
+c = 0
+
+d :: Int
+d = 0

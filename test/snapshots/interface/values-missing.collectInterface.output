@@ -1,0 +1,4 @@
+{
+  interface: { values: {} },
+  errors: [ MissingValue { value0: 'a' }, MissingValue { value0: 'b' } ]
+}
