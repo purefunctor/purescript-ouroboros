@@ -1,1 +1,457 @@
-module Main where
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [],
+    declarations: [
+      DeclarationValue {
+        value0: { index: 0 },
+        value1: 'a',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [ BinderWildcard { value0: { index: 0 } } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 0 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [ BinderVar { value0: { index: 1 }, value1: 'var' } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 1 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderNamed {
+                value0: { index: 2 },
+                value1: 'named',
+                value2: BinderConstructor {
+                  value0: { index: 3 },
+                  value1: { moduleName: Nothing {}, name: 'Named' },
+                  value2: []
+                }
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 2 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderConstructor {
+                value0: { index: 4 },
+                value1: { moduleName: Nothing {}, name: 'Constructor' },
+                value2: []
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 3 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [ BinderBoolean { value0: { index: 5 }, value1: false } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 4 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [ BinderChar { value0: { index: 6 }, value1: 'c' } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 5 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [ BinderString { value0: { index: 7 }, value1: 'string' } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 6 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderInt {
+                value0: { index: 8 },
+                value1: false,
+                value2: SmallInt { value0: 0 }
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 7 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderNumber {
+                value0: { index: 9 },
+                value1: false,
+                value2: 9.19
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 8 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [ BinderArray { value0: { index: 10 }, value1: [] } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 9 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderArray {
+                value0: { index: 11 },
+                value1: [ BinderVar { value0: { index: 12 }, value1: 'a' } ]
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 10 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [ BinderRecord { value0: { index: 13 }, value1: [] } ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 11 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderRecord {
+                value0: { index: 14 },
+                value1: [ RecordPun { value0: 'a' } ]
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 12 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderRecord {
+                value0: { index: 15 },
+                value1: [
+                  RecordField {
+                    value0: 'a',
+                    value1: BinderVar { value0: { index: 16 }, value1: 'b' }
+                  }
+                ]
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 13 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderParens {
+                value0: { index: 17 },
+                value1: BinderVar { value0: { index: 18 }, value1: 'a' }
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 14 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderParens {
+                value0: { index: 19 },
+                value1: BinderTyped {
+                  value0: { index: 20 },
+                  value1: BinderVar { value0: { index: 21 }, value1: 'a' },
+                  value2: TypeConstructor {
+                    value0: { index: 0 },
+                    value1: { moduleName: Nothing {}, name: 'T' }
+                  }
+                }
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 15 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          },
+          {
+            binders: [
+              BinderParens {
+                value0: { index: 22 },
+                value1: BinderOp {
+                  value0: { index: 23 },
+                  value1: BinderVar { value0: { index: 24 }, value1: 'h' },
+                  value2: [
+                    Tuple {
+                      value0: { moduleName: Nothing {}, name: ':' },
+                      value1: BinderVar { value0: { index: 25 }, value1: 't' }
+                    },
+                    Tuple {
+                      value0: { moduleName: Nothing {}, name: ':' },
+                      value1: BinderVar { value0: { index: 26 }, value1: 'm' }
+                    },
+                    Tuple {
+                      value0: { moduleName: Nothing {}, name: ':' },
+                      value1: BinderVar { value0: { index: 27 }, value1: 'x' }
+                    }
+                  ]
+                }
+              }
+            ],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 16 },
+                  value1: SmallInt { value0: 0 }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  sourceRanges: {
+    exprSourceRange: [
+      { start: { line: 2, column: 6 }, end: { line: 2, column: 7 } },
+      { start: { line: 3, column: 8 }, end: { line: 3, column: 9 } },
+      { start: { line: 4, column: 16 }, end: { line: 4, column: 17 } },
+      { start: { line: 5, column: 16 }, end: { line: 5, column: 17 } },
+      { start: { line: 6, column: 10 }, end: { line: 6, column: 11 } },
+      { start: { line: 7, column: 8 }, end: { line: 7, column: 9 } },
+      { start: { line: 8, column: 13 }, end: { line: 8, column: 14 } },
+      { start: { line: 9, column: 6 }, end: { line: 9, column: 7 } },
+      { start: { line: 10, column: 9 }, end: { line: 10, column: 10 } },
+      { start: { line: 11, column: 7 }, end: { line: 11, column: 8 } },
+      { start: { line: 12, column: 8 }, end: { line: 12, column: 9 } },
+      { start: { line: 13, column: 7 }, end: { line: 13, column: 8 } },
+      {
+        start: { line: 14, column: 10 },
+        end: { line: 14, column: 11 }
+      },
+      {
+        start: { line: 15, column: 13 },
+        end: { line: 15, column: 14 }
+      },
+      { start: { line: 16, column: 8 }, end: { line: 16, column: 9 } },
+      {
+        start: { line: 17, column: 13 },
+        end: { line: 17, column: 14 }
+      },
+      {
+        start: { line: 18, column: 20 },
+        end: { line: 18, column: 21 }
+      }
+    ],
+    binderSourceRange: [
+      { start: { line: 2, column: 2 }, end: { line: 2, column: 3 } },
+      { start: { line: 3, column: 2 }, end: { line: 3, column: 5 } },
+      { start: { line: 4, column: 2 }, end: { line: 4, column: 13 } },
+      { start: { line: 4, column: 8 }, end: { line: 4, column: 13 } },
+      { start: { line: 5, column: 2 }, end: { line: 5, column: 13 } },
+      { start: { line: 6, column: 2 }, end: { line: 6, column: 7 } },
+      { start: { line: 7, column: 2 }, end: { line: 7, column: 5 } },
+      { start: { line: 8, column: 2 }, end: { line: 8, column: 10 } },
+      { start: { line: 9, column: 2 }, end: { line: 9, column: 3 } },
+      { start: { line: 10, column: 2 }, end: { line: 10, column: 6 } },
+      { start: { line: 11, column: 2 }, end: { line: 11, column: 4 } },
+      { start: { line: 12, column: 2 }, end: { line: 12, column: 5 } },
+      { start: { line: 12, column: 3 }, end: { line: 12, column: 4 } },
+      { start: { line: 13, column: 2 }, end: { line: 13, column: 4 } },
+      { start: { line: 14, column: 2 }, end: { line: 14, column: 7 } },
+      { start: { line: 15, column: 2 }, end: { line: 15, column: 10 } },
+      { start: { line: 15, column: 7 }, end: { line: 15, column: 8 } },
+      { start: { line: 16, column: 2 }, end: { line: 16, column: 5 } },
+      { start: { line: 16, column: 3 }, end: { line: 16, column: 4 } },
+      { start: { line: 17, column: 2 }, end: { line: 17, column: 10 } },
+      { start: { line: 17, column: 3 }, end: { line: 17, column: 9 } },
+      { start: { line: 17, column: 3 }, end: { line: 17, column: 4 } },
+      { start: { line: 18, column: 2 }, end: { line: 18, column: 17 } },
+      { start: { line: 18, column: 3 }, end: { line: 18, column: 16 } },
+      { start: { line: 18, column: 3 }, end: { line: 18, column: 4 } },
+      { start: { line: 18, column: 7 }, end: { line: 18, column: 8 } },
+      {
+        start: { line: 18, column: 11 },
+        end: { line: 18, column: 12 }
+      },
+      {
+        start: { line: 18, column: 15 },
+        end: { line: 18, column: 16 }
+      }
+    ],
+    typeSourceRange: [
+      { start: { line: 17, column: 8 }, end: { line: 17, column: 9 } }
+    ],
+    letBindingSourceRange: [],
+    declarationSourceRange: [
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 2, column: 0 },
+              end: { line: 2, column: 7 }
+            },
+            {
+              start: { line: 3, column: 0 },
+              end: { line: 3, column: 9 }
+            },
+            {
+              start: { line: 4, column: 0 },
+              end: { line: 4, column: 17 }
+            },
+            {
+              start: { line: 5, column: 0 },
+              end: { line: 5, column: 17 }
+            },
+            {
+              start: { line: 6, column: 0 },
+              end: { line: 6, column: 11 }
+            },
+            {
+              start: { line: 7, column: 0 },
+              end: { line: 7, column: 9 }
+            },
+            {
+              start: { line: 8, column: 0 },
+              end: { line: 8, column: 14 }
+            },
+            {
+              start: { line: 9, column: 0 },
+              end: { line: 9, column: 7 }
+            },
+            {
+              start: { line: 10, column: 0 },
+              end: { line: 10, column: 10 }
+            },
+            {
+              start: { line: 11, column: 0 },
+              end: { line: 11, column: 8 }
+            },
+            {
+              start: { line: 12, column: 0 },
+              end: { line: 12, column: 9 }
+            },
+            {
+              start: { line: 13, column: 0 },
+              end: { line: 13, column: 8 }
+            },
+            {
+              start: { line: 14, column: 0 },
+              end: { line: 14, column: 11 }
+            },
+            {
+              start: { line: 15, column: 0 },
+              end: { line: 15, column: 14 }
+            },
+            {
+              start: { line: 16, column: 0 },
+              end: { line: 16, column: 9 }
+            },
+            {
+              start: { line: 17, column: 0 },
+              end: { line: 17, column: 14 }
+            },
+            {
+              start: { line: 18, column: 0 },
+              end: { line: 18, column: 21 }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

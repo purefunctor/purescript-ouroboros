@@ -1,1 +1,19 @@
 module Main where
+
+a _ = 0
+a var = 0
+a named@Named = 0
+a Constructor = 0
+a false = 0
+a 'c' = 0
+a "string" = 0
+a 0 = 0
+a 9.19 = 0
+a [] = 0
+a [a] = 0
+a {} = 0
+a { a } = 0
+a { a: b } = 0
+a (a) = 0
+a (a :: T) = 0
+a (h : t : m : x) = 0

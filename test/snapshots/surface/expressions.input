@@ -1,1 +1,45 @@
 module Main where
+
+hole = ?hole
+section = _
+ident = ident
+constructor = Constructor
+boolean = true
+char = 'c'
+string = "string"
+int = 42
+number = 9.19
+arrayEmpty = []
+arrayNonEmpty = [42, 9.19]
+recordEmpty = {}
+recordPun = { a }
+recordField = { a: 42 }
+parens = (f)
+typed = (x :: T)
+infixE = a `operator` b `chain` c
+operatorE = a + b * c
+opName = (/)
+negate = -1
+accessor = x.a.b.c
+update = w { x = 0, y { z = 0 } }
+application = f a
+lambda = \a -> a
+ifThenElse = if a then b else c
+caseExpr = case 0 of
+  a -> a
+  b | b -> b
+letExpr =
+  let
+    a = 0
+    _ = 1
+    b = 2
+  in
+    [a, b]
+doExpr = do
+  a <- b
+  let c = d
+  e
+adoExpr = ado
+  a <- b
+  let c = d
+  in e

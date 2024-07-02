@@ -39,8 +39,10 @@ spec = do
   interfaceInputs ← findInputs interfaceGlob
   describe "PureScript.Surface" do
     makeSnapshotsNamed surfaceInputs $
-      [ "lowerModule" /\ \inputFile →
-          pure inputFile
+      [ "lowerModule" /\ \inputFile → do
+          liftEffect $ toEffect do
+            lower <- lowerModule $ parseTotal inputFile
+            pure $ inspect lower
       ]
     makeSnapshotsNamed interfaceInputs $
       [ "collectInterface" /\ \inputFile → do

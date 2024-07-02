@@ -1,1 +1,1422 @@
-module Main where
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [],
+    declarations: [
+      DeclarationValue {
+        value0: { index: 0 },
+        value1: 'hole',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprHole { value0: { index: 0 }, value1: 'hole' },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 1 },
+        value1: 'section',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprSection { value0: { index: 1 } },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 2 },
+        value1: 'ident',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprIdent {
+                  value0: { index: 2 },
+                  value1: { moduleName: Nothing {}, name: 'ident' }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 3 },
+        value1: 'constructor',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprConstructor {
+                  value0: { index: 3 },
+                  value1: { moduleName: Nothing {}, name: 'Constructor' }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 4 },
+        value1: 'boolean',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprBoolean { value0: { index: 4 }, value1: true },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 5 },
+        value1: 'char',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprChar { value0: { index: 5 }, value1: 'c' },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 6 },
+        value1: 'string',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprString { value0: { index: 6 }, value1: 'string' },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 7 },
+        value1: 'int',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInt {
+                  value0: { index: 7 },
+                  value1: SmallInt { value0: 42 }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 8 },
+        value1: 'number',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprNumber { value0: { index: 8 }, value1: 9.19 },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 9 },
+        value1: 'arrayEmpty',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprArray { value0: { index: 9 }, value1: [] },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 10 },
+        value1: 'arrayNonEmpty',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprArray {
+                  value0: { index: 10 },
+                  value1: [
+                    ExprInt {
+                      value0: { index: 11 },
+                      value1: SmallInt { value0: 42 }
+                    },
+                    ExprNumber { value0: { index: 12 }, value1: 9.19 }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 11 },
+        value1: 'recordEmpty',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprRecord { value0: { index: 13 }, value1: [] },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 12 },
+        value1: 'recordPun',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprRecord {
+                  value0: { index: 14 },
+                  value1: [ RecordPun { value0: 'a' } ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 13 },
+        value1: 'recordField',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprRecord {
+                  value0: { index: 15 },
+                  value1: [
+                    RecordField {
+                      value0: 'a',
+                      value1: ExprInt {
+                        value0: { index: 16 },
+                        value1: SmallInt { value0: 42 }
+                      }
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 14 },
+        value1: 'parens',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprParens {
+                  value0: { index: 17 },
+                  value1: ExprIdent {
+                    value0: { index: 18 },
+                    value1: { moduleName: Nothing {}, name: 'f' }
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 15 },
+        value1: 'typed',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprParens {
+                  value0: { index: 19 },
+                  value1: ExprTyped {
+                    value0: { index: 20 },
+                    value1: ExprIdent {
+                      value0: { index: 21 },
+                      value1: { moduleName: Nothing {}, name: 'x' }
+                    },
+                    value2: TypeConstructor {
+                      value0: { index: 0 },
+                      value1: { moduleName: Nothing {}, name: 'T' }
+                    }
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 16 },
+        value1: 'infixE',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprInfix {
+                  value0: { index: 22 },
+                  value1: ExprIdent {
+                    value0: { index: 23 },
+                    value1: { moduleName: Nothing {}, name: 'a' }
+                  },
+                  value2: [
+                    Tuple {
+                      value0: ExprIdent {
+                        value0: { index: 24 },
+                        value1: { moduleName: Nothing {}, name: 'operator' }
+                      },
+                      value1: ExprIdent {
+                        value0: { index: 25 },
+                        value1: { moduleName: Nothing {}, name: 'b' }
+                      }
+                    },
+                    Tuple {
+                      value0: ExprIdent {
+                        value0: { index: 26 },
+                        value1: { moduleName: Nothing {}, name: 'chain' }
+                      },
+                      value1: ExprIdent {
+                        value0: { index: 27 },
+                        value1: { moduleName: Nothing {}, name: 'c' }
+                      }
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 17 },
+        value1: 'operatorE',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprOp {
+                  value0: { index: 28 },
+                  value1: ExprIdent {
+                    value0: { index: 29 },
+                    value1: { moduleName: Nothing {}, name: 'a' }
+                  },
+                  value2: [
+                    Tuple {
+                      value0: { moduleName: Nothing {}, name: '+' },
+                      value1: ExprIdent {
+                        value0: { index: 30 },
+                        value1: { moduleName: Nothing {}, name: 'b' }
+                      }
+                    },
+                    Tuple {
+                      value0: { moduleName: Nothing {}, name: '*' },
+                      value1: ExprIdent {
+                        value0: { index: 31 },
+                        value1: { moduleName: Nothing {}, name: 'c' }
+                      }
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 18 },
+        value1: 'opName',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprOpName {
+                  value0: { index: 32 },
+                  value1: { moduleName: Nothing {}, name: '/' }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 19 },
+        value1: 'negate',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprNegate {
+                  value0: { index: 33 },
+                  value1: ExprInt {
+                    value0: { index: 34 },
+                    value1: SmallInt { value0: 1 }
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 20 },
+        value1: 'accessor',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprRecordAccessor {
+                  value0: { index: 35 },
+                  value1: ExprIdent {
+                    value0: { index: 36 },
+                    value1: { moduleName: Nothing {}, name: 'x' }
+                  },
+                  value2: [ 'a', 'b', 'c' ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 21 },
+        value1: 'update',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprRecordUpdate {
+                  value0: { index: 37 },
+                  value1: ExprIdent {
+                    value0: { index: 38 },
+                    value1: { moduleName: Nothing {}, name: 'w' }
+                  },
+                  value2: [
+                    RecordUpdateLeaf {
+                      value0: 'x',
+                      value1: ExprInt {
+                        value0: { index: 39 },
+                        value1: SmallInt { value0: 0 }
+                      }
+                    },
+                    RecordUpdateBranch {
+                      value0: 'y',
+                      value1: [
+                        RecordUpdateLeaf {
+                          value0: 'z',
+                          value1: ExprInt {
+                            value0: { index: 40 },
+                            value1: SmallInt { value0: 0 }
+                          }
+                        }
+                      ]
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 22 },
+        value1: 'application',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprApplication {
+                  value0: { index: 41 },
+                  value1: ExprIdent {
+                    value0: { index: 42 },
+                    value1: { moduleName: Nothing {}, name: 'f' }
+                  },
+                  value2: [
+                    AppTerm {
+                      value0: ExprIdent {
+                        value0: { index: 43 },
+                        value1: { moduleName: Nothing {}, name: 'a' }
+                      }
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 23 },
+        value1: 'lambda',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprLambda {
+                  value0: { index: 44 },
+                  value1: [ BinderVar { value0: { index: 0 }, value1: 'a' } ],
+                  value2: ExprIdent {
+                    value0: { index: 45 },
+                    value1: { moduleName: Nothing {}, name: 'a' }
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 24 },
+        value1: 'ifThenElse',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprIfThenElse {
+                  value0: { index: 46 },
+                  value1: ExprIdent {
+                    value0: { index: 47 },
+                    value1: { moduleName: Nothing {}, name: 'a' }
+                  },
+                  value2: ExprIdent {
+                    value0: { index: 48 },
+                    value1: { moduleName: Nothing {}, name: 'b' }
+                  },
+                  value3: ExprIdent {
+                    value0: { index: 49 },
+                    value1: { moduleName: Nothing {}, name: 'c' }
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 25 },
+        value1: 'caseExpr',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprCase {
+                  value0: { index: 50 },
+                  value1: [
+                    ExprInt {
+                      value0: { index: 51 },
+                      value1: SmallInt { value0: 0 }
+                    }
+                  ],
+                  value2: [
+                    Tuple {
+                      value0: [
+                        BinderVar { value0: { index: 1 }, value1: 'a' }
+                      ],
+                      value1: Unconditional {
+                        value0: Where {
+                          value0: ExprIdent {
+                            value0: { index: 52 },
+                            value1: { moduleName: Nothing {}, name: 'a' }
+                          },
+                          value1: []
+                        }
+                      }
+                    },
+                    Tuple {
+                      value0: [
+                        BinderVar { value0: { index: 2 }, value1: 'b' }
+                      ],
+                      value1: Guarded {
+                        value0: [
+                          GuardedExpr {
+                            value0: [
+                              PatternGuard {
+                                value0: Nothing {},
+                                value1: ExprIdent {
+                                  value0: { index: 53 },
+                                  value1: { moduleName: Nothing {}, name: 'b' }
+                                }
+                              }
+                            ],
+                            value1: Where {
+                              value0: ExprIdent {
+                                value0: { index: 54 },
+                                value1: { moduleName: Nothing {}, name: 'b' }
+                              },
+                              value1: []
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 26 },
+        value1: 'letExpr',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprLet {
+                  value0: { index: 55 },
+                  value1: [
+                    LetBindingValue {
+                      value0: { index: 0 },
+                      value1: 'a',
+                      value2: Nothing {},
+                      value3: [
+                        {
+                          binders: [],
+                          guarded: Unconditional {
+                            value0: Where {
+                              value0: ExprInt {
+                                value0: { index: 56 },
+                                value1: SmallInt { value0: 0 }
+                              },
+                              value1: []
+                            }
+                          }
+                        }
+                      ]
+                    },
+                    LetBindingPattern {
+                      value0: { index: 1 },
+                      value1: BinderWildcard { value0: { index: 3 } },
+                      value2: Where {
+                        value0: ExprInt {
+                          value0: { index: 57 },
+                          value1: SmallInt { value0: 1 }
+                        },
+                        value1: []
+                      }
+                    },
+                    LetBindingValue {
+                      value0: { index: 2 },
+                      value1: 'b',
+                      value2: Nothing {},
+                      value3: [
+                        {
+                          binders: [],
+                          guarded: Unconditional {
+                            value0: Where {
+                              value0: ExprInt {
+                                value0: { index: 58 },
+                                value1: SmallInt { value0: 2 }
+                              },
+                              value1: []
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  value2: ExprArray {
+                    value0: { index: 59 },
+                    value1: [
+                      ExprIdent {
+                        value0: { index: 60 },
+                        value1: { moduleName: Nothing {}, name: 'a' }
+                      },
+                      ExprIdent {
+                        value0: { index: 61 },
+                        value1: { moduleName: Nothing {}, name: 'b' }
+                      }
+                    ]
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 27 },
+        value1: 'doExpr',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprDo {
+                  value0: { index: 62 },
+                  value1: [
+                    DoBind {
+                      value0: BinderVar { value0: { index: 4 }, value1: 'a' },
+                      value1: ExprIdent {
+                        value0: { index: 63 },
+                        value1: { moduleName: Nothing {}, name: 'b' }
+                      }
+                    },
+                    DoLet {
+                      value0: [
+                        LetBindingValue {
+                          value0: { index: 3 },
+                          value1: 'c',
+                          value2: Nothing {},
+                          value3: [
+                            {
+                              binders: [],
+                              guarded: Unconditional {
+                                value0: Where {
+                                  value0: ExprIdent {
+                                    value0: { index: 64 },
+                                    value1: {
+                                      moduleName: Nothing {},
+                                      name: 'd'
+                                    }
+                                  },
+                                  value1: []
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    DoDiscard {
+                      value0: ExprIdent {
+                        value0: { index: 65 },
+                        value1: { moduleName: Nothing {}, name: 'e' }
+                      }
+                    }
+                  ]
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      },
+      DeclarationValue {
+        value0: { index: 28 },
+        value1: 'adoExpr',
+        value2: Nothing {},
+        value3: [
+          {
+            binders: [],
+            guarded: Unconditional {
+              value0: Where {
+                value0: ExprAdo {
+                  value0: { index: 66 },
+                  value1: [
+                    DoBind {
+                      value0: BinderVar { value0: { index: 5 }, value1: 'a' },
+                      value1: ExprIdent {
+                        value0: { index: 67 },
+                        value1: { moduleName: Nothing {}, name: 'b' }
+                      }
+                    },
+                    DoLet {
+                      value0: [
+                        LetBindingValue {
+                          value0: { index: 4 },
+                          value1: 'c',
+                          value2: Nothing {},
+                          value3: [
+                            {
+                              binders: [],
+                              guarded: Unconditional {
+                                value0: Where {
+                                  value0: ExprIdent {
+                                    value0: { index: 68 },
+                                    value1: {
+                                      moduleName: Nothing {},
+                                      name: 'd'
+                                    }
+                                  },
+                                  value1: []
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ],
+                  value2: ExprIdent {
+                    value0: { index: 69 },
+                    value1: { moduleName: Nothing {}, name: 'e' }
+                  }
+                },
+                value1: []
+              }
+            }
+          }
+        ]
+      }
+    ]
+  },
+  sourceRanges: {
+    exprSourceRange: [
+      { start: { line: 2, column: 7 }, end: { line: 2, column: 12 } },
+      { start: { line: 3, column: 10 }, end: { line: 3, column: 11 } },
+      { start: { line: 4, column: 8 }, end: { line: 4, column: 13 } },
+      { start: { line: 5, column: 14 }, end: { line: 5, column: 25 } },
+      { start: { line: 6, column: 10 }, end: { line: 6, column: 14 } },
+      { start: { line: 7, column: 7 }, end: { line: 7, column: 10 } },
+      { start: { line: 8, column: 9 }, end: { line: 8, column: 17 } },
+      { start: { line: 9, column: 6 }, end: { line: 9, column: 8 } },
+      { start: { line: 10, column: 9 }, end: { line: 10, column: 13 } },
+      {
+        start: { line: 11, column: 13 },
+        end: { line: 11, column: 15 }
+      },
+      {
+        start: { line: 12, column: 16 },
+        end: { line: 12, column: 26 }
+      },
+      {
+        start: { line: 12, column: 17 },
+        end: { line: 12, column: 19 }
+      },
+      {
+        start: { line: 12, column: 21 },
+        end: { line: 12, column: 25 }
+      },
+      {
+        start: { line: 13, column: 14 },
+        end: { line: 13, column: 16 }
+      },
+      {
+        start: { line: 14, column: 12 },
+        end: { line: 14, column: 17 }
+      },
+      {
+        start: { line: 15, column: 14 },
+        end: { line: 15, column: 23 }
+      },
+      {
+        start: { line: 15, column: 19 },
+        end: { line: 15, column: 21 }
+      },
+      { start: { line: 16, column: 9 }, end: { line: 16, column: 12 } },
+      {
+        start: { line: 16, column: 10 },
+        end: { line: 16, column: 11 }
+      },
+      { start: { line: 17, column: 8 }, end: { line: 17, column: 16 } },
+      { start: { line: 17, column: 9 }, end: { line: 17, column: 15 } },
+      { start: { line: 17, column: 9 }, end: { line: 17, column: 10 } },
+      { start: { line: 18, column: 9 }, end: { line: 18, column: 33 } },
+      { start: { line: 18, column: 9 }, end: { line: 18, column: 10 } },
+      {
+        start: { line: 18, column: 12 },
+        end: { line: 18, column: 20 }
+      },
+      {
+        start: { line: 18, column: 22 },
+        end: { line: 18, column: 23 }
+      },
+      {
+        start: { line: 18, column: 25 },
+        end: { line: 18, column: 30 }
+      },
+      {
+        start: { line: 18, column: 32 },
+        end: { line: 18, column: 33 }
+      },
+      {
+        start: { line: 19, column: 12 },
+        end: { line: 19, column: 21 }
+      },
+      {
+        start: { line: 19, column: 12 },
+        end: { line: 19, column: 13 }
+      },
+      {
+        start: { line: 19, column: 16 },
+        end: { line: 19, column: 17 }
+      },
+      {
+        start: { line: 19, column: 20 },
+        end: { line: 19, column: 21 }
+      },
+      { start: { line: 20, column: 9 }, end: { line: 20, column: 12 } },
+      { start: { line: 21, column: 9 }, end: { line: 21, column: 11 } },
+      {
+        start: { line: 21, column: 10 },
+        end: { line: 21, column: 11 }
+      },
+      {
+        start: { line: 22, column: 11 },
+        end: { line: 22, column: 18 }
+      },
+      {
+        start: { line: 22, column: 11 },
+        end: { line: 22, column: 12 }
+      },
+      { start: { line: 23, column: 9 }, end: { line: 23, column: 33 } },
+      { start: { line: 23, column: 9 }, end: { line: 23, column: 10 } },
+      {
+        start: { line: 23, column: 17 },
+        end: { line: 23, column: 18 }
+      },
+      {
+        start: { line: 23, column: 28 },
+        end: { line: 23, column: 29 }
+      },
+      {
+        start: { line: 24, column: 14 },
+        end: { line: 24, column: 17 }
+      },
+      {
+        start: { line: 24, column: 14 },
+        end: { line: 24, column: 15 }
+      },
+      {
+        start: { line: 24, column: 16 },
+        end: { line: 24, column: 17 }
+      },
+      { start: { line: 25, column: 9 }, end: { line: 25, column: 16 } },
+      {
+        start: { line: 25, column: 15 },
+        end: { line: 25, column: 16 }
+      },
+      {
+        start: { line: 26, column: 13 },
+        end: { line: 26, column: 31 }
+      },
+      {
+        start: { line: 26, column: 16 },
+        end: { line: 26, column: 17 }
+      },
+      {
+        start: { line: 26, column: 23 },
+        end: { line: 26, column: 24 }
+      },
+      {
+        start: { line: 26, column: 30 },
+        end: { line: 26, column: 31 }
+      },
+      {
+        start: { line: 27, column: 11 },
+        end: { line: 29, column: 12 }
+      },
+      {
+        start: { line: 27, column: 16 },
+        end: { line: 27, column: 17 }
+      },
+      { start: { line: 28, column: 7 }, end: { line: 28, column: 8 } },
+      { start: { line: 29, column: 6 }, end: { line: 29, column: 7 } },
+      {
+        start: { line: 29, column: 11 },
+        end: { line: 29, column: 12 }
+      },
+      { start: { line: 31, column: 2 }, end: { line: 36, column: 10 } },
+      { start: { line: 32, column: 8 }, end: { line: 32, column: 9 } },
+      { start: { line: 33, column: 8 }, end: { line: 33, column: 9 } },
+      { start: { line: 34, column: 8 }, end: { line: 34, column: 9 } },
+      { start: { line: 36, column: 4 }, end: { line: 36, column: 10 } },
+      { start: { line: 36, column: 5 }, end: { line: 36, column: 6 } },
+      { start: { line: 36, column: 8 }, end: { line: 36, column: 9 } },
+      { start: { line: 37, column: 9 }, end: { line: 40, column: 3 } },
+      { start: { line: 38, column: 7 }, end: { line: 38, column: 8 } },
+      {
+        start: { line: 39, column: 10 },
+        end: { line: 39, column: 11 }
+      },
+      { start: { line: 40, column: 2 }, end: { line: 40, column: 3 } },
+      { start: { line: 41, column: 10 }, end: { line: 44, column: 6 } },
+      { start: { line: 42, column: 7 }, end: { line: 42, column: 8 } },
+      {
+        start: { line: 43, column: 10 },
+        end: { line: 43, column: 11 }
+      },
+      { start: { line: 44, column: 5 }, end: { line: 44, column: 6 } }
+    ],
+    binderSourceRange: [
+      {
+        start: { line: 25, column: 10 },
+        end: { line: 25, column: 11 }
+      },
+      { start: { line: 28, column: 2 }, end: { line: 28, column: 3 } },
+      { start: { line: 29, column: 2 }, end: { line: 29, column: 3 } },
+      { start: { line: 33, column: 4 }, end: { line: 33, column: 5 } },
+      { start: { line: 38, column: 2 }, end: { line: 38, column: 3 } },
+      { start: { line: 42, column: 2 }, end: { line: 42, column: 3 } }
+    ],
+    typeSourceRange: [
+      {
+        start: { line: 17, column: 14 },
+        end: { line: 17, column: 15 }
+      }
+    ],
+    letBindingSourceRange: [
+      LetBindingNameSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 32, column: 4 },
+              end: { line: 32, column: 9 }
+            }
+          ]
+        }
+      },
+      LetBindingPatternSourceRange {
+        value0: {
+          start: { line: 33, column: 4 },
+          end: { line: 33, column: 9 }
+        }
+      },
+      LetBindingNameSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 34, column: 4 },
+              end: { line: 34, column: 9 }
+            }
+          ]
+        }
+      },
+      LetBindingNameSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 39, column: 6 },
+              end: { line: 39, column: 11 }
+            }
+          ]
+        }
+      },
+      LetBindingNameSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 43, column: 6 },
+              end: { line: 43, column: 11 }
+            }
+          ]
+        }
+      }
+    ],
+    declarationSourceRange: [
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 2, column: 0 },
+              end: { line: 2, column: 12 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 3, column: 0 },
+              end: { line: 3, column: 11 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 4, column: 0 },
+              end: { line: 4, column: 13 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 5, column: 0 },
+              end: { line: 5, column: 25 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 6, column: 0 },
+              end: { line: 6, column: 14 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 7, column: 0 },
+              end: { line: 7, column: 10 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 8, column: 0 },
+              end: { line: 8, column: 17 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 9, column: 0 },
+              end: { line: 9, column: 8 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 10, column: 0 },
+              end: { line: 10, column: 13 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 11, column: 0 },
+              end: { line: 11, column: 15 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 12, column: 0 },
+              end: { line: 12, column: 26 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 13, column: 0 },
+              end: { line: 13, column: 16 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 14, column: 0 },
+              end: { line: 14, column: 17 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 15, column: 0 },
+              end: { line: 15, column: 23 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 16, column: 0 },
+              end: { line: 16, column: 12 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 17, column: 0 },
+              end: { line: 17, column: 16 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 18, column: 0 },
+              end: { line: 18, column: 33 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 19, column: 0 },
+              end: { line: 19, column: 21 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 20, column: 0 },
+              end: { line: 20, column: 12 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 21, column: 0 },
+              end: { line: 21, column: 11 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 22, column: 0 },
+              end: { line: 22, column: 18 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 23, column: 0 },
+              end: { line: 23, column: 33 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 24, column: 0 },
+              end: { line: 24, column: 17 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 25, column: 0 },
+              end: { line: 25, column: 16 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 26, column: 0 },
+              end: { line: 26, column: 31 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 27, column: 0 },
+              end: { line: 29, column: 12 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 30, column: 0 },
+              end: { line: 36, column: 10 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 37, column: 0 },
+              end: { line: 40, column: 3 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 41, column: 0 },
+              end: { line: 44, column: 6 }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

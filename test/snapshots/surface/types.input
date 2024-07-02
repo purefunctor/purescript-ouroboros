@@ -1,1 +1,23 @@
 module Main where
+
+var :: v
+constructor :: Constructor
+wildcard :: _
+hole :: ?hole
+string :: "string"
+int :: 0
+rowEmpty :: ()
+rowSome :: ( a :: Int )
+rowTail :: ( a :: Int | t )
+recordEmpty :: {}
+recordSome :: { a :: Int }
+recordTail :: { a :: Int | t }
+polyType :: forall a @b (c :: T) (@d :: T). a
+kinded :: (T :: K)
+app :: F a
+op :: A + B + C
+opName :: (+)
+arrow :: a -> b
+arrowName :: (->)
+constrained :: C => T
+parens :: (T)
