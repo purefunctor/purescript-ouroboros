@@ -1,0 +1,86 @@
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [],
+    declarations: [
+      DeclarationType {
+        value0: { index: 0 },
+        value1: 'T',
+        value2: Nothing {},
+        value3: {
+          variables: [],
+          synonymTo: TypeConstructor {
+            value0: { index: 0 },
+            value1: { moduleName: Nothing {}, name: 'U' }
+          }
+        }
+      },
+      DeclarationType {
+        value0: { index: 1 },
+        value1: 'P',
+        value2: Just {
+          value0: TypeArrow {
+            value0: { index: 1 },
+            value1: TypeConstructor {
+              value0: { index: 2 },
+              value1: { moduleName: Nothing {}, name: 'Type' }
+            },
+            value2: TypeConstructor {
+              value0: { index: 3 },
+              value1: { moduleName: Nothing {}, name: 'Type' }
+            }
+          }
+        },
+        value3: {
+          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          synonymTo: TypeConstructor {
+            value0: { index: 4 },
+            value1: { moduleName: Nothing {}, name: 'Q' }
+          }
+        }
+      }
+    ]
+  },
+  sourceRanges: {
+    exprSourceRange: [],
+    binderSourceRange: [],
+    typeSourceRange: [
+      { start: { line: 2, column: 9 }, end: { line: 2, column: 10 } },
+      { start: { line: 4, column: 10 }, end: { line: 4, column: 22 } },
+      { start: { line: 4, column: 10 }, end: { line: 4, column: 14 } },
+      { start: { line: 4, column: 18 }, end: { line: 4, column: 22 } },
+      { start: { line: 5, column: 11 }, end: { line: 5, column: 12 } }
+    ],
+    letBindingSourceRange: [],
+    declarationSourceRange: [
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 2, column: 0 },
+              end: { line: 2, column: 10 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Just {
+            value0: {
+              start: { line: 4, column: 0 },
+              end: { line: 4, column: 22 }
+            }
+          },
+          definitions: [
+            {
+              start: { line: 5, column: 0 },
+              end: { line: 5, column: 12 }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

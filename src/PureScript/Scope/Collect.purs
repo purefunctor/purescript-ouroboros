@@ -65,6 +65,8 @@ collectDeclaration ∷ ∀ r. State r → SST.Declaration → ST r Unit
 collectDeclaration state = case _ of
   SST.DeclarationData _ _ _ _ → do
     pure unit
+  SST.DeclarationType _ _ _ _ → do
+    pure unit
   SST.DeclarationNewtype _ _ _ _ → do
     pure unit
   SST.DeclarationValue _ _ t e → do
@@ -347,6 +349,8 @@ collectTopLevel declarations = ST.run do
 
   for_ declarations case _ of
     SST.DeclarationData _ _ _ _ →
+      pure unit
+    SST.DeclarationType _ _ _ _ →
       pure unit
     SST.DeclarationNewtype _ _ _ _ →
       pure unit

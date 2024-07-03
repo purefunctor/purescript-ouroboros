@@ -764,6 +764,9 @@ bySignatureName = case _, _ of
   CST.DeclData { name: CST.Name { name: dataName } } _ →
     printToken value == "data" && signatureName == dataName
   CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
+  CST.DeclType { name: CST.Name { name: dataName } } _ _ →
+    printToken value == "type" && signatureName == dataName
+  CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
   CST.DeclNewtype { name: CST.Name { name: newtypeName } } _ _ _ →
     printToken value == "newtype" && signatureName == newtypeName
   _, _ →
@@ -799,6 +802,12 @@ lowerDataEquation state { vars } cstConstructors = do
       sstTail ← traverse (Tuple.snd >>> lowerDataCtor state) tail
       pure $ NEA.cons' sstHead sstTail
   pure $ SST.DataEquation { variables, constructors }
+
+lowerTypeEquation ∷ ∀ r. State r → CST.DataHead Void → CST.Type Void → ST r SST.TypeEquation
+lowerTypeEquation state { vars } cstType = do
+  variables ← lowerDataHeadVars state vars
+  synonymTo ← lowerType state cstType
+  pure $ SST.TypeEquation { variables, synonymTo }
 
 lowerNewtypeEquation
   ∷ ∀ r
@@ -845,11 +854,14 @@ lowerDeclarations state cstDeclarations = do
         [ CST.DeclData dataHead dataEquation ] → do
           equation ← lowerDataEquation state dataHead dataEquation
           pure $ SST.DeclarationData annotation cstName signature equation
+        [ CST.DeclType dataHead _ ctorType ] → do
+          equation ← lowerTypeEquation state dataHead ctorType
+          pure $ SST.DeclarationType annotation cstName signature equation
         [ CST.DeclNewtype dataHead _ ctorName ctorField ] → do
           equation ← lowerNewtypeEquation state dataHead ctorName ctorField
           pure $ SST.DeclarationNewtype annotation cstName signature equation
         _ →
-          unsafeCrashWith "invariant violated: expecting DeclData/DeclNewtype"
+          unsafeCrashWith "invariant violated: expecting DeclData/DeclType/DeclNewtype"
 
       void $ STA.push declaration declarationsRaw
 
@@ -891,6 +903,8 @@ lowerDeclarations state cstDeclarations = do
     case NEA.uncons signatureNameGroup of
       { head, tail } → case head of
         CST.DeclData { name: CST.Name { name } } _ →
+          onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
+        CST.DeclType { name: CST.Name { name } } _ _ →
           onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
         CST.DeclNewtype { name: CST.Name { name } } _ _ _ →
           onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
