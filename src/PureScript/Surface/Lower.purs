@@ -16,6 +16,7 @@ import Data.Traversable (for, for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
+import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (rangeOf)
 import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
@@ -759,9 +760,9 @@ bySignatureName = case _, _ of
   CST.DeclValue ({ name: CST.Name { name: valueNameX } }),
   CST.DeclValue ({ name: CST.Name { name: valueNameY } }) →
     valueNameX == valueNameY
-  CST.DeclKindSignature _ (CST.Labeled { label: CST.Name { name: signatureName } }),
+  CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
   CST.DeclData { name: CST.Name { name: dataName } } _ →
-    signatureName == dataName
+    printToken value == "data" && signatureName == dataName
   _, _ →
     false
 
