@@ -22,6 +22,7 @@
           methods: Just {
             value0: [
               {
+                annotation: { index: 0 },
                 name: 'some',
                 signature: TypeArrow {
                   value0: { index: 0 },
@@ -107,6 +108,7 @@
           ]
         }
       }
-    ]
+    ],
+    classMethodSourceRange: [ { start: { line: 5, column: 2 }, end: { line: 5, column: 16 } } ]
   }
 }

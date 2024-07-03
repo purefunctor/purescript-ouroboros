@@ -110,8 +110,12 @@ newtype ClassEquation = ClassEquation
 
 derive newtype instance Eq ClassEquation
 
+type ClassMethodAnnotation = Annotation ClassMethod
+type ClassMethodIndex = Index ClassMethod
+
 newtype ClassMethod = ClassMethod
-  { name ∷ Ident
+  { annotation ∷ ClassMethodAnnotation
+  , name ∷ Ident
   , signature ∷ Type
   }
 
