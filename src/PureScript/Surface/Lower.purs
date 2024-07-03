@@ -763,6 +763,9 @@ bySignatureName = case _, _ of
   CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
   CST.DeclData { name: CST.Name { name: dataName } } _ →
     printToken value == "data" && signatureName == dataName
+  CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
+  CST.DeclNewtype { name: CST.Name { name: newtypeName } } _ _ _ →
+    printToken value == "newtype" && signatureName == newtypeName
   _, _ →
     false
 
@@ -771,6 +774,17 @@ lowerDataCtor state (CST.DataCtor { name: CST.Name { name }, fields: cstFields }
   fields ← traverse (lowerType state) cstFields
   pure $ SST.DataConstructor { name, fields }
 
+lowerDataHeadVars
+  ∷ ∀ i r
+  . State r
+  → Array (CST.TypeVarBinding (CST.Name i) Void)
+  → ST r (Array (SST.TypeVarBinding i))
+lowerDataHeadVars state vars = for vars case _ of
+  CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label: CST.Name { name }, value } }) →
+    SST.TypeVarKinded false name <$> lowerType state value
+  CST.TypeVarName (CST.Name { name }) →
+    pure $ SST.TypeVarName false name
+
 lowerDataEquation
   ∷ ∀ r
   . State r
@@ -778,19 +792,25 @@ lowerDataEquation
   → Maybe (Tuple CST.SourceToken (CST.Separated (CST.DataCtor Void)))
   → ST r SST.DataEquation
 lowerDataEquation state { vars } cstConstructors = do
-  variables ← for vars case _ of
-    CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label: CST.Name { name }, value } }) →
-      SST.TypeVarKinded false name <$> lowerType state value
-    CST.TypeVarName (CST.Name { name }) →
-      pure $ SST.TypeVarName false name
-
+  variables ← lowerDataHeadVars state vars
   constructors ← for cstConstructors case _ of
     Tuple _ (CST.Separated { head, tail }) → do
       sstHead ← lowerDataCtor state head
       sstTail ← traverse (Tuple.snd >>> lowerDataCtor state) tail
       pure $ NEA.cons' sstHead sstTail
-
   pure $ SST.DataEquation { variables, constructors }
+
+lowerNewtypeEquation
+  ∷ ∀ r
+  . State r
+  → CST.DataHead Void
+  → CST.Name CST.Proper
+  → CST.Type Void
+  → ST r SST.NewtypeEquation
+lowerNewtypeEquation state { vars } (CST.Name { name }) ctorField = do
+  variables ← lowerDataHeadVars state vars
+  field ← lowerType state ctorField
+  pure $ SST.NewtypeEquation { variables, name, field }
 
 lowerDeclarations ∷ ∀ r. State r → Array (CST.Declaration Void) → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
@@ -800,14 +820,14 @@ lowerDeclarations state cstDeclarations = do
     signatureNameGroups ∷ Array (NonEmptyArray (CST.Declaration Void))
     signatureNameGroups = Array.groupBy bySignatureName cstDeclarations
 
-    onDeclDataGroup ∷ CST.Proper → _ → _ → ST r Unit
-    onDeclDataGroup cstName cstSignature cstEquation = do
+    onTypeGroup ∷ CST.Proper → _ → _ → ST r Unit
+    onTypeGroup cstName cstSignature cstDeclaration = do
       index ← nextDeclarationIndex state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
-          , definitions: cstEquation <#> rangeOf
+          , definitions: cstDeclaration <#> rangeOf
           }
       insertDeclarationSourceRange state index declarationSourceRange
 
@@ -817,18 +837,19 @@ lowerDeclarations state cstDeclarations = do
         _ →
           unsafeCrashWith "invariant violated: expecting DeclKindSignature"
 
-      equation ← case cstEquation of
-        [ CST.DeclData dataHead dataEquation ] →
-          lowerDataEquation state dataHead dataEquation
-        _ →
-          unsafeCrashWith "invariant violated: expecting DeclData"
-
       let
         annotation ∷ SST.DeclarationAnnotation
         annotation = SST.Annotation { index }
 
-        declaration ∷ SST.Declaration
-        declaration = SST.DeclarationData annotation cstName signature equation
+      declaration ← case cstDeclaration of
+        [ CST.DeclData dataHead dataEquation ] → do
+          equation ← lowerDataEquation state dataHead dataEquation
+          pure $ SST.DeclarationData annotation cstName signature equation
+        [ CST.DeclNewtype dataHead _ ctorName ctorField ] → do
+          equation ← lowerNewtypeEquation state dataHead ctorName ctorField
+          pure $ SST.DeclarationNewtype annotation cstName signature equation
+        _ →
+          unsafeCrashWith "invariant violated: expecting DeclData/DeclNewtype"
 
       void $ STA.push declaration declarationsRaw
 
@@ -870,9 +891,11 @@ lowerDeclarations state cstDeclarations = do
     case NEA.uncons signatureNameGroup of
       { head, tail } → case head of
         CST.DeclData { name: CST.Name { name } } _ →
-          onDeclDataGroup name Nothing (NEA.toArray signatureNameGroup)
+          onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
+        CST.DeclNewtype { name: CST.Name { name } } _ _ _ →
+          onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
         CST.DeclKindSignature _ (CST.Labeled { label: CST.Name { name } }) →
-          onDeclDataGroup name (Just head) tail
+          onTypeGroup name (Just head) tail
         CST.DeclSignature (CST.Labeled { label: CST.Name { name } }) →
           onDeclValueGroup name (Just head) tail
         CST.DeclValue { name: CST.Name { name } } →

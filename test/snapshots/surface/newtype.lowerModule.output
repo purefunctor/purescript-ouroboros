@@ -1,0 +1,85 @@
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [],
+    declarations: [
+      DeclarationNewtype {
+        value0: { index: 0 },
+        value1: 'Phantom',
+        value2: Just {
+          value0: TypeArrow {
+            value0: { index: 0 },
+            value1: TypeConstructor {
+              value0: { index: 1 },
+              value1: { moduleName: Nothing {}, name: 'Type' }
+            },
+            value2: TypeConstructor {
+              value0: { index: 2 },
+              value1: { moduleName: Nothing {}, name: 'Type' }
+            }
+          }
+        },
+        value3: {
+          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          name: 'Phantom',
+          field: TypeConstructor {
+            value0: { index: 3 },
+            value1: { moduleName: Nothing {}, name: 'Int' }
+          }
+        }
+      },
+      DeclarationNewtype {
+        value0: { index: 1 },
+        value1: 'Identity',
+        value2: Nothing {},
+        value3: {
+          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          name: 'Identity',
+          field: TypeVar { value0: { index: 4 }, value1: 'a' }
+        }
+      }
+    ]
+  },
+  sourceRanges: {
+    exprSourceRange: [],
+    binderSourceRange: [],
+    typeSourceRange: [
+      { start: { line: 2, column: 19 }, end: { line: 2, column: 31 } },
+      { start: { line: 2, column: 19 }, end: { line: 2, column: 23 } },
+      { start: { line: 2, column: 27 }, end: { line: 2, column: 31 } },
+      { start: { line: 3, column: 28 }, end: { line: 3, column: 31 } },
+      { start: { line: 5, column: 30 }, end: { line: 5, column: 31 } }
+    ],
+    letBindingSourceRange: [],
+    declarationSourceRange: [
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Just {
+            value0: {
+              start: { line: 2, column: 0 },
+              end: { line: 2, column: 31 }
+            }
+          },
+          definitions: [
+            {
+              start: { line: 3, column: 0 },
+              end: { line: 3, column: 31 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 5, column: 0 },
+              end: { line: 5, column: 31 }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

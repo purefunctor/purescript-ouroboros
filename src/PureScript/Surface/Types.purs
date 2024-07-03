@@ -88,8 +88,17 @@ newtype DataEquation = DataEquation
 
 derive newtype instance Eq DataEquation
 
+newtype NewtypeEquation = NewtypeEquation
+  { variables ∷ Array (TypeVarBinding Ident)
+  , name ∷ Proper
+  , field ∷ Type
+  }
+
+derive newtype instance Eq NewtypeEquation
+
 data Declaration
   = DeclarationData DeclarationAnnotation Proper (Maybe Type) DataEquation
+  | DeclarationNewtype DeclarationAnnotation Proper (Maybe Type) NewtypeEquation
   | DeclarationValue DeclarationAnnotation Ident (Maybe Type) (Array ValueEquation)
   | DeclarationNotImplemented DeclarationAnnotation
 
