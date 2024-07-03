@@ -99,10 +99,20 @@ newtype TypeEquation = TypeEquation
 
 derive newtype instance Eq TypeEquation
 
-newtype NewtypeEquation = NewtypeEquation
-  { variables ∷ Array (TypeVarBinding Ident)
+type NewtypeAnnotation = Annotation NewtypeConstructor
+type NewtypeIndex = Index NewtypeConstructor
+
+newtype NewtypeConstructor = NewtypeConstructor
+  { annotation ∷ NewtypeAnnotation
   , name ∷ Proper
   , field ∷ Type
+  }
+
+derive newtype instance Eq NewtypeConstructor
+
+newtype NewtypeEquation = NewtypeEquation
+  { variables ∷ Array (TypeVarBinding Ident)
+  , constructor ∷ NewtypeConstructor
   }
 
 derive newtype instance Eq NewtypeEquation

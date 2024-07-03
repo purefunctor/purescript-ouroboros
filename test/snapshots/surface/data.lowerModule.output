@@ -102,6 +102,11 @@
       { start: { line: 6, column: 15 }, end: { line: 6, column: 21 } },
       { start: { line: 6, column: 24 }, end: { line: 6, column: 31 } }
     ],
+    newtypeSourceRange: [
+      { start: { line: 3, column: 12 }, end: { line: 3, column: 16 } },
+      { start: { line: 6, column: 15 }, end: { line: 6, column: 21 } },
+      { start: { line: 6, column: 24 }, end: { line: 6, column: 31 } }
+    ],
     classMethodSourceRange: []
   }
 }

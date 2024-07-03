@@ -693,6 +693,7 @@
       }
     ],
     constructorSourceRange: [],
+    newtypeSourceRange: [],
     classMethodSourceRange: []
   }
 }

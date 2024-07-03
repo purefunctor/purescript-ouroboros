@@ -53,6 +53,7 @@ newtype State r = State
   , letBindingIndex ∷ StateIndex r
   , declarationIndex ∷ StateIndex r
   , constructorIndex ∷ StateIndex r
+  , newtypeIndex ∷ StateIndex r
   , classMethodIndex ∷ StateIndex r
   , exprSourceRange ∷ StateSourceRange r
   , binderSourceRange ∷ StateSourceRange r
@@ -60,6 +61,7 @@ newtype State r = State
   , letBindingSourceRange ∷ StateLetBindingSourceRange r
   , declarationSourceRange ∷ StateDeclarationSourceRange r
   , constructorSourceRange ∷ StateSourceRange r
+  , newtypeSourceRange ∷ StateSourceRange r
   , classMethodSourceRange ∷ StateSourceRange r
   }
 
@@ -70,6 +72,7 @@ type SourceRanges =
   , letBindingSourceRange ∷ SST.SparseMap SST.LetBinding LetBindingSourceRange
   , declarationSourceRange ∷ SST.SparseMap SST.Declaration DeclarationSourceRange
   , constructorSourceRange ∷ SST.SparseMap SST.DataConstructor CST.SourceRange
+  , newtypeSourceRange ∷ SST.SparseMap SST.NewtypeConstructor CST.SourceRange
   , classMethodSourceRange ∷ SST.SparseMap SST.ClassMethod CST.SourceRange
   }
 
@@ -81,6 +84,7 @@ defaultState = do
   letBindingIndex ← STRef.new 0
   declarationIndex ← STRef.new 0
   constructorIndex ← STRef.new 0
+  newtypeIndex ← STRef.new 0
   classMethodIndex ← STRef.new 0
   exprSourceRange ← MutableArray.empty
   binderSourceRange ← MutableArray.empty
@@ -88,6 +92,7 @@ defaultState = do
   letBindingSourceRange ← MutableArray.empty
   declarationSourceRange ← MutableArray.empty
   constructorSourceRange ← MutableArray.empty
+  newtypeSourceRange ← MutableArray.empty
   classMethodSourceRange ← MutableArray.empty
   pure $ State
     { exprIndex
@@ -96,6 +101,7 @@ defaultState = do
     , letBindingIndex
     , declarationIndex
     , constructorIndex
+    , newtypeIndex
     , classMethodIndex
     , exprSourceRange
     , binderSourceRange
@@ -103,6 +109,7 @@ defaultState = do
     , letBindingSourceRange
     , declarationSourceRange
     , constructorSourceRange
+    , newtypeSourceRange
     , classMethodSourceRange
     }
 
@@ -114,6 +121,7 @@ freezeState (State state) = do
   letBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.letBindingSourceRange
   declarationSourceRange ← coerce $ MutableArray.unsafeFreeze state.declarationSourceRange
   constructorSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
+  newtypeSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
   classMethodSourceRange ← coerce $ MutableArray.unsafeFreeze state.classMethodSourceRange
   pure
     { exprSourceRange
@@ -122,6 +130,7 @@ freezeState (State state) = do
     , letBindingSourceRange
     , declarationSourceRange
     , constructorSourceRange
+    , newtypeSourceRange
     , classMethodSourceRange
     }
 
@@ -149,6 +158,9 @@ nextDeclarationIndex = nextIndex \(State { declarationIndex }) → declarationIn
 
 nextConstructorIndex ∷ ∀ r. State r → ST r SST.ConstructorIndex
 nextConstructorIndex = nextIndex \(State { constructorIndex }) → constructorIndex
+
+nextNewtypeIndex ∷ ∀ r. State r → ST r SST.NewtypeIndex
+nextNewtypeIndex = nextIndex \(State { newtypeIndex }) → newtypeIndex
 
 nextClassMethodIndex ∷ ∀ r. State r → ST r SST.ClassMethodIndex
 nextClassMethodIndex = nextIndex \(State { classMethodIndex }) → classMethodIndex
@@ -181,6 +193,9 @@ insertConstructorSourceRange
   ∷ ∀ r. State r → SST.ConstructorIndex → CST.SourceRange → ST r Unit
 insertConstructorSourceRange =
   insertSourceRange \(State { constructorSourceRange }) → constructorSourceRange
+
+insertNewtypeSourceRange ∷ ∀ r. State r → SST.NewtypeIndex → CST.SourceRange → ST r Unit
+insertNewtypeSourceRange = insertSourceRange \(State { newtypeSourceRange }) → newtypeSourceRange
 
 insertClassMethodSourceRange
   ∷ ∀ r. State r → SST.ClassMethodIndex → CST.SourceRange → ST r Unit
@@ -863,10 +878,29 @@ lowerNewtypeEquation
   → CST.Name CST.Proper
   → CST.Type Void
   → ST r SST.NewtypeEquation
-lowerNewtypeEquation state { vars } (CST.Name { name }) ctorField = do
+lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
+  index ← nextNewtypeIndex state
+  let
+    sourceRange ∷ CST.SourceRange
+    sourceRange =
+      { start: rangeOf cstName # _.start
+      , end: rangeOf cstField # _.end
+      }
+  insertNewtypeSourceRange state index sourceRange
   variables ← lowerDataHeadVars state vars
-  field ← lowerType state ctorField
-  pure $ SST.NewtypeEquation { variables, name, field }
+  let
+    annotation ∷ SST.NewtypeAnnotation
+    annotation = SST.Annotation { index }
+  field ← lowerType state cstField
+  pure $ SST.NewtypeEquation
+    { variables
+    , constructor: SST.NewtypeConstructor
+        { annotation
+        , name
+        , field
+        }
+
+    }
 
 type CSTClassMethod =
   CST.Labeled (CST.Name CST.Ident) (CST.Type Void)
