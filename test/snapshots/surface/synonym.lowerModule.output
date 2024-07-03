@@ -33,7 +33,13 @@
           }
         },
         value3: {
-          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          variables: [
+            TypeVarName {
+              value0: { index: 0 },
+              value1: false,
+              value2: 'a'
+            }
+          ],
           synonymTo: TypeConstructor {
             value0: { index: 4 },
             value1: { moduleName: Nothing {}, name: 'Q' }
@@ -84,6 +90,7 @@
     ],
     constructorSourceRange: [],
     newtypeSourceRange: [],
-    classMethodSourceRange: []
+    classMethodSourceRange: [],
+    typeVarBindingSourceRange: [ { start: { line: 5, column: 7 }, end: { line: 5, column: 8 } } ]
   }
 }

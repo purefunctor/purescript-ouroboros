@@ -17,7 +17,7 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Print (printToken)
-import PureScript.CST.Range (rangeOf)
+import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -55,6 +55,7 @@ newtype State r = State
   , constructorIndex ∷ StateIndex r
   , newtypeIndex ∷ StateIndex r
   , classMethodIndex ∷ StateIndex r
+  , typeVarBindingIndex ∷ StateIndex r
   , exprSourceRange ∷ StateSourceRange r
   , binderSourceRange ∷ StateSourceRange r
   , typeSourceRange ∷ StateSourceRange r
@@ -63,6 +64,7 @@ newtype State r = State
   , constructorSourceRange ∷ StateSourceRange r
   , newtypeSourceRange ∷ StateSourceRange r
   , classMethodSourceRange ∷ StateSourceRange r
+  , typeVarBindingSourceRange ∷ StateSourceRange r
   }
 
 type SourceRanges =
@@ -74,6 +76,7 @@ type SourceRanges =
   , constructorSourceRange ∷ SST.SparseMap SST.DataConstructor CST.SourceRange
   , newtypeSourceRange ∷ SST.SparseMap SST.NewtypeConstructor CST.SourceRange
   , classMethodSourceRange ∷ SST.SparseMap SST.ClassMethod CST.SourceRange
+  , typeVarBindingSourceRange ∷ SST.SparseMap SST.TypeVarBinding CST.SourceRange
   }
 
 defaultState ∷ ∀ r. ST r (State r)
@@ -86,6 +89,7 @@ defaultState = do
   constructorIndex ← STRef.new 0
   newtypeIndex ← STRef.new 0
   classMethodIndex ← STRef.new 0
+  typeVarBindingIndex ← STRef.new 0
   exprSourceRange ← MutableArray.empty
   binderSourceRange ← MutableArray.empty
   typeSourceRange ← MutableArray.empty
@@ -94,6 +98,7 @@ defaultState = do
   constructorSourceRange ← MutableArray.empty
   newtypeSourceRange ← MutableArray.empty
   classMethodSourceRange ← MutableArray.empty
+  typeVarBindingSourceRange ← MutableArray.empty
   pure $ State
     { exprIndex
     , binderIndex
@@ -103,6 +108,7 @@ defaultState = do
     , constructorIndex
     , newtypeIndex
     , classMethodIndex
+    , typeVarBindingIndex
     , exprSourceRange
     , binderSourceRange
     , typeSourceRange
@@ -111,6 +117,7 @@ defaultState = do
     , constructorSourceRange
     , newtypeSourceRange
     , classMethodSourceRange
+    , typeVarBindingSourceRange
     }
 
 freezeState ∷ ∀ r. State r → ST r SourceRanges
@@ -123,6 +130,7 @@ freezeState (State state) = do
   constructorSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
   newtypeSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
   classMethodSourceRange ← coerce $ MutableArray.unsafeFreeze state.classMethodSourceRange
+  typeVarBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeVarBindingSourceRange
   pure
     { exprSourceRange
     , binderSourceRange
@@ -132,6 +140,7 @@ freezeState (State state) = do
     , constructorSourceRange
     , newtypeSourceRange
     , classMethodSourceRange
+    , typeVarBindingSourceRange
     }
 
 nextIndex ∷ ∀ r a. (State r → StateIndex r) → State r → ST r (SST.Index a)
@@ -164,6 +173,9 @@ nextNewtypeIndex = nextIndex \(State { newtypeIndex }) → newtypeIndex
 
 nextClassMethodIndex ∷ ∀ r. State r → ST r SST.ClassMethodIndex
 nextClassMethodIndex = nextIndex \(State { classMethodIndex }) → classMethodIndex
+
+nextTypeVarBindingIndex ∷ ∀ r. State r → ST r SST.TypeVarBindingIndex
+nextTypeVarBindingIndex = nextIndex \(State { typeVarBindingIndex }) → typeVarBindingIndex
 
 insertSourceRange
   ∷ ∀ r k v
@@ -206,6 +218,11 @@ insertDeclarationSourceRange
   ∷ ∀ r. State r → SST.DeclarationIndex → DeclarationSourceRange → ST r Unit
 insertDeclarationSourceRange =
   insertSourceRange \(State { declarationSourceRange }) → declarationSourceRange
+
+insertTypeVarBindingSourceRange
+  ∷ ∀ r. State r → SST.TypeVarBindingIndex → CST.SourceRange → ST r Unit
+insertTypeVarBindingSourceRange =
+  insertSourceRange \(State { typeVarBindingSourceRange }) → typeVarBindingSourceRange
 
 unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name
@@ -820,17 +837,28 @@ lowerDataCtor state dataCtor = do
 lowerTypeVarBindings_
   ∷ ∀ t i r
   . Traversable t
+  ⇒ RangeOf i
   ⇒ (i → { visible ∷ Boolean, name ∷ CST.Ident })
   → State r
   → t (CST.TypeVarBinding i Void)
   → ST r (t SST.TypeVarBinding)
-lowerTypeVarBindings_ un state = traverse case _ of
-  CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label, value } }) → do
-    let { visible, name } = un label
-    SST.TypeVarKinded visible name <$> lowerType state value
-  CST.TypeVarName cstName → do
-    let { visible, name } = un cstName
-    pure $ SST.TypeVarName visible name
+lowerTypeVarBindings_ un state = traverse \typeVarBinding → do
+  index ← nextTypeVarBindingIndex state
+  let
+    sourceRange ∷ CST.SourceRange
+    sourceRange = rangeOf typeVarBinding
+  insertTypeVarBindingSourceRange state index sourceRange
+  let
+    annotation ∷ SST.TypeVarBindingAnnotation
+    annotation = SST.Annotation { index }
+  case typeVarBinding of
+    CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label, value } }) → do
+      let { visible, name } = un label
+      kind ← lowerType state value
+      pure $ SST.TypeVarKinded annotation visible name kind
+    CST.TypeVarName cstName → do
+      let { visible, name } = un cstName
+      pure $ SST.TypeVarName annotation visible name
 
 lowerTypeVarBindings
   ∷ ∀ t r

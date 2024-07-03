@@ -145,9 +145,12 @@ data Declaration
 
 derive instance Eq Declaration
 
+type TypeVarBindingAnnotation = Annotation TypeVarBinding
+type TypeVarBindingIndex = Index TypeVarBinding
+
 data TypeVarBinding
-  = TypeVarKinded Boolean Ident Type
-  | TypeVarName Boolean Ident
+  = TypeVarKinded TypeVarBindingAnnotation Boolean Ident Type
+  | TypeVarName TypeVarBindingAnnotation Boolean Ident
 
 derive instance Eq TypeVarBinding
 

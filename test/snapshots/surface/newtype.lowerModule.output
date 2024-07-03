@@ -21,7 +21,13 @@
           }
         },
         value3: {
-          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          variables: [
+            TypeVarName {
+              value0: { index: 0 },
+              value1: false,
+              value2: 'a'
+            }
+          ],
           constructor: {
             annotation: { index: 0 },
             name: 'Phantom',
@@ -37,7 +43,13 @@
         value1: 'Identity',
         value2: Nothing {},
         value3: {
-          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          variables: [
+            TypeVarName {
+              value0: { index: 1 },
+              value1: false,
+              value2: 'a'
+            }
+          ],
           constructor: {
             annotation: { index: 1 },
             name: 'Identity',
@@ -89,6 +101,10 @@
     ],
     constructorSourceRange: [],
     newtypeSourceRange: [],
-    classMethodSourceRange: []
+    classMethodSourceRange: [],
+    typeVarBindingSourceRange: [
+      { start: { line: 3, column: 16 }, end: { line: 3, column: 17 } },
+      { start: { line: 5, column: 17 }, end: { line: 5, column: 18 } }
+    ]
   }
 }

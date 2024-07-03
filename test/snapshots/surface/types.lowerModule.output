@@ -176,20 +176,30 @@
           value0: TypeForall {
             value0: { index: 18 },
             value1: [
-              TypeVarName { value0: false, value1: 'a' },
-              TypeVarName { value0: true, value1: 'b' },
+              TypeVarName {
+                value0: { index: 0 },
+                value1: false,
+                value2: 'a'
+              },
+              TypeVarName {
+                value0: { index: 1 },
+                value1: true,
+                value2: 'b'
+              },
               TypeVarKinded {
-                value0: false,
-                value1: 'c',
-                value2: TypeConstructor {
+                value0: { index: 2 },
+                value1: false,
+                value2: 'c',
+                value3: TypeConstructor {
                   value0: { index: 19 },
                   value1: { moduleName: Nothing {}, name: 'T' }
                 }
               },
               TypeVarKinded {
-                value0: true,
-                value1: 'd',
-                value2: TypeConstructor {
+                value0: { index: 3 },
+                value1: true,
+                value2: 'd',
+                value3: TypeConstructor {
                   value0: { index: 20 },
                   value1: { moduleName: Nothing {}, name: 'T' }
                 }
@@ -694,6 +704,24 @@
     ],
     constructorSourceRange: [],
     newtypeSourceRange: [],
-    classMethodSourceRange: []
+    classMethodSourceRange: [],
+    typeVarBindingSourceRange: [
+      {
+        start: { line: 14, column: 19 },
+        end: { line: 14, column: 20 }
+      },
+      {
+        start: { line: 14, column: 21 },
+        end: { line: 14, column: 23 }
+      },
+      {
+        start: { line: 14, column: 24 },
+        end: { line: 14, column: 32 }
+      },
+      {
+        start: { line: 14, column: 33 },
+        end: { line: 14, column: 42 }
+      }
+    ]
   }
 }

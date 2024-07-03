@@ -1420,6 +1420,7 @@
     ],
     constructorSourceRange: [],
     newtypeSourceRange: [],
-    classMethodSourceRange: []
+    classMethodSourceRange: [],
+    typeVarBindingSourceRange: []
   }
 }

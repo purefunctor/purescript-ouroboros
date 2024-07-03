@@ -37,7 +37,13 @@
           }
         },
         value3: {
-          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          variables: [
+            TypeVarName {
+              value0: { index: 0 },
+              value1: false,
+              value2: 'a'
+            }
+          ],
           constructors: Just {
             value0: [
               {
@@ -107,6 +113,9 @@
       { start: { line: 6, column: 15 }, end: { line: 6, column: 21 } },
       { start: { line: 6, column: 24 }, end: { line: 6, column: 31 } }
     ],
-    classMethodSourceRange: []
+    classMethodSourceRange: [],
+    typeVarBindingSourceRange: [
+      { start: { line: 6, column: 11 }, end: { line: 6, column: 12 } }
+    ]
   }
 }
