@@ -12,7 +12,7 @@ import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Maybe (Maybe(..), isJust)
-import Data.Traversable (for, for_, traverse)
+import Data.Traversable (class Traversable, for, for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
@@ -527,28 +527,6 @@ lowerType state = runSTFn1 go
       tail ← traverse (Tuple.snd >>> lowerType state) cstTail
       pure $ SST.Row labels tail
 
-  goTypeVar
-    ∷ STFn1
-        (CST.Labeled (CST.Prefixed (CST.Name CST.Ident)) (CST.Type Void))
-        r
-        { visible ∷ Boolean, name ∷ CST.Ident, value ∷ SST.Type }
-  goTypeVar = mkSTFn1 case _ of
-    CST.Labeled
-      { label: (CST.Prefixed { prefix, value: (CST.Name { name: cstLabel }) }), value: cstValue } →
-      { visible: isJust prefix, name: cstLabel, value: _ } <$> lowerType state cstValue
-
-  goBinding
-    ∷ STFn1
-        (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) Void)
-        r
-        (SST.TypeVarBinding CST.Ident)
-  goBinding = mkSTFn1 case _ of
-    CST.TypeVarKinded (CST.Wrapped { value: cstValue }) → do
-      { visible, name, value } ← runSTFn1 goTypeVar cstValue
-      pure $ SST.TypeVarKinded visible name value
-    CST.TypeVarName (CST.Prefixed { prefix, value: CST.Name { name } }) →
-      pure $ SST.TypeVarName (isJust prefix) name
-
   goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Type Void)) r (Tuple b SST.Type)
   goChain = mkSTFn2 \onOperator (Tuple operator operand) →
     Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
@@ -584,7 +562,7 @@ lowerType state = runSTFn1 go
       CST.TypeRecord r → do
         SST.TypeRecord annotation <$> runSTFn1 goRow r
       CST.TypeForall _ cstBindings _ cstBody → do
-        bindings ← traverse (runSTFn1 goBinding) cstBindings
+        bindings ← lowerTypeVarBindingsPrefixed state cstBindings
         body ← runSTFn1 go cstBody
         pure $ SST.TypeForall annotation bindings body
       CST.TypeKinded cstType _ cstKind →
@@ -839,16 +817,38 @@ lowerDataCtor state dataCtor = do
       fields ← traverse (lowerType state) cstFields
       pure $ SST.DataConstructor { annotation, name, fields }
 
-lowerDataHeadVars
-  ∷ ∀ i r
-  . State r
-  → Array (CST.TypeVarBinding (CST.Name i) Void)
-  → ST r (Array (SST.TypeVarBinding i))
-lowerDataHeadVars state vars = for vars case _ of
-  CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label: CST.Name { name }, value } }) →
-    SST.TypeVarKinded false name <$> lowerType state value
-  CST.TypeVarName (CST.Name { name }) →
-    pure $ SST.TypeVarName false name
+lowerTypeVarBindings_
+  ∷ ∀ t i j r
+  . Traversable t
+  ⇒ (i → { visible ∷ Boolean, name ∷ j })
+  → State r
+  → t (CST.TypeVarBinding i Void)
+  → ST r (t (SST.TypeVarBinding j))
+lowerTypeVarBindings_ un state = traverse case _ of
+  CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label, value } }) → do
+    let { visible, name } = un label
+    SST.TypeVarKinded visible name <$> lowerType state value
+  CST.TypeVarName cstName → do
+    let { visible, name } = un cstName
+    pure $ SST.TypeVarName visible name
+
+lowerTypeVarBindings
+  ∷ ∀ t i r
+  . Traversable t
+  ⇒ State r
+  → t (CST.TypeVarBinding (CST.Name i) Void)
+  → ST r (t (SST.TypeVarBinding i))
+lowerTypeVarBindings = lowerTypeVarBindings_ case _ of
+  CST.Name { name } → { visible: false, name }
+
+lowerTypeVarBindingsPrefixed
+  ∷ ∀ t i r
+  . Traversable t
+  ⇒ State r
+  → t (CST.TypeVarBinding (CST.Prefixed (CST.Name i)) Void)
+  → ST r (t (SST.TypeVarBinding i))
+lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
+  CST.Prefixed { prefix, value: CST.Name { name } } → { visible: isJust prefix, name }
 
 lowerDataEquation
   ∷ ∀ r
@@ -857,7 +857,7 @@ lowerDataEquation
   → Maybe (Tuple CST.SourceToken (CST.Separated (CST.DataCtor Void)))
   → ST r SST.DataEquation
 lowerDataEquation state { vars } cstConstructors = do
-  variables ← lowerDataHeadVars state vars
+  variables ← lowerTypeVarBindings state vars
   constructors ← for cstConstructors case _ of
     Tuple _ (CST.Separated { head, tail }) → do
       sstHead ← lowerDataCtor state head
@@ -867,7 +867,7 @@ lowerDataEquation state { vars } cstConstructors = do
 
 lowerTypeEquation ∷ ∀ r. State r → CST.DataHead Void → CST.Type Void → ST r SST.TypeEquation
 lowerTypeEquation state { vars } cstType = do
-  variables ← lowerDataHeadVars state vars
+  variables ← lowerTypeVarBindings state vars
   synonymTo ← lowerType state cstType
   pure $ SST.TypeEquation { variables, synonymTo }
 
@@ -887,7 +887,7 @@ lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
       , end: rangeOf cstField # _.end
       }
   insertNewtypeSourceRange state index sourceRange
-  variables ← lowerDataHeadVars state vars
+  variables ← lowerTypeVarBindings state vars
   let
     annotation ∷ SST.NewtypeAnnotation
     annotation = SST.Annotation { index }
@@ -925,7 +925,7 @@ type CSTClassBody =
 
 lowerClassBody ∷ ∀ r. State r → CST.ClassHead Void → Maybe CSTClassBody → ST r SST.ClassEquation
 lowerClassBody state { vars } classBody = do
-  variables ← lowerDataHeadVars state vars
+  variables ← lowerTypeVarBindings state vars
   methods ← for classBody case _ of
     Tuple _ classMethods →
       traverse (lowerClassMethod state) classMethods
