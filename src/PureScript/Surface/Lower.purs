@@ -46,7 +46,7 @@ type StateSourceRange r = MutableArray r CST.SourceRange
 type StateLetBindingSourceRange r = MutableArray r LetBindingSourceRange
 type StateDeclarationSourceRange r = MutableArray r DeclarationSourceRange
 
-type State r =
+newtype State r = State
   { exprIndex ∷ StateIndex r
   , binderIndex ∷ StateIndex r
   , typeIndex ∷ StateIndex r
@@ -79,7 +79,7 @@ defaultState = do
   typeSourceRange ← MutableArray.empty
   letBindingSourceRange ← MutableArray.empty
   declarationSourceRange ← MutableArray.empty
-  pure
+  pure $ State
     { exprIndex
     , binderIndex
     , typeIndex
@@ -93,7 +93,7 @@ defaultState = do
     }
 
 freezeState ∷ ∀ r. State r → ST r SourceRanges
-freezeState state = do
+freezeState (State state) = do
   exprSourceRange ← coerce $ MutableArray.unsafeFreeze state.exprSourceRange
   binderSourceRange ← coerce $ MutableArray.unsafeFreeze state.binderSourceRange
   typeSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeSourceRange
@@ -108,54 +108,54 @@ freezeState state = do
     }
 
 nextExprIndex ∷ ∀ r. State r → ST r SST.ExprIndex
-nextExprIndex { exprIndex } = do
+nextExprIndex (State { exprIndex }) = do
   index ← STRef.read exprIndex
   void $ STRef.modify (_ + 1) exprIndex
   pure $ SST.Index index
 
 nextBinderIndex ∷ ∀ r. State r → ST r SST.BinderIndex
-nextBinderIndex { binderIndex } = do
+nextBinderIndex (State { binderIndex }) = do
   index ← STRef.read binderIndex
   void $ STRef.modify (_ + 1) binderIndex
   pure $ SST.Index index
 
 nextTypeIndex ∷ ∀ r. State r → ST r SST.TypeIndex
-nextTypeIndex { typeIndex } = do
+nextTypeIndex (State { typeIndex }) = do
   index ← STRef.read typeIndex
   void $ STRef.modify (_ + 1) typeIndex
   pure $ SST.Index index
 
 nextLetBindingIndex ∷ ∀ r. State r → ST r SST.LetBindingIndex
-nextLetBindingIndex { letBindingIndex } = do
+nextLetBindingIndex (State { letBindingIndex }) = do
   index ← STRef.read letBindingIndex
   void $ STRef.modify (_ + 1) letBindingIndex
   pure $ SST.Index index
 
 nextDeclarationIndex ∷ ∀ r. State r → ST r SST.DeclarationIndex
-nextDeclarationIndex { declarationIndex } = do
+nextDeclarationIndex (State { declarationIndex }) = do
   index ← STRef.read declarationIndex
   void $ STRef.modify (_ + 1) declarationIndex
   pure $ SST.Index index
 
 insertExprSourceRange ∷ ∀ r. State r → SST.ExprIndex → CST.SourceRange → ST r Unit
-insertExprSourceRange { exprSourceRange } exprIndex exprRange =
+insertExprSourceRange (State { exprSourceRange }) exprIndex exprRange =
   MutableArray.poke exprIndex exprRange exprSourceRange
 
 insertBinderSourceRange ∷ ∀ r. State r → SST.BinderIndex → CST.SourceRange → ST r Unit
-insertBinderSourceRange { binderSourceRange } binderIndex binderRange =
+insertBinderSourceRange (State { binderSourceRange }) binderIndex binderRange =
   MutableArray.poke binderIndex binderRange binderSourceRange
 
 insertTypeSourceRange ∷ ∀ r. State r → SST.TypeIndex → CST.SourceRange → ST r Unit
-insertTypeSourceRange { typeSourceRange } typeIndex typeRange =
+insertTypeSourceRange (State { typeSourceRange }) typeIndex typeRange =
   MutableArray.poke typeIndex typeRange typeSourceRange
 
 insertLetBindingSourceRange ∷ ∀ r. State r → SST.LetBindingIndex → LetBindingSourceRange → ST r Unit
-insertLetBindingSourceRange { letBindingSourceRange } letBindingIndex letBindingRange =
+insertLetBindingSourceRange (State { letBindingSourceRange }) letBindingIndex letBindingRange =
   MutableArray.poke letBindingIndex letBindingRange letBindingSourceRange
 
 insertDeclarationSourceRange
   ∷ ∀ r. State r → SST.DeclarationIndex → DeclarationSourceRange → ST r Unit
-insertDeclarationSourceRange { declarationSourceRange } declarationIndex declarationRange =
+insertDeclarationSourceRange (State { declarationSourceRange }) declarationIndex declarationRange =
   MutableArray.poke declarationIndex declarationRange declarationSourceRange
 
 unName ∷ ∀ a. CST.Name a → a

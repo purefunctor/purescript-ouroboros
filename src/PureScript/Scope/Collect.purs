@@ -65,7 +65,7 @@ collectDeclaration ∷ ∀ r. State r → SST.Declaration → ST r Unit
 collectDeclaration state = case _ of
   SST.DeclarationData _ _ _ _ → do
     pure unit
-  SST.DeclarationNewtype _ _ _ _ -> do
+  SST.DeclarationNewtype _ _ _ _ → do
     pure unit
   SST.DeclarationValue _ _ t e → do
     traverse_ (collectType state) t
@@ -348,7 +348,7 @@ collectTopLevel declarations = ST.run do
   for_ declarations case _ of
     SST.DeclarationData _ _ _ _ →
       pure unit
-    SST.DeclarationNewtype _ _ _ _ ->
+    SST.DeclarationNewtype _ _ _ _ →
       pure unit
     SST.DeclarationValue (SST.Annotation { index }) name _ _ →
       void $ STO.poke (coerce name) index valuesRaw
