@@ -41,7 +41,7 @@ spec = do
     makeSnapshotsNamed surfaceInputs $
       [ "lowerModule" /\ \inputFile → do
           liftEffect $ toEffect do
-            lower <- lowerModule $ parseTotal inputFile
+            lower ← lowerModule $ parseTotal inputFile
             pure $ inspect lower
       ]
     makeSnapshotsNamed interfaceInputs $

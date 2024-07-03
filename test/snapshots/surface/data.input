@@ -1,0 +1,7 @@
+module Main where
+
+data Unit :: Type
+data Unit = Unit
+
+data Maybe :: Type -> Type
+data Maybe a = Just a | Nothing

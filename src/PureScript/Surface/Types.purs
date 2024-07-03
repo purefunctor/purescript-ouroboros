@@ -74,8 +74,23 @@ newtype ValueEquation = ValueEquation
 
 derive newtype instance Eq ValueEquation
 
+newtype DataConstructor = DataConstructor
+  { name ∷ Proper
+  , fields ∷ Array Type
+  }
+
+derive newtype instance Eq DataConstructor
+
+newtype DataEquation = DataEquation
+  { variables ∷ Array (TypeVarBinding Ident)
+  , constructors ∷ Maybe (NonEmptyArray DataConstructor)
+  }
+
+derive newtype instance Eq DataEquation
+
 data Declaration
-  = DeclarationValue DeclarationAnnotation Ident (Maybe Type) (Array ValueEquation)
+  = DeclarationData DeclarationAnnotation Proper (Maybe Type) DataEquation
+  | DeclarationValue DeclarationAnnotation Ident (Maybe Type) (Array ValueEquation)
   | DeclarationNotImplemented DeclarationAnnotation
 
 derive instance Eq Declaration

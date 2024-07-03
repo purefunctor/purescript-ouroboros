@@ -15,6 +15,7 @@ import Data.Maybe (Maybe(..), isJust)
 import Data.Traversable (for, for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
+import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Range (rangeOf)
 import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
@@ -33,7 +34,9 @@ data LetBindingSourceRange
 
 derive instance Eq LetBindingSourceRange
 
-data DeclarationSourceRange = DeclarationValueSourceRange SigDefSourceRange
+data DeclarationSourceRange
+  = DeclarationDataSourceRange SigDefSourceRange
+  | DeclarationValueSourceRange SigDefSourceRange
 
 derive instance Eq DeclarationSourceRange
 
@@ -748,100 +751,135 @@ lowerImportDecls cstImports = do
 
   STA.unsafeFreeze importsRaw
 
-data LoweringGroup r = LoweringGroupValue
-  CST.Ident
-  (STRef r (Maybe { sourceRange ∷ CST.SourceRange, t ∷ SST.Type }))
-  (STArray r { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
+bySignatureName ∷ ∀ e. CST.Declaration e → CST.Declaration e → Boolean
+bySignatureName = case _, _ of
+  CST.DeclSignature (CST.Labeled { label: CST.Name { name: signatureName } }),
+  CST.DeclValue ({ name: CST.Name { name: valueName } }) →
+    signatureName == valueName
+  CST.DeclValue ({ name: CST.Name { name: valueNameX } }),
+  CST.DeclValue ({ name: CST.Name { name: valueNameY } }) →
+    valueNameX == valueNameY
+  CST.DeclKindSignature _ (CST.Labeled { label: CST.Name { name: signatureName } }),
+  CST.DeclData { name: CST.Name { name: dataName } } _ →
+    signatureName == dataName
+  _, _ →
+    false
+
+lowerDataCtor ∷ ∀ r. State r → CST.DataCtor Void → ST r SST.DataConstructor
+lowerDataCtor state (CST.DataCtor { name: CST.Name { name }, fields: cstFields }) = do
+  fields ← traverse (lowerType state) cstFields
+  pure $ SST.DataConstructor { name, fields }
+
+lowerDataEquation
+  ∷ ∀ r
+  . State r
+  → CST.DataHead Void
+  → Maybe (Tuple CST.SourceToken (CST.Separated (CST.DataCtor Void)))
+  → ST r SST.DataEquation
+lowerDataEquation state { vars } cstConstructors = do
+  variables ← for vars case _ of
+    CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label: CST.Name { name }, value } }) →
+      SST.TypeVarKinded false name <$> lowerType state value
+    CST.TypeVarName (CST.Name { name }) →
+      pure $ SST.TypeVarName false name
+
+  constructors ← for cstConstructors case _ of
+    Tuple _ (CST.Separated { head, tail }) → do
+      sstHead ← lowerDataCtor state head
+      sstTail ← traverse (Tuple.snd >>> lowerDataCtor state) tail
+      pure $ NEA.cons' sstHead sstTail
+
+  pure $ SST.DataEquation { variables, constructors }
 
 lowerDeclarations ∷ ∀ r. State r → Array (CST.Declaration Void) → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
-  currentGroupRef ← STRef.new Nothing
   declarationsRaw ← STA.new
 
   let
-    dischargeGroup ∷ ST r Unit
-    dischargeGroup = do
-      currentGroup ← STRef.read currentGroupRef
-      case currentGroup of
-        Just (LoweringGroupValue groupName signatureRef valuesRaw) → do
-          signature ← STRef.read signatureRef
-          values ← STA.unsafeFreeze valuesRaw
-          let
-            declarationSourceRange ∷ DeclarationSourceRange
-            declarationSourceRange = DeclarationValueSourceRange
-              { signature: signature <#> _.sourceRange
-              , definitions: values <#> _.sourceRange
-              }
-          index ← nextDeclarationIndex state
-          let
-            annotation ∷ SST.DeclarationAnnotation
-            annotation = SST.Annotation { index }
-          insertDeclarationSourceRange state index declarationSourceRange
-          let
-            declaration ∷ SST.Declaration
-            declaration =
-              SST.DeclarationValue annotation groupName (signature <#> _.t) (values <#> _.v)
-          void $ STA.push declaration declarationsRaw
-        Nothing →
-          pure unit
-      void $ STRef.write Nothing currentGroupRef
+    signatureNameGroups ∷ Array (NonEmptyArray (CST.Declaration Void))
+    signatureNameGroups = Array.groupBy bySignatureName cstDeclarations
 
-    newValueGroup ∷ CST.Ident → _ → _ → ST r Unit
-    newValueGroup groupName signature values = do
-      signatureRef ← STRef.new signature
-      valuesRaw ← STA.unsafeThaw values
-      void $ STRef.write (Just $ LoweringGroupValue groupName signatureRef valuesRaw)
-        currentGroupRef
+    onDeclDataGroup ∷ CST.Proper → _ → _ → ST r Unit
+    onDeclDataGroup cstName cstSignature cstEquation = do
+      index ← nextDeclarationIndex state
+      let
+        declarationSourceRange ∷ DeclarationSourceRange
+        declarationSourceRange = DeclarationValueSourceRange
+          { signature: cstSignature <#> rangeOf
+          , definitions: cstEquation <#> rangeOf
+          }
+      insertDeclarationSourceRange state index declarationSourceRange
 
-    onDeclSignature ∷ CST.SourceRange → CST.Ident → SST.Type → ST r Unit
-    onDeclSignature sourceRange signatureName t = do
-      currentGroup ← STRef.read currentGroupRef
-      case currentGroup of
-        Just (LoweringGroupValue groupName signatureRef _) → do
-          if signatureName == groupName then do
-            void $ STRef.write (Just { sourceRange, t }) signatureRef
-          else do
-            dischargeGroup
-            newValueGroup signatureName (Just { sourceRange, t }) []
-        Nothing → do
-          newValueGroup signatureName (Just { sourceRange, t }) []
+      signature ← for cstSignature case _ of
+        CST.DeclKindSignature _ (CST.Labeled { value: cstType }) →
+          lowerType state cstType
+        _ →
+          unsafeCrashWith "invariant violated: expecting DeclKindSignature"
 
-    onDeclValue ∷ CST.SourceRange → CST.Ident → SST.ValueEquation → ST r Unit
-    onDeclValue sourceRange valueName v = do
-      currentGroup ← STRef.read currentGroupRef
-      case currentGroup of
-        Just (LoweringGroupValue groupName _ values) → do
-          if valueName == groupName then
-            void $ STA.push { sourceRange, v } values
-          else do
-            dischargeGroup
-            newValueGroup valueName Nothing [ { sourceRange, v } ]
-        Nothing → do
-          newValueGroup valueName Nothing [ { sourceRange, v } ]
+      equation ← case cstEquation of
+        [ CST.DeclData dataHead dataEquation ] →
+          lowerDataEquation state dataHead dataEquation
+        _ →
+          unsafeCrashWith "invariant violated: expecting DeclData"
 
-  for_ cstDeclarations \cstDeclaration → do
-    let
-      sourceRange ∷ CST.SourceRange
-      sourceRange = rangeOf cstDeclaration
-    case cstDeclaration of
-      CST.DeclSignature
-        (CST.Labeled { label: CST.Name { name: signatureName }, value }) →
-        do
-          signature ← lowerType state value
-          onDeclSignature sourceRange signatureName signature
-      CST.DeclValue
-        { name: CST.Name { name: valueName }, binders: cstBinders, guarded: cstGuarded } →
-        do
+      let
+        annotation ∷ SST.DeclarationAnnotation
+        annotation = SST.Annotation { index }
+
+        declaration ∷ SST.Declaration
+        declaration = SST.DeclarationData annotation cstName signature equation
+
+      void $ STA.push declaration declarationsRaw
+
+    onDeclValueGroup ∷ CST.Ident → _ → _ → ST r Unit
+    onDeclValueGroup cstName cstSignature cstValues = do
+      index ← nextDeclarationIndex state
+      let
+        declarationSourceRange ∷ DeclarationSourceRange
+        declarationSourceRange = DeclarationValueSourceRange
+          { signature: cstSignature <#> rangeOf
+          , definitions: cstValues <#> rangeOf
+          }
+      insertDeclarationSourceRange state index declarationSourceRange
+
+      signature ← for cstSignature case _ of
+        CST.DeclSignature (CST.Labeled { value: cstType }) →
+          lowerType state cstType
+        _ →
+          unsafeCrashWith "invariant violated: expecting DeclSignature"
+
+      values ← for cstValues case _ of
+        CST.DeclValue { binders: cstBinders, guarded: cstGuarded } → do
           binders ← traverse (lowerBinder state) cstBinders
           guarded ← lowerGuarded state cstGuarded
-          onDeclValue sourceRange valueName (SST.ValueEquation { binders, guarded })
-      CST.DeclError v →
-        absurd v
-      _ →
-        pure unit
+          pure $ SST.ValueEquation { binders, guarded }
+        _ →
+          unsafeCrashWith "invariant violated: expecting DeclValue"
 
-  dischargeGroup
-  STA.unsafeFreeze declarationsRaw
+      let
+        annotation ∷ SST.DeclarationAnnotation
+        annotation = SST.Annotation { index }
+
+        declaration ∷ SST.Declaration
+        declaration = SST.DeclarationValue annotation cstName signature values
+
+      void $ STA.push declaration declarationsRaw
+
+  for_ signatureNameGroups \signatureNameGroup →
+    case NEA.uncons signatureNameGroup of
+      { head, tail } → case head of
+        CST.DeclData { name: CST.Name { name } } _ →
+          onDeclDataGroup name Nothing (NEA.toArray signatureNameGroup)
+        CST.DeclKindSignature _ (CST.Labeled { label: CST.Name { name } }) →
+          onDeclDataGroup name (Just head) tail
+        CST.DeclSignature (CST.Labeled { label: CST.Name { name } }) →
+          onDeclValueGroup name (Just head) tail
+        CST.DeclValue { name: CST.Name { name } } →
+          onDeclValueGroup name Nothing (NEA.toArray signatureNameGroup)
+        _ →
+          pure unit
+
+  STA.freeze declarationsRaw
 
 type ModuleWithSourceRanges =
   { surface ∷ SST.Module
