@@ -63,6 +63,8 @@ withRevertingScope state action = do
 
 collectDeclaration ∷ ∀ r. State r → SST.Declaration → ST r Unit
 collectDeclaration state = case _ of
+  SST.DeclarationData _ _ _ _ → do
+    pure unit
   SST.DeclarationValue _ _ t e → do
     traverse_ (collectType state) t
     traverse_ (collectValueEquation state) e
@@ -342,6 +344,8 @@ collectTopLevel declarations = ST.run do
   valuesRaw ← STO.new
 
   for_ declarations case _ of
+    SST.DeclarationData _ _ _ _ →
+      pure unit
     SST.DeclarationValue (SST.Annotation { index }) name _ _ →
       void $ STO.poke (coerce name) index valuesRaw
     SST.DeclarationNotImplemented _ →
