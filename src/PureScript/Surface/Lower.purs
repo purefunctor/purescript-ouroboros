@@ -818,12 +818,12 @@ lowerDataCtor state dataCtor = do
       pure $ SST.DataConstructor { annotation, name, fields }
 
 lowerTypeVarBindings_
-  ∷ ∀ t i j r
+  ∷ ∀ t i r
   . Traversable t
-  ⇒ (i → { visible ∷ Boolean, name ∷ j })
+  ⇒ (i → { visible ∷ Boolean, name ∷ CST.Ident })
   → State r
   → t (CST.TypeVarBinding i Void)
-  → ST r (t (SST.TypeVarBinding j))
+  → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings_ un state = traverse case _ of
   CST.TypeVarKinded (CST.Wrapped { value: CST.Labeled { label, value } }) → do
     let { visible, name } = un label
@@ -833,20 +833,20 @@ lowerTypeVarBindings_ un state = traverse case _ of
     pure $ SST.TypeVarName visible name
 
 lowerTypeVarBindings
-  ∷ ∀ t i r
+  ∷ ∀ t r
   . Traversable t
   ⇒ State r
-  → t (CST.TypeVarBinding (CST.Name i) Void)
-  → ST r (t (SST.TypeVarBinding i))
+  → t (CST.TypeVarBinding (CST.Name CST.Ident) Void)
+  → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings = lowerTypeVarBindings_ case _ of
   CST.Name { name } → { visible: false, name }
 
 lowerTypeVarBindingsPrefixed
-  ∷ ∀ t i r
+  ∷ ∀ t r
   . Traversable t
   ⇒ State r
-  → t (CST.TypeVarBinding (CST.Prefixed (CST.Name i)) Void)
-  → ST r (t (SST.TypeVarBinding i))
+  → t (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) Void)
+  → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
   CST.Prefixed { prefix, value: CST.Name { name } } → { visible: isJust prefix, name }
 

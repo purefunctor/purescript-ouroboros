@@ -86,14 +86,14 @@ newtype DataConstructor = DataConstructor
 derive newtype instance Eq DataConstructor
 
 newtype DataEquation = DataEquation
-  { variables ∷ Array (TypeVarBinding Ident)
+  { variables ∷ Array TypeVarBinding
   , constructors ∷ Maybe (NonEmptyArray DataConstructor)
   }
 
 derive newtype instance Eq DataEquation
 
 newtype TypeEquation = TypeEquation
-  { variables ∷ Array (TypeVarBinding Ident)
+  { variables ∷ Array TypeVarBinding
   , synonymTo ∷ Type
   }
 
@@ -111,14 +111,14 @@ newtype NewtypeConstructor = NewtypeConstructor
 derive newtype instance Eq NewtypeConstructor
 
 newtype NewtypeEquation = NewtypeEquation
-  { variables ∷ Array (TypeVarBinding Ident)
+  { variables ∷ Array TypeVarBinding
   , constructor ∷ NewtypeConstructor
   }
 
 derive newtype instance Eq NewtypeEquation
 
 newtype ClassEquation = ClassEquation
-  { variables ∷ Array (TypeVarBinding Ident)
+  { variables ∷ Array TypeVarBinding
   , methods ∷ Maybe (NonEmptyArray ClassMethod)
   }
 
@@ -145,11 +145,11 @@ data Declaration
 
 derive instance Eq Declaration
 
-data TypeVarBinding a
-  = TypeVarKinded Boolean a Type
-  | TypeVarName Boolean a
+data TypeVarBinding
+  = TypeVarKinded Boolean Ident Type
+  | TypeVarName Boolean Ident
 
-derive instance Eq a ⇒ Eq (TypeVarBinding a)
+derive instance Eq TypeVarBinding
 
 data Guarded
   = Unconditional Where
@@ -276,7 +276,7 @@ data Type
   | TypeInt TypeAnnotation Boolean IntValue
   | TypeRow TypeAnnotation Row
   | TypeRecord TypeAnnotation Row
-  | TypeForall TypeAnnotation (NonEmptyArray (TypeVarBinding Ident)) Type
+  | TypeForall TypeAnnotation (NonEmptyArray TypeVarBinding) Type
   | TypeKinded TypeAnnotation Type Type
   | TypeApp TypeAnnotation Type (NonEmptyArray Type)
   | TypeOp TypeAnnotation Type (NonEmptyArray (Tuple (QualifiedName Operator) Type))
