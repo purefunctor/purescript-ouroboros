@@ -52,12 +52,14 @@ newtype State r = State
   , typeIndex ∷ StateIndex r
   , letBindingIndex ∷ StateIndex r
   , declarationIndex ∷ StateIndex r
+  , constructorIndex ∷ StateIndex r
   , classMethodIndex ∷ StateIndex r
   , exprSourceRange ∷ StateSourceRange r
   , binderSourceRange ∷ StateSourceRange r
   , typeSourceRange ∷ StateSourceRange r
   , letBindingSourceRange ∷ StateLetBindingSourceRange r
   , declarationSourceRange ∷ StateDeclarationSourceRange r
+  , constructorSourceRange ∷ StateSourceRange r
   , classMethodSourceRange ∷ StateSourceRange r
   }
 
@@ -67,6 +69,7 @@ type SourceRanges =
   , typeSourceRange ∷ SST.SparseMap SST.Type CST.SourceRange
   , letBindingSourceRange ∷ SST.SparseMap SST.LetBinding LetBindingSourceRange
   , declarationSourceRange ∷ SST.SparseMap SST.Declaration DeclarationSourceRange
+  , constructorSourceRange ∷ SST.SparseMap SST.DataConstructor CST.SourceRange
   , classMethodSourceRange ∷ SST.SparseMap SST.ClassMethod CST.SourceRange
   }
 
@@ -77,12 +80,14 @@ defaultState = do
   typeIndex ← STRef.new 0
   letBindingIndex ← STRef.new 0
   declarationIndex ← STRef.new 0
+  constructorIndex ← STRef.new 0
   classMethodIndex ← STRef.new 0
   exprSourceRange ← MutableArray.empty
   binderSourceRange ← MutableArray.empty
   typeSourceRange ← MutableArray.empty
   letBindingSourceRange ← MutableArray.empty
   declarationSourceRange ← MutableArray.empty
+  constructorSourceRange ← MutableArray.empty
   classMethodSourceRange ← MutableArray.empty
   pure $ State
     { exprIndex
@@ -90,12 +95,14 @@ defaultState = do
     , typeIndex
     , letBindingIndex
     , declarationIndex
+    , constructorIndex
     , classMethodIndex
     , exprSourceRange
     , binderSourceRange
     , typeSourceRange
     , letBindingSourceRange
     , declarationSourceRange
+    , constructorSourceRange
     , classMethodSourceRange
     }
 
@@ -106,6 +113,7 @@ freezeState (State state) = do
   typeSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeSourceRange
   letBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.letBindingSourceRange
   declarationSourceRange ← coerce $ MutableArray.unsafeFreeze state.declarationSourceRange
+  constructorSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
   classMethodSourceRange ← coerce $ MutableArray.unsafeFreeze state.classMethodSourceRange
   pure
     { exprSourceRange
@@ -113,6 +121,7 @@ freezeState (State state) = do
     , typeSourceRange
     , letBindingSourceRange
     , declarationSourceRange
+    , constructorSourceRange
     , classMethodSourceRange
     }
 
@@ -146,6 +155,12 @@ nextDeclarationIndex (State { declarationIndex }) = do
   void $ STRef.modify (_ + 1) declarationIndex
   pure $ SST.Index index
 
+nextConstructorIndex ∷ ∀ r. State r → ST r SST.ConstructorIndex
+nextConstructorIndex (State { constructorIndex }) = do
+  index ← STRef.read constructorIndex
+  void $ STRef.modify (_ + 1) constructorIndex
+  pure $ SST.Index index
+
 nextClassMethodIndex ∷ ∀ r. State r → ST r SST.ClassMethodIndex
 nextClassMethodIndex (State { classMethodIndex }) = do
   index ← STRef.read classMethodIndex
@@ -167,6 +182,11 @@ insertTypeSourceRange (State { typeSourceRange }) typeIndex typeRange =
 insertLetBindingSourceRange ∷ ∀ r. State r → SST.LetBindingIndex → LetBindingSourceRange → ST r Unit
 insertLetBindingSourceRange (State { letBindingSourceRange }) letBindingIndex letBindingRange =
   MutableArray.poke letBindingIndex letBindingRange letBindingSourceRange
+
+insertConstructorSourceRange
+  ∷ ∀ r. State r → SST.ConstructorIndex → CST.SourceRange → ST r Unit
+insertConstructorSourceRange (State { constructorSourceRange }) constructorIndex constructorRange =
+  MutableArray.poke constructorIndex constructorRange constructorSourceRange
 
 insertClassMethodSourceRange
   ∷ ∀ r. State r → SST.ClassMethodIndex → CST.SourceRange → ST r Unit
@@ -796,9 +816,19 @@ bySignatureName = case _, _ of
     false
 
 lowerDataCtor ∷ ∀ r. State r → CST.DataCtor Void → ST r SST.DataConstructor
-lowerDataCtor state (CST.DataCtor { name: CST.Name { name }, fields: cstFields }) = do
-  fields ← traverse (lowerType state) cstFields
-  pure $ SST.DataConstructor { name, fields }
+lowerDataCtor state dataCtor = do
+  index ← nextConstructorIndex state
+  let
+    sourceRange ∷ CST.SourceRange
+    sourceRange = rangeOf dataCtor
+  insertConstructorSourceRange state index sourceRange
+  let
+    annotation ∷ SST.ConstructorAnnotation
+    annotation = SST.Annotation { index }
+  case dataCtor of
+    CST.DataCtor { name: CST.Name { name }, fields: cstFields } → do
+      fields ← traverse (lowerType state) cstFields
+      pure $ SST.DataConstructor { annotation, name, fields }
 
 lowerDataHeadVars
   ∷ ∀ i r

@@ -74,8 +74,12 @@ newtype ValueEquation = ValueEquation
 
 derive newtype instance Eq ValueEquation
 
+type ConstructorAnnotation = Annotation DataConstructor
+type ConstructorIndex = Index DataConstructor
+
 newtype DataConstructor = DataConstructor
-  { name ∷ Proper
+  { annotation ∷ ConstructorAnnotation
+  , name ∷ Proper
   , fields ∷ Array Type
   }
 

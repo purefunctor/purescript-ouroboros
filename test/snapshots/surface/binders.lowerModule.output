@@ -453,6 +453,7 @@
         }
       }
     ],
+    constructorSourceRange: [],
     classMethodSourceRange: []
   }
 }

@@ -109,6 +109,7 @@
         }
       }
     ],
+    constructorSourceRange: [],
     classMethodSourceRange: [ { start: { line: 5, column: 2 }, end: { line: 5, column: 16 } } ]
   }
 }
