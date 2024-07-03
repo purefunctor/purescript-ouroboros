@@ -103,10 +103,25 @@ newtype NewtypeEquation = NewtypeEquation
 
 derive newtype instance Eq NewtypeEquation
 
+newtype ClassEquation = ClassEquation
+  { variables ∷ Array (TypeVarBinding Ident)
+  , methods ∷ Maybe (NonEmptyArray ClassMethod)
+  }
+
+derive newtype instance Eq ClassEquation
+
+newtype ClassMethod = ClassMethod
+  { name ∷ Ident
+  , signature ∷ Type
+  }
+
+derive newtype instance Eq ClassMethod
+
 data Declaration
   = DeclarationData DeclarationAnnotation Proper (Maybe Type) DataEquation
   | DeclarationType DeclarationAnnotation Proper (Maybe Type) TypeEquation
   | DeclarationNewtype DeclarationAnnotation Proper (Maybe Type) NewtypeEquation
+  | DeclarationClass DeclarationAnnotation Proper (Maybe Type) ClassEquation
   | DeclarationValue DeclarationAnnotation Ident (Maybe Type) (Array ValueEquation)
   | DeclarationNotImplemented DeclarationAnnotation
 

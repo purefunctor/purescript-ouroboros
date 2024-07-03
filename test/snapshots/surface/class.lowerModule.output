@@ -1,0 +1,112 @@
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [],
+    declarations: [
+      DeclarationClass {
+        value0: { index: 0 },
+        value1: 'Empty',
+        value2: Nothing {},
+        value3: {
+          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          methods: Nothing {}
+        }
+      },
+      DeclarationClass {
+        value0: { index: 1 },
+        value1: 'Some',
+        value2: Nothing {},
+        value3: {
+          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          methods: Just {
+            value0: [
+              {
+                name: 'some',
+                signature: TypeArrow {
+                  value0: { index: 0 },
+                  value1: TypeVar { value0: { index: 1 }, value1: 'a' },
+                  value2: TypeVar { value0: { index: 2 }, value1: 'a' }
+                }
+              }
+            ]
+          }
+        }
+      },
+      DeclarationClass {
+        value0: { index: 2 },
+        value1: 'Kinded',
+        value2: Just {
+          value0: TypeArrow {
+            value0: { index: 3 },
+            value1: TypeConstructor {
+              value0: { index: 4 },
+              value1: { moduleName: Nothing {}, name: 'Type' }
+            },
+            value2: TypeConstructor {
+              value0: { index: 5 },
+              value1: { moduleName: Nothing {}, name: 'Constraint' }
+            }
+          }
+        },
+        value3: {
+          variables: [ TypeVarName { value0: false, value1: 'a' } ],
+          methods: Nothing {}
+        }
+      }
+    ]
+  },
+  sourceRanges: {
+    exprSourceRange: [],
+    binderSourceRange: [],
+    typeSourceRange: [
+      { start: { line: 5, column: 10 }, end: { line: 5, column: 16 } },
+      { start: { line: 5, column: 10 }, end: { line: 5, column: 11 } },
+      { start: { line: 5, column: 15 }, end: { line: 5, column: 16 } },
+      { start: { line: 7, column: 16 }, end: { line: 7, column: 34 } },
+      { start: { line: 7, column: 16 }, end: { line: 7, column: 20 } },
+      { start: { line: 7, column: 24 }, end: { line: 7, column: 34 } }
+    ],
+    letBindingSourceRange: [],
+    declarationSourceRange: [
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 2, column: 0 },
+              end: { line: 2, column: 13 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Nothing {},
+          definitions: [
+            {
+              start: { line: 4, column: 0 },
+              end: { line: 5, column: 16 }
+            }
+          ]
+        }
+      },
+      DeclarationValueSourceRange {
+        value0: {
+          signature: Just {
+            value0: {
+              start: { line: 7, column: 0 },
+              end: { line: 7, column: 34 }
+            }
+          },
+          definitions: [
+            {
+              start: { line: 8, column: 0 },
+              end: { line: 8, column: 14 }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

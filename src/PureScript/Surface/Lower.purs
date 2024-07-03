@@ -769,6 +769,9 @@ bySignatureName = case _, _ of
   CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
   CST.DeclNewtype { name: CST.Name { name: newtypeName } } _ _ _ →
     printToken value == "newtype" && signatureName == newtypeName
+  CST.DeclKindSignature { value } (CST.Labeled { label: CST.Name { name: signatureName } }),
+  CST.DeclClass { name: CST.Name { name: className } } _ →
+    printToken value == "class" && signatureName == className
   _, _ →
     false
 
@@ -821,6 +824,26 @@ lowerNewtypeEquation state { vars } (CST.Name { name }) ctorField = do
   field ← lowerType state ctorField
   pure $ SST.NewtypeEquation { variables, name, field }
 
+type CSTClassMethod =
+  CST.Labeled (CST.Name CST.Ident) (CST.Type Void)
+
+lowerClassMethod ∷ ∀ r. State r → CSTClassMethod → ST r SST.ClassMethod
+lowerClassMethod state = case _ of
+  CST.Labeled { label: CST.Name { name }, value } → do
+    signature ← lowerType state value
+    pure $ SST.ClassMethod { name, signature }
+
+type CSTClassBody =
+  Tuple CST.SourceToken (NonEmptyArray CSTClassMethod)
+
+lowerClassBody ∷ ∀ r. State r → CST.ClassHead Void → Maybe CSTClassBody → ST r SST.ClassEquation
+lowerClassBody state { vars } classBody = do
+  variables ← lowerDataHeadVars state vars
+  methods ← for classBody case _ of
+    Tuple _ classMethods →
+      traverse (lowerClassMethod state) classMethods
+  pure $ SST.ClassEquation { variables, methods }
+
 lowerDeclarations ∷ ∀ r. State r → Array (CST.Declaration Void) → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
   declarationsRaw ← STA.new
@@ -860,6 +883,9 @@ lowerDeclarations state cstDeclarations = do
         [ CST.DeclNewtype dataHead _ ctorName ctorField ] → do
           equation ← lowerNewtypeEquation state dataHead ctorName ctorField
           pure $ SST.DeclarationNewtype annotation cstName signature equation
+        [ CST.DeclClass classHead classBody ] → do
+          body ← lowerClassBody state classHead classBody
+          pure $ SST.DeclarationClass annotation cstName signature body
         _ →
           unsafeCrashWith "invariant violated: expecting DeclData/DeclType/DeclNewtype"
 
@@ -907,6 +933,8 @@ lowerDeclarations state cstDeclarations = do
         CST.DeclType { name: CST.Name { name } } _ _ →
           onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
         CST.DeclNewtype { name: CST.Name { name } } _ _ _ →
+          onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
+        CST.DeclClass { name: CST.Name { name } } _ →
           onTypeGroup name Nothing (NEA.toArray signatureNameGroup)
         CST.DeclKindSignature _ (CST.Labeled { label: CST.Name { name } }) →
           onTypeGroup name (Just head) tail

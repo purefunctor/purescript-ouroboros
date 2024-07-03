@@ -1,0 +1,9 @@
+module Main where
+
+class Empty a
+
+class Some a where
+  some :: a -> a
+
+class Kinded :: Type -> Constraint
+class Kinded a
