@@ -64,20 +64,24 @@ withRevertingScope state action = do
 
 collectDeclaration ∷ ∀ r. State r → SST.Declaration → ST r Unit
 collectDeclaration state = case _ of
-  SST.DeclarationData _ _ t e → do
-    traverse_ (collectType state) t
-    collectDataEquation state e
-  SST.DeclarationType _ _ t e → do
-    traverse_ (collectType state) t
-    collectTypeEquation state e
-  SST.DeclarationNewtype _ _ t e → do
-    traverse_ (collectType state) t
-    collectNewtypeEquation state e
+  SST.DeclarationData _ _ t e →
+    withRevertingScope state do
+      traverse_ (collectPushType state) t
+      collectDataEquation state e
+  SST.DeclarationType _ _ t e →
+    withRevertingScope state do
+      traverse_ (collectPushType state) t
+      collectTypeEquation state e
+  SST.DeclarationNewtype _ _ t e →
+    withRevertingScope state do
+      traverse_ (collectPushType state) t
+      collectNewtypeEquation state e
   SST.DeclarationClass _ _ _ _ → do
     pure unit
-  SST.DeclarationValue _ _ t e → do
-    traverse_ (collectType state) t
-    traverse_ (collectValueEquation state) e
+  SST.DeclarationValue _ _ t e →
+    withRevertingScope state do
+      traverse_ (collectPushType state) t
+      traverse_ (collectValueEquation state) e
   SST.DeclarationNotImplemented _ →
     pure unit
 
