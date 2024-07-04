@@ -19,7 +19,7 @@ data ScopeNode
   | TopLevel ScopeNode TopLevelRefs
   | Binders ScopeNode (Object BinderRef)
   | LetBound ScopeNode (Object LetBindingRef)
-  | TypeVars ScopeNode (Object TypeVarRef)
+  | TypeVar ScopeNode String TypeVarRef
   | JoinScope ScopeNode ScopeNode
 
 derive instance Eq ScopeNode

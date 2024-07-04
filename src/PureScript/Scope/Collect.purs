@@ -113,15 +113,14 @@ collectValueEquation state (SST.ValueEquation { binders, guarded }) = do
 
 collectPushTypeVars ∷ ∀ r t. Traversable t ⇒ State r → t SST.TypeVarBinding → ST r Unit
 collectPushTypeVars state typeVars = do
-  inScopeRaw ← STO.new
   for_ typeVars case _ of
-    SST.TypeVarKinded (SST.Annotation { index }) _ name _ →
-      STO.poke (coerce name) index inScopeRaw
-    SST.TypeVarName (SST.Annotation { index }) _ name →
-      STO.poke (coerce name) index inScopeRaw
-  inScope ← O.freezeST inScopeRaw
-  parentScope ← currentScope state
-  pushScope state (TypeVars parentScope inScope)
+    SST.TypeVarKinded (SST.Annotation { index }) _ name kind → do
+      collectType state kind
+      parentScope ← currentScope state
+      pushScope state (TypeVar parentScope (coerce name) index)
+    SST.TypeVarName (SST.Annotation { index }) _ name → do
+      parentScope ← currentScope state
+      pushScope state (TypeVar parentScope (coerce name) index)
 
 collectGuarded ∷ ∀ r. State r → SST.Guarded → ST r Unit
 collectGuarded state = case _ of
