@@ -8,6 +8,7 @@ import PureScript.Surface.Types as SST
 type BinderRef = SST.BinderIndex
 type LetBindingRef = SST.LetBindingIndex
 type DeclarationRef = SST.DeclarationIndex
+type TypeVarRef = SST.TypeVarBindingIndex
 
 type TopLevelRefs =
   { values ∷ Object DeclarationRef
@@ -18,6 +19,7 @@ data ScopeNode
   | TopLevel ScopeNode TopLevelRefs
   | Binders ScopeNode (Object BinderRef)
   | LetBound ScopeNode (Object LetBindingRef)
+  | TypeVars ScopeNode (Object TypeVarRef)
   | JoinScope ScopeNode ScopeNode
 
 derive instance Eq ScopeNode

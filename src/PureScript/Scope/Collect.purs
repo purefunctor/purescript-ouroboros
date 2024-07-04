@@ -63,12 +63,15 @@ withRevertingScope state action = do
 
 collectDeclaration ∷ ∀ r. State r → SST.Declaration → ST r Unit
 collectDeclaration state = case _ of
-  SST.DeclarationData _ _ _ _ → do
-    pure unit
-  SST.DeclarationType _ _ _ _ → do
-    pure unit
-  SST.DeclarationNewtype _ _ _ _ → do
-    pure unit
+  SST.DeclarationData _ _ t e → do
+    traverse_ (collectType state) t
+    collectDataEquation state e
+  SST.DeclarationType _ _ t e → do
+    traverse_ (collectType state) t
+    collectTypeEquation state e
+  SST.DeclarationNewtype _ _ t e → do
+    traverse_ (collectType state) t
+    collectNewtypeEquation state e
   SST.DeclarationClass _ _ _ _ → do
     pure unit
   SST.DeclarationValue _ _ t e → do
@@ -77,11 +80,43 @@ collectDeclaration state = case _ of
   SST.DeclarationNotImplemented _ →
     pure unit
 
+collectDataEquation ∷ ∀ r. State r → SST.DataEquation → ST r Unit
+collectDataEquation state (SST.DataEquation { variables, constructors }) = do
+  withRevertingScope state do
+    collectPushTypeVars state variables
+    traverse_ (traverse_ $ collectDataConstructor state) constructors
+
+collectDataConstructor ∷ ∀ r. State r → SST.DataConstructor → ST r Unit
+collectDataConstructor state (SST.DataConstructor { fields }) = traverse_ (collectType state) fields
+
+collectTypeEquation ∷ ∀ r. State r → SST.TypeEquation → ST r Unit
+collectTypeEquation state (SST.TypeEquation { synonymTo }) = collectType state synonymTo
+
+collectNewtypeEquation ∷ ∀ r. State r → SST.NewtypeEquation → ST r Unit
+collectNewtypeEquation state (SST.NewtypeEquation { variables, constructor }) = do
+  withRevertingScope state do
+    collectPushTypeVars state variables
+    case constructor of
+      SST.NewtypeConstructor { field } →
+        collectType state field
+
 collectValueEquation ∷ ∀ r. State r → SST.ValueEquation → ST r Unit
 collectValueEquation state (SST.ValueEquation { binders, guarded }) = do
   withRevertingScope state do
     collectPushBinders state binders
     collectGuarded state guarded
+
+collectPushTypeVars ∷ ∀ r. State r → Array SST.TypeVarBinding → ST r Unit
+collectPushTypeVars state typeVars = do
+  inScopeRaw ← STO.new
+  for_ typeVars case _ of
+    SST.TypeVarKinded (SST.Annotation { index }) _ name _ →
+      STO.poke (coerce name) index inScopeRaw
+    SST.TypeVarName (SST.Annotation { index }) _ name →
+      STO.poke (coerce name) index inScopeRaw
+  inScope ← O.freezeST inScopeRaw
+  parentScope ← currentScope state
+  pushScope state (TypeVars parentScope inScope)
 
 collectGuarded ∷ ∀ r. State r → SST.Guarded → ST r Unit
 collectGuarded state = case _ of
