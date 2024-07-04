@@ -1,0 +1,35 @@
+{
+  exprScopeNode: [],
+  typeScopeNode: [
+    TopLevel { value0: RootScope {}, value1: { values: {} } },
+    TypeVar {
+      value0: TopLevel { value0: RootScope {}, value1: { values: {} } },
+      value1: 'k',
+      value2: 0
+    },
+    TypeVar {
+      value0: TopLevel { value0: RootScope {}, value1: { values: {} } },
+      value1: 'k',
+      value2: 0
+    },
+    TypeVar {
+      value0: TopLevel { value0: RootScope {}, value1: { values: {} } },
+      value1: 'k',
+      value2: 0
+    },
+    TypeVar {
+      value0: TopLevel { value0: RootScope {}, value1: { values: {} } },
+      value1: 'k',
+      value2: 0
+    },
+    TypeVar {
+      value0: TypeVar {
+        value0: TopLevel { value0: RootScope {}, value1: { values: {} } },
+        value1: 'k',
+        value2: 0
+      },
+      value1: 'a',
+      value2: 1
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+module Main where
+
+data F :: forall k. k -> Type
+data F (a :: k) = F Int

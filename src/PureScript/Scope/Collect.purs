@@ -27,22 +27,26 @@ import Safe.Coerce (coerce)
 type State r =
   { scope ∷ STRef r ScopeNode
   , exprScopeNode ∷ MutableArray r ScopeNode
+  , typeScopeNode ∷ MutableArray r ScopeNode
   }
 
 type ScopeNodes =
   { exprScopeNode ∷ SST.SparseMap SST.Expr ScopeNode
+  , typeScopeNode ∷ SST.SparseMap SST.Type ScopeNode
   }
 
 defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
   scope ← STRef.new RootScope
   exprScopeNode ← MutableArray.empty
-  pure { scope, exprScopeNode }
+  typeScopeNode ← MutableArray.empty
+  pure { scope, exprScopeNode, typeScopeNode }
 
 freezeState ∷ ∀ r. State r → ST r ScopeNodes
 freezeState state = do
   exprScopeNode ← coerce $ MutableArray.unsafeFreeze state.exprScopeNode
-  pure { exprScopeNode }
+  typeScopeNode ← coerce $ MutableArray.unsafeFreeze state.typeScopeNode
+  pure { exprScopeNode, typeScopeNode }
 
 currentScope ∷ ∀ r. State r → ST r ScopeNode
 currentScope state = STRef.read state.scope
@@ -54,6 +58,11 @@ pushExprScopeNode ∷ ∀ r. State r → SST.ExprIndex → ST r Unit
 pushExprScopeNode state@{ exprScopeNode } index = do
   scope ← currentScope state
   MutableArray.poke index scope exprScopeNode
+
+pushTypeScopeNode ∷ ∀ r. State r → SST.TypeIndex → ST r Unit
+pushTypeScopeNode state@{ typeScopeNode } index = do
+  scope ← currentScope state
+  MutableArray.poke index scope typeScopeNode
 
 withRevertingScope ∷ ∀ r a. State r → ST r a → ST r a
 withRevertingScope state action = do
@@ -333,48 +342,57 @@ collectPushType state = runSTFn1 go
   go ∷ STFn1 SST.Type r Unit
   go = mkSTFn1 \t → do
     case t of
-      SST.TypeVar _ _ →
-        pure unit
-      SST.TypeConstructor _ _ →
-        pure unit
-      SST.TypeWildcard _ →
-        pure unit
-      SST.TypeHole _ _ →
-        pure unit
-      SST.TypeString _ _ →
-        pure unit
-      SST.TypeInt _ _ _ →
-        pure unit
-      SST.TypeRow _ r →
+      SST.TypeVar (SST.Annotation { index }) _ →
+        pushTypeScopeNode state index
+      SST.TypeConstructor (SST.Annotation { index }) _ →
+        pushTypeScopeNode state index
+      SST.TypeWildcard (SST.Annotation { index }) →
+        pushTypeScopeNode state index
+      SST.TypeHole (SST.Annotation { index }) _ →
+        pushTypeScopeNode state index
+      SST.TypeString (SST.Annotation { index }) _ →
+        pushTypeScopeNode state index
+      SST.TypeInt (SST.Annotation { index }) _ _ →
+        pushTypeScopeNode state index
+      SST.TypeRow (SST.Annotation { index }) r → do
+        pushTypeScopeNode state index
         runSTFn1 goRow r
-      SST.TypeRecord _ r →
+      SST.TypeRecord (SST.Annotation { index }) r → do
+        pushTypeScopeNode state index
         runSTFn1 goRow r
-      SST.TypeForall _ v i → do
+      SST.TypeForall (SST.Annotation { index }) v i → do
+        pushTypeScopeNode state index
         collectPushTypeVars state v
         runSTFn1 go i
-      SST.TypeKinded _ i k → do
+      SST.TypeKinded (SST.Annotation { index }) i k → do
+        pushTypeScopeNode state index
         runSTFn1 go i
         runSTFn1 go k
-      SST.TypeApp _ f a → do
+      SST.TypeApp (SST.Annotation { index }) f a → do
+        pushTypeScopeNode state index
         runSTFn1 go f
         traverse_ (runSTFn1 go) a
-      SST.TypeOp _ head chain → do
+      SST.TypeOp (SST.Annotation { index }) head chain → do
+        pushTypeScopeNode state index
         runSTFn1 go head
         traverse_ (Tuple.snd >>> runSTFn1 go) chain
-      SST.TypeOpName _ _ →
-        pure unit
-      SST.TypeArrow _ a r → do
+      SST.TypeOpName (SST.Annotation { index }) _ → do
+        pushTypeScopeNode state index
+      SST.TypeArrow (SST.Annotation { index }) a r → do
+        pushTypeScopeNode state index
         runSTFn1 go a
         runSTFn1 go r
-      SST.TypeArrowName _ →
-        pure unit
-      SST.TypeConstrained _ c i → do
+      SST.TypeArrowName (SST.Annotation { index }) →
+        pushTypeScopeNode state index
+      SST.TypeConstrained (SST.Annotation { index }) c i → do
+        pushTypeScopeNode state index
         runSTFn1 go c
         runSTFn1 go i
-      SST.TypeParens _ i →
+      SST.TypeParens (SST.Annotation { index }) i → do
+        pushTypeScopeNode state index
         runSTFn1 go i
-      SST.TypeNotImplemented _ →
-        pure unit
+      SST.TypeNotImplemented (SST.Annotation { index }) →
+        pushTypeScopeNode state index
 
 collectPushBinders ∷ ∀ r. State r → Array SST.Binder → ST r Unit
 collectPushBinders state binders = do

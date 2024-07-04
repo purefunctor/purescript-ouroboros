@@ -22,6 +22,7 @@ import Node.Process as Process
 import Test.PureScript.Driver as TestDriver
 import Test.PureScript.Graph as TestGraph
 import Test.PureScript.Query as TestQuery
+import Test.PureScript.Scope as TestScope
 import Test.PureScript.Surface as TestSurface
 import Test.Snapshot (Options(..), runSnapshotSpec)
 
@@ -50,4 +51,5 @@ main = launchAff_ do
         TestDriver.spec
         TestQuery.spec
         TestGraph.spec
+        TestScope.spec
         TestSurface.spec
