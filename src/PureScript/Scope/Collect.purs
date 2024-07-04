@@ -9,8 +9,9 @@ import Control.Monad.ST.Ref as STRef
 import Control.Monad.ST.Uncurried (STFn1, mkSTFn1, runSTFn1)
 import Data.Array as Array
 import Data.Array.NonEmpty as NEA
-import Data.Traversable (for_, traverse_)
+import Data.Traversable (class Traversable, for_, traverse_)
 import Data.Tuple (Tuple(..))
+import Data.Tuple as Tuple
 import Foreign.Object as O
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
@@ -106,7 +107,7 @@ collectValueEquation state (SST.ValueEquation { binders, guarded }) = do
     collectPushBinders state binders
     collectGuarded state guarded
 
-collectPushTypeVars ∷ ∀ r. State r → Array SST.TypeVarBinding → ST r Unit
+collectPushTypeVars ∷ ∀ r t. Traversable t ⇒ State r → t SST.TypeVarBinding → ST r Unit
 collectPushTypeVars state typeVars = do
   inScopeRaw ← STO.new
   for_ typeVars case _ of
@@ -317,7 +318,62 @@ collectBinder _ perName = runSTFn1 go
         pure unit
 
 collectType ∷ ∀ r. State r → SST.Type → ST r Unit
-collectType _ _ = pure unit
+collectType state t = withRevertingScope state $ collectPushType state t
+
+collectPushType ∷ ∀ r. State r → SST.Type → ST r Unit
+collectPushType state = runSTFn1 go
+  where
+  goRow ∷ STFn1 SST.Row r Unit
+  goRow = mkSTFn1 case _ of
+    SST.Row head tail → do
+      traverse_ (Tuple.snd >>> runSTFn1 go) head
+      traverse_ (runSTFn1 go) tail
+
+  go ∷ STFn1 SST.Type r Unit
+  go = mkSTFn1 \t → do
+    case t of
+      SST.TypeVar _ _ →
+        pure unit
+      SST.TypeConstructor _ _ →
+        pure unit
+      SST.TypeWildcard _ →
+        pure unit
+      SST.TypeHole _ _ →
+        pure unit
+      SST.TypeString _ _ →
+        pure unit
+      SST.TypeInt _ _ _ →
+        pure unit
+      SST.TypeRow _ r →
+        runSTFn1 goRow r
+      SST.TypeRecord _ r →
+        runSTFn1 goRow r
+      SST.TypeForall _ v i → do
+        collectPushTypeVars state v
+        runSTFn1 go i
+      SST.TypeKinded _ i k → do
+        runSTFn1 go i
+        runSTFn1 go k
+      SST.TypeApp _ f a → do
+        runSTFn1 go f
+        traverse_ (runSTFn1 go) a
+      SST.TypeOp _ head chain → do
+        runSTFn1 go head
+        traverse_ (Tuple.snd >>> runSTFn1 go) chain
+      SST.TypeOpName _ _ →
+        pure unit
+      SST.TypeArrow _ a r → do
+        runSTFn1 go a
+        runSTFn1 go r
+      SST.TypeArrowName _ →
+        pure unit
+      SST.TypeConstrained _ c i → do
+        runSTFn1 go c
+        runSTFn1 go i
+      SST.TypeParens _ i →
+        runSTFn1 go i
+      SST.TypeNotImplemented _ →
+        pure unit
 
 collectPushBinders ∷ ∀ r. State r → Array SST.Binder → ST r Unit
 collectPushBinders state binders = do
