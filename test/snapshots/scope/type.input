@@ -1,0 +1,4 @@
+module Main where
+
+type F :: forall k. k -> Type
+type F (a :: k) = k

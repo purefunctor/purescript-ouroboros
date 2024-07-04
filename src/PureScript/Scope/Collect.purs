@@ -104,7 +104,10 @@ collectDataConstructor ∷ ∀ r. State r → SST.DataConstructor → ST r Unit
 collectDataConstructor state (SST.DataConstructor { fields }) = traverse_ (collectType state) fields
 
 collectTypeEquation ∷ ∀ r. State r → SST.TypeEquation → ST r Unit
-collectTypeEquation state (SST.TypeEquation { synonymTo }) = collectType state synonymTo
+collectTypeEquation state (SST.TypeEquation { variables, synonymTo }) = do
+  withRevertingScope state do
+    collectPushTypeVars state variables
+    collectType state synonymTo
 
 collectNewtypeEquation ∷ ∀ r. State r → SST.NewtypeEquation → ST r Unit
 collectNewtypeEquation state (SST.NewtypeEquation { variables, constructor }) = do
