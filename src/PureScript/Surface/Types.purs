@@ -292,6 +292,9 @@ data Type
 
 derive instance Eq Type
 
-data Row = Row (Array (Tuple Label Type)) (Maybe Type)
+newtype Row = Row
+  { labels ∷ Array (Tuple Label Type)
+  , tail ∷ Maybe Type
+  }
 
-derive instance Eq Row
+derive newtype instance Eq Row

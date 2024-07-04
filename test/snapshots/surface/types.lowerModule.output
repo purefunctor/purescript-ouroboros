@@ -61,7 +61,7 @@
         value2: Just {
           value0: TypeRow {
             value0: { index: 6 },
-            value1: Row { value0: [], value1: Nothing {} }
+            value1: { labels: [], tail: Nothing {} }
           }
         },
         value3: []
@@ -72,8 +72,8 @@
         value2: Just {
           value0: TypeRow {
             value0: { index: 7 },
-            value1: Row {
-              value0: [
+            value1: {
+              labels: [
                 Tuple {
                   value0: 'a',
                   value1: TypeConstructor {
@@ -82,7 +82,7 @@
                   }
                 }
               ],
-              value1: Nothing {}
+              tail: Nothing {}
             }
           }
         },
@@ -94,8 +94,8 @@
         value2: Just {
           value0: TypeRow {
             value0: { index: 9 },
-            value1: Row {
-              value0: [
+            value1: {
+              labels: [
                 Tuple {
                   value0: 'a',
                   value1: TypeConstructor {
@@ -104,7 +104,7 @@
                   }
                 }
               ],
-              value1: Just {
+              tail: Just {
                 value0: TypeVar { value0: { index: 11 }, value1: 't' }
               }
             }
@@ -118,7 +118,7 @@
         value2: Just {
           value0: TypeRecord {
             value0: { index: 12 },
-            value1: Row { value0: [], value1: Nothing {} }
+            value1: { labels: [], tail: Nothing {} }
           }
         },
         value3: []
@@ -129,8 +129,8 @@
         value2: Just {
           value0: TypeRecord {
             value0: { index: 13 },
-            value1: Row {
-              value0: [
+            value1: {
+              labels: [
                 Tuple {
                   value0: 'a',
                   value1: TypeConstructor {
@@ -139,7 +139,7 @@
                   }
                 }
               ],
-              value1: Nothing {}
+              tail: Nothing {}
             }
           }
         },
@@ -151,8 +151,8 @@
         value2: Just {
           value0: TypeRecord {
             value0: { index: 15 },
-            value1: Row {
-              value0: [
+            value1: {
+              labels: [
                 Tuple {
                   value0: 'a',
                   value1: TypeConstructor {
@@ -161,7 +161,7 @@
                   }
                 }
               ],
-              value1: Just {
+              tail: Just {
                 value0: TypeVar { value0: { index: 17 }, value1: 't' }
               }
             }

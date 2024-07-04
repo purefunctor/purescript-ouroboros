@@ -325,8 +325,8 @@ collectPushType state = runSTFn1 go
   where
   goRow ∷ STFn1 SST.Row r Unit
   goRow = mkSTFn1 case _ of
-    SST.Row head tail → do
-      traverse_ (Tuple.snd >>> runSTFn1 go) head
+    SST.Row { labels, tail } → do
+      traverse_ (Tuple.snd >>> runSTFn1 go) labels
       traverse_ (runSTFn1 go) tail
 
   go ∷ STFn1 SST.Type r Unit

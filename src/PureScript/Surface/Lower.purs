@@ -542,7 +542,7 @@ lowerType state = runSTFn1 go
         Nothing →
           pure []
       tail ← traverse (Tuple.snd >>> lowerType state) cstTail
-      pure $ SST.Row labels tail
+      pure $ SST.Row { labels, tail }
 
   goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Type Void)) r (Tuple b SST.Type)
   goChain = mkSTFn2 \onOperator (Tuple operator operand) →
