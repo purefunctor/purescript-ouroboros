@@ -219,8 +219,7 @@ collectExpr state = runSTFn1 go
       SST.ExprOp (SST.Annotation { index }) head chain → do
         pushExprScopeNode state index
         runSTFn1 go head
-        for_ chain \(Tuple _ operand) → do
-          runSTFn1 go operand
+        traverse_ (Tuple.snd >>> runSTFn1 go) chain
       SST.ExprOpName (SST.Annotation { index }) _ →
         pushExprScopeNode state index
       SST.ExprNegate (SST.Annotation { index }) i → do
@@ -312,8 +311,7 @@ collectBinder _ perName = runSTFn1 go
         runSTFn1 go i
       SST.BinderOp _ head chain → do
         runSTFn1 go head
-        for_ chain \(Tuple _ operand) →
-          runSTFn1 go operand
+        traverse_ (Tuple.snd >>> runSTFn1 go) chain
       SST.BinderNotImplemented _ →
         pure unit
 
