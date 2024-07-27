@@ -85,8 +85,10 @@ collectDeclaration state = case _ of
     withRevertingScope state do
       traverse_ (collectPushType state) t
       collectNewtypeEquation state e
-  SST.DeclarationClass _ _ _ _ → do
-    pure unit
+  SST.DeclarationClass _ _ t e → do
+    withRevertingScope state do
+      traverse_ (collectPushType state) t
+      collectClassEquation state e
   SST.DeclarationValue _ _ t e →
     withRevertingScope state do
       traverse_ (collectPushType state) t
@@ -116,6 +118,15 @@ collectNewtypeEquation state (SST.NewtypeEquation { variables, constructor }) = 
     case constructor of
       SST.NewtypeConstructor { field } →
         collectType state field
+
+collectClassEquation ∷ ∀ r. State r → SST.ClassEquation → ST r Unit
+collectClassEquation state (SST.ClassEquation { variables, methods }) = do
+  withRevertingScope state do
+    collectPushTypeVars state variables
+    traverse_ (traverse_ $ collectClassMethod state) methods
+
+collectClassMethod ∷ ∀ r. State r → SST.ClassMethod → ST r Unit
+collectClassMethod state (SST.ClassMethod { signature }) = collectType state signature
 
 collectValueEquation ∷ ∀ r. State r → SST.ValueEquation → ST r Unit
 collectValueEquation state (SST.ValueEquation { binders, guarded }) = do
@@ -462,6 +473,7 @@ collectTopLevel ∷ Array SST.Declaration → TopLevelRefs
 collectTopLevel declarations = ST.run do
   dataConstructorsRaw ← MutableObject.empty
   newtypeConstructorsRaw ← MutableObject.empty
+  classMethodsRaw ← MutableObject.empty
   typesRaw ← MutableObject.empty
   valuesRaw ← MutableObject.empty
 
@@ -476,6 +488,11 @@ collectTopLevel declarations = ST.run do
       SST.NewtypeConstructor { annotation: SST.Annotation { index }, name } →
         MutableObject.poke name index newtypeConstructorsRaw
 
+    collectMethod ∷ SST.ClassMethod → _
+    collectMethod = case _ of
+      SST.ClassMethod { annotation: SST.Annotation { index }, name } →
+        MutableObject.poke name index classMethodsRaw
+
   for_ declarations case _ of
     SST.DeclarationData (SST.Annotation { index }) name _ (SST.DataEquation { constructors }) →
       do
@@ -487,7 +504,8 @@ collectTopLevel declarations = ST.run do
       do
         collectNewtypeCtor constructor
         MutableObject.poke name index typesRaw
-    SST.DeclarationClass (SST.Annotation { index }) name _ _ →
+    SST.DeclarationClass (SST.Annotation { index }) name _ (SST.ClassEquation { methods }) → do
+      traverse_ (traverse_ collectMethod) methods
       MutableObject.poke name index typesRaw
     SST.DeclarationValue (SST.Annotation { index }) name _ _ →
       MutableObject.poke name index valuesRaw
@@ -496,9 +514,10 @@ collectTopLevel declarations = ST.run do
 
   dataConstructors ← MutableObject.unsafeFreeze dataConstructorsRaw
   newtypeConstructors ← MutableObject.unsafeFreeze newtypeConstructorsRaw
+  classMethods ← MutableObject.unsafeFreeze classMethodsRaw
   types ← MutableObject.unsafeFreeze typesRaw
   values ← MutableObject.unsafeFreeze valuesRaw
-  pure $ TopLevelRefs { dataConstructors, newtypeConstructors, types, values }
+  pure $ TopLevelRefs { dataConstructors, newtypeConstructors, classMethods, types, values }
 
 collectModule ∷ ∀ r. SST.Module → ST r ScopeNodes
 collectModule (SST.Module { declarations }) = do

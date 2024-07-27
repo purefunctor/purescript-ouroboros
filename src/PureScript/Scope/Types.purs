@@ -11,10 +11,12 @@ type DeclarationRef = SST.DeclarationIndex
 type TypeVarRef = SST.TypeVarBindingIndex
 type ConstructorRef = SST.ConstructorIndex
 type NewtypeRef = SST.NewtypeIndex
+type MethodRef = SST.ClassMethodIndex
 
 newtype TopLevelRefs = TopLevelRefs
   { dataConstructors ∷ Object ConstructorRef
   , newtypeConstructors ∷ Object NewtypeRef
+  , classMethods ∷ Object MethodRef
   , types ∷ Object DeclarationRef
   , values ∷ Object DeclarationRef
   }

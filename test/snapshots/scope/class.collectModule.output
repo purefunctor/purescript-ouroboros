@@ -6,7 +6,27 @@
       value1: {
         dataConstructors: {},
         newtypeConstructors: {},
-        classMethods: {},
+        classMethods: { f: 0 },
+        types: { F: 0 },
+        values: {}
+      }
+    },
+    TopLevel {
+      value0: RootScope {},
+      value1: {
+        dataConstructors: {},
+        newtypeConstructors: {},
+        classMethods: { f: 0 },
+        types: { F: 0 },
+        values: {}
+      }
+    },
+    TopLevel {
+      value0: RootScope {},
+      value1: {
+        dataConstructors: {},
+        newtypeConstructors: {},
+        classMethods: { f: 0 },
         types: { F: 0 },
         values: {}
       }
@@ -17,73 +37,41 @@
         value1: {
           dataConstructors: {},
           newtypeConstructors: {},
-          classMethods: {},
+          classMethods: { f: 0 },
           types: { F: 0 },
           values: {}
         }
-      },
-      value1: 'k',
-      value2: 0
-    },
-    TypeVar {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {}
-        }
-      },
-      value1: 'k',
-      value2: 0
-    },
-    TypeVar {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {}
-        }
-      },
-      value1: 'k',
-      value2: 0
-    },
-    TypeVar {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {}
-        }
-      },
-      value1: 'k',
-      value2: 0
-    },
-    TypeVar {
-      value0: TypeVar {
-        value0: TopLevel {
-          value0: RootScope {},
-          value1: {
-            dataConstructors: {},
-            newtypeConstructors: {},
-            classMethods: {},
-            types: { F: 0 },
-            values: {}
-          }
-        },
-        value1: 'k',
-        value2: 0
       },
       value1: 'a',
-      value2: 1
+      value2: 0
+    },
+    TypeVar {
+      value0: TopLevel {
+        value0: RootScope {},
+        value1: {
+          dataConstructors: {},
+          newtypeConstructors: {},
+          classMethods: { f: 0 },
+          types: { F: 0 },
+          values: {}
+        }
+      },
+      value1: 'a',
+      value2: 0
+    },
+    TypeVar {
+      value0: TopLevel {
+        value0: RootScope {},
+        value1: {
+          dataConstructors: {},
+          newtypeConstructors: {},
+          classMethods: { f: 0 },
+          types: { F: 0 },
+          values: {}
+        }
+      },
+      value1: 'a',
+      value2: 0
     }
   ]
 }

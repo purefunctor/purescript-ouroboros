@@ -1,0 +1,5 @@
+module Main where
+
+class F :: Type -> Constraint
+class F a where
+  f :: a -> a
