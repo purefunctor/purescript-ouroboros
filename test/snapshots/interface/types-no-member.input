@@ -1,0 +1,7 @@
+module Main (A, B, C) where
+
+data A = A
+
+newtype B = B A
+
+type C = B

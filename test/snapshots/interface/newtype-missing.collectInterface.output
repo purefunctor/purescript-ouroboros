@@ -1,0 +1,10 @@
+{
+  interface: {
+    dataConstructors: {},
+    newtypeConstructors: { A: 0 },
+    classMethods: {},
+    types: { A: 0 },
+    values: {}
+  },
+  errors: [ MissingMember { value0: 'B' } ]
+}

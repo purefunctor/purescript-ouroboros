@@ -26,7 +26,10 @@ newtype Interface = Interface
 
 derive instance Eq Interface
 
-data InterfaceError = MissingValue Ident
+data InterfaceError
+  = MissingMember Proper
+  | MissingType Proper
+  | MissingValue Ident
 
 derive instance Eq InterfaceError
 
@@ -36,7 +39,7 @@ type InterfaceWithErrors =
   }
 
 checkExports ∷ Interface → Maybe (NonEmptyArray SST.Export) → Array InterfaceError
-checkExports (Interface { values }) = case _ of
+checkExports (Interface { dataConstructors, newtypeConstructors, types, values }) = case _ of
   Nothing →
     []
   Just exportList → ST.run do
@@ -44,13 +47,29 @@ checkExports (Interface { values }) = case _ of
 
     let
       check ∷ ∀ k v. Coercible k String ⇒ k → Object v → InterfaceError → ST _ Unit
-      check i k e =
-        unless (Object.member (coerce i) k) do
-          void $ MutableArray.push e errorsRaw
+      check name collection error =
+        unless (Object.member (coerce name) collection) do
+          void $ MutableArray.push error errorsRaw
+
+      checkMembers ∷ Maybe SST.DataMembers → ST _ Unit
+      checkMembers = traverse_ case _ of
+        SST.DataAll →
+          pure unit
+        SST.DataEnumerated members →
+          for_ members \member → do
+            let
+              isMember ∷ String → Boolean
+              isMember = flip Object.member dataConstructors
+                || flip Object.member newtypeConstructors
+            unless (isMember (coerce member)) do
+              void $ MutableArray.push (MissingMember member) errorsRaw
 
     for_ exportList case _ of
-      SST.ExportValue i →
-        check i values (MissingValue i)
+      SST.ExportType name members → do
+        check name types (MissingType name)
+        checkMembers members
+      SST.ExportValue name →
+        check name values (MissingValue name)
       _ →
         pure unit
 

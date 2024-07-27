@@ -1,0 +1,5 @@
+module Main (A(A), B(B)) where
+
+data A = A | C
+
+newtype B = B A

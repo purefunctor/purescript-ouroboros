@@ -1,0 +1,14 @@
+{
+  interface: {
+    dataConstructors: {},
+    newtypeConstructors: {},
+    classMethods: {},
+    types: {},
+    values: {}
+  },
+  errors: [
+    MissingType { value0: 'A' },
+    MissingType { value0: 'B' },
+    MissingType { value0: 'C' }
+  ]
+}

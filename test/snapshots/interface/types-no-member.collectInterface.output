@@ -1,0 +1,10 @@
+{
+  interface: {
+    dataConstructors: { A: 0 },
+    newtypeConstructors: { B: 0 },
+    classMethods: {},
+    types: { A: 0, B: 1, C: 2 },
+    values: {}
+  },
+  errors: []
+}

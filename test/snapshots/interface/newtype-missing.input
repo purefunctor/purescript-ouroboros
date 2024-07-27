@@ -1,0 +1,3 @@
+module Main (A(B)) where
+
+newtype A = A Int
