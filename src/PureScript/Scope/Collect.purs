@@ -3,7 +3,6 @@ module PureScript.Scope.Collect where
 import Prelude
 
 import Control.Monad.ST (ST)
-import Control.Monad.ST as ST
 import Control.Monad.ST.Ref (STRef)
 import Control.Monad.ST.Ref as STRef
 import Control.Monad.ST.Uncurried (STFn1, mkSTFn1, runSTFn1)
@@ -17,11 +16,11 @@ import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
-import PureScript.Scope.Types (ScopeNode(..), TopLevelRefs(..))
+import PureScript.Scope.Types (ScopeNode(..))
+import PureScript.Surface.Interface (collectInterface)
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
-import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (coerce)
 
 type State r =
@@ -469,66 +468,14 @@ collectPushLetBindings state letBindings = do
 
   pure unit
 
-collectTopLevel ∷ Array SST.Declaration → TopLevelRefs
-collectTopLevel declarations = ST.run do
-  dataConstructorsRaw ← MutableObject.empty
-  newtypeConstructorsRaw ← MutableObject.empty
-  classMethodsRaw ← MutableObject.empty
-  typesRaw ← MutableObject.empty
-  valuesRaw ← MutableObject.empty
-
-  let
-    collectDataCtor ∷ SST.DataConstructor → _
-    collectDataCtor = case _ of
-      SST.DataConstructor { annotation: SST.Annotation { index }, name } →
-        MutableObject.poke name index dataConstructorsRaw
-
-    collectNewtypeCtor ∷ SST.NewtypeConstructor → _
-    collectNewtypeCtor = case _ of
-      SST.NewtypeConstructor { annotation: SST.Annotation { index }, name } →
-        MutableObject.poke name index newtypeConstructorsRaw
-
-    collectMethod ∷ SST.ClassMethod → _
-    collectMethod = case _ of
-      SST.ClassMethod { annotation: SST.Annotation { index }, name } →
-        MutableObject.poke name index classMethodsRaw
-
-  for_ declarations case _ of
-    SST.DeclarationData (SST.Annotation { index }) name _ (SST.DataEquation { constructors }) →
-      do
-        traverse_ (traverse_ collectDataCtor) constructors
-        MutableObject.poke name index typesRaw
-    SST.DeclarationType (SST.Annotation { index }) name _ _ →
-      MutableObject.poke name index typesRaw
-    SST.DeclarationNewtype (SST.Annotation { index }) name _ (SST.NewtypeEquation { constructor }) →
-      do
-        collectNewtypeCtor constructor
-        MutableObject.poke name index typesRaw
-    SST.DeclarationClass (SST.Annotation { index }) name _ (SST.ClassEquation { methods }) → do
-      traverse_ (traverse_ collectMethod) methods
-      MutableObject.poke name index typesRaw
-    SST.DeclarationValue (SST.Annotation { index }) name _ _ →
-      MutableObject.poke name index valuesRaw
-    SST.DeclarationNotImplemented _ →
-      pure unit
-
-  dataConstructors ← MutableObject.unsafeFreeze dataConstructorsRaw
-  newtypeConstructors ← MutableObject.unsafeFreeze newtypeConstructorsRaw
-  classMethods ← MutableObject.unsafeFreeze classMethodsRaw
-  types ← MutableObject.unsafeFreeze typesRaw
-  values ← MutableObject.unsafeFreeze valuesRaw
-  pure $ TopLevelRefs { dataConstructors, newtypeConstructors, classMethods, types, values }
-
 collectModule ∷ ∀ r. SST.Module → ST r ScopeNodes
-collectModule (SST.Module { declarations }) = do
+collectModule m@(SST.Module { declarations }) = do
   state ← defaultState
 
-  let
-    topLevel ∷ TopLevelRefs
-    topLevel = collectTopLevel declarations
-
+  let { interface } = collectInterface m
   parentScope ← currentScope state
-  pushScope state (TopLevel parentScope topLevel)
+
+  pushScope state (TopLevel parentScope interface)
   traverse_ (collectDeclaration state) declarations
 
   freezeState state

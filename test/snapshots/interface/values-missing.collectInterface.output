@@ -1,4 +1,10 @@
 {
-  interface: { values: {} },
+  interface: {
+    dataConstructors: {},
+    newtypeConstructors: {},
+    classMethods: {},
+    types: {},
+    values: {}
+  },
   errors: [ MissingValue { value0: 'a' }, MissingValue { value0: 'b' } ]
 }
