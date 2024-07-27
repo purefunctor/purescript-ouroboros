@@ -15,13 +15,13 @@ import Data.Tuple as Tuple
 import Foreign.Object as O
 import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
-import Foreign.Object.ST.Unsafe as STOU
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
-import PureScript.Scope.Types (ScopeNode(..), TopLevelRefs)
+import PureScript.Scope.Types (ScopeNode(..), TopLevelRefs(..))
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
+import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (coerce)
 
 type State r =
@@ -460,24 +460,45 @@ collectPushLetBindings state letBindings = do
 
 collectTopLevel ∷ Array SST.Declaration → TopLevelRefs
 collectTopLevel declarations = ST.run do
-  valuesRaw ← STO.new
+  dataConstructorsRaw ← MutableObject.empty
+  newtypeConstructorsRaw ← MutableObject.empty
+  typesRaw ← MutableObject.empty
+  valuesRaw ← MutableObject.empty
+
+  let
+    collectDataCtor ∷ SST.DataConstructor → _
+    collectDataCtor = case _ of
+      SST.DataConstructor { annotation: SST.Annotation { index }, name } →
+        MutableObject.poke name index dataConstructorsRaw
+
+    collectNewtypeCtor ∷ SST.NewtypeConstructor → _
+    collectNewtypeCtor = case _ of
+      SST.NewtypeConstructor { annotation: SST.Annotation { index }, name } →
+        MutableObject.poke name index newtypeConstructorsRaw
 
   for_ declarations case _ of
-    SST.DeclarationData _ _ _ _ →
-      pure unit
-    SST.DeclarationType _ _ _ _ →
-      pure unit
-    SST.DeclarationNewtype _ _ _ _ →
-      pure unit
-    SST.DeclarationClass _ _ _ _ →
-      pure unit
+    SST.DeclarationData (SST.Annotation { index }) name _ (SST.DataEquation { constructors }) →
+      do
+        traverse_ (traverse_ collectDataCtor) constructors
+        MutableObject.poke name index typesRaw
+    SST.DeclarationType (SST.Annotation { index }) name _ _ →
+      MutableObject.poke name index typesRaw
+    SST.DeclarationNewtype (SST.Annotation { index }) name _ (SST.NewtypeEquation { constructor }) →
+      do
+        collectNewtypeCtor constructor
+        MutableObject.poke name index typesRaw
+    SST.DeclarationClass (SST.Annotation { index }) name _ _ →
+      MutableObject.poke name index typesRaw
     SST.DeclarationValue (SST.Annotation { index }) name _ _ →
-      void $ STO.poke (coerce name) index valuesRaw
+      MutableObject.poke name index valuesRaw
     SST.DeclarationNotImplemented _ →
       pure unit
 
-  values ← STOU.unsafeFreeze valuesRaw
-  pure $ { values }
+  dataConstructors ← MutableObject.unsafeFreeze dataConstructorsRaw
+  newtypeConstructors ← MutableObject.unsafeFreeze newtypeConstructorsRaw
+  types ← MutableObject.unsafeFreeze typesRaw
+  values ← MutableObject.unsafeFreeze valuesRaw
+  pure $ TopLevelRefs { dataConstructors, newtypeConstructors, types, values }
 
 collectModule ∷ ∀ r. SST.Module → ST r ScopeNodes
 collectModule (SST.Module { declarations }) = do

@@ -9,10 +9,17 @@ type BinderRef = SST.BinderIndex
 type LetBindingRef = SST.LetBindingIndex
 type DeclarationRef = SST.DeclarationIndex
 type TypeVarRef = SST.TypeVarBindingIndex
+type ConstructorRef = SST.ConstructorIndex
+type NewtypeRef = SST.NewtypeIndex
 
-type TopLevelRefs =
-  { values ∷ Object DeclarationRef
+newtype TopLevelRefs = TopLevelRefs
+  { dataConstructors ∷ Object ConstructorRef
+  , newtypeConstructors ∷ Object NewtypeRef
+  , types ∷ Object DeclarationRef
+  , values ∷ Object DeclarationRef
   }
+
+derive instance Eq TopLevelRefs
 
 data ScopeNode
   = RootScope
