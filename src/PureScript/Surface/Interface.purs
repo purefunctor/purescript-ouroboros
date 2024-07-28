@@ -172,8 +172,8 @@ checkExports (Interface { dataConstructors, newtypeConstructors, types, values }
 
     MutableArray.unsafeFreeze errorsRaw
 
-collectInterface ∷ SST.Module → InterfaceWithErrors
-collectInterface (SST.Module { exports, declarations }) = ST.run do
+collectInterface ∷ ∀ r. SST.Module → ST r InterfaceWithErrors
+collectInterface (SST.Module { exports, declarations }) = do
   dataConstructorsRaw ← MutableObject.empty
   newtypeConstructorsRaw ← MutableObject.empty
   classMethodsRaw ← MutableObject.empty

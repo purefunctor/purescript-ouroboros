@@ -35,5 +35,6 @@ spec = do
       [ "collectInterface" /\ \inputFile → do
           liftEffect $ toEffect do
             { surface } ← lowerModule $ parseTotal inputFile
-            pure $ inspect $ collectInterface surface
+            interface <- collectInterface surface
+            pure $ inspect interface
       ]

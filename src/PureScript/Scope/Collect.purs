@@ -472,7 +472,7 @@ collectModule ∷ ∀ r. SST.Module → ST r ScopeNodes
 collectModule m@(SST.Module { declarations }) = do
   state ← defaultState
 
-  let { interface } = collectInterface m
+  { interface } ← collectInterface m
   parentScope ← currentScope state
 
   pushScope state (TopLevel parentScope interface)
