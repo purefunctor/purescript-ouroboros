@@ -48,6 +48,7 @@ import Data.Set (Set)
 import Data.Set as Set
 import Data.Traversable (traverse_)
 import Partial.Unsafe (unsafeCrashWith)
+import PureScript.CST.Types (ModuleName)
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex, ModuleNameInterner)
 import PureScript.Driver.Interner as ModuleNameInterner
@@ -168,7 +169,7 @@ inputGet getQuery getStorage storage key = do
     Just { value } →
       pure value
     Nothing →
-      unsafeCrashWith "impossible."
+      unsafeCrashWith "invariant violated: value is not in storage"
 
 inputSet
   ∷ ∀ r k v
@@ -325,6 +326,17 @@ queryGet
       freshValue
 
   pure value
+
+-- The presence of a module name in the interner does not necessarily imply
+-- the presence of a parsed source file. This utility is useful for queries
+-- that need to obtain information from source files that may not exist yet.
+--
+-- Rather than designing queries to return `Maybe` if the source file does
+-- not exist, we simply do not call them at all if they're not available.
+lookupModuleIndex ∷ ∀ r. QueryEngine r → ModuleName → ST r (Maybe ModuleNameIndex)
+lookupModuleIndex (QueryEngine { moduleNameInterner, parsedFileStorage }) name = do
+  index ← ModuleNameInterner.internModuleName moduleNameInterner name
+  STRef.read parsedFileStorage <#> Map.member index >>> if _ then Just index else Nothing
 
 getParsedFile ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ParsedFile
 getParsedFile = inputGet OnParsedFile \(QueryEngine { parsedFileStorage }) → parsedFileStorage
