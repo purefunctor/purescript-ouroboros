@@ -4,6 +4,14 @@
     newtypeConstructors: {},
     classMethods: {},
     types: { A: 0 },
+    values: {},
+    constructorsOfData: {}
+  },
+  exported: {
+    dataConstructors: {},
+    newtypeConstructors: {},
+    classMethods: {},
+    types: { A: undefined },
     values: {}
   },
   errors: [ MissingMember { value0: 'A' } ]

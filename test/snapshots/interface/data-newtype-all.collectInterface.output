@@ -4,6 +4,14 @@
     newtypeConstructors: { B: 0 },
     classMethods: {},
     types: { A: 0, B: 1 },
+    values: {},
+    constructorsOfData: { A: [ 'A' ], B: [ 'B' ] }
+  },
+  exported: {
+    dataConstructors: { A: undefined },
+    newtypeConstructors: { B: undefined },
+    classMethods: {},
+    types: { A: undefined, B: undefined },
     values: {}
   },
   errors: []

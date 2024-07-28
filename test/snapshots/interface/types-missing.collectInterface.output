@@ -4,6 +4,14 @@
     newtypeConstructors: {},
     classMethods: {},
     types: {},
+    values: {},
+    constructorsOfData: {}
+  },
+  exported: {
+    dataConstructors: {},
+    newtypeConstructors: {},
+    classMethods: {},
+    types: {},
     values: {}
   },
   errors: [

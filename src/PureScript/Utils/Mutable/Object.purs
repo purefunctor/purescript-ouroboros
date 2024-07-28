@@ -14,7 +14,7 @@ import Safe.Coerce (coerce)
 newtype MutableObject ∷ Region → Type → Type → Type
 newtype MutableObject r k v = MutableObject (STObject r v)
 
-empty ∷ ∀ r k v. ST r (MutableObject r k v)
+empty ∷ ∀ r @k v. ST r (MutableObject r k v)
 empty = MutableObject <$> STObject.new
 
 peek ∷ ∀ r k v. Coercible k String ⇒ k → MutableObject r k v → ST r (Maybe v)

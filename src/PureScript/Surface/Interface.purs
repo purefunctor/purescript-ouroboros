@@ -6,15 +6,18 @@ import Control.Monad.ST (ST)
 import Control.Monad.ST as ST
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..))
+import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Traversable (traverse_)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import PureScript.CST.Types (Ident(..), Proper(..))
 import PureScript.Surface.Types as SST
+import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
+import PureScript.Utils.Mutable.Object (MutableObject)
 import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (class Coercible, coerce)
+import Unsafe.Coerce (unsafeCoerce)
 
 newtype Interface = Interface
   { dataConstructors ∷ Object SST.ConstructorIndex
@@ -22,9 +25,20 @@ newtype Interface = Interface
   , classMethods ∷ Object SST.ClassMethodIndex
   , types ∷ Object SST.DeclarationIndex
   , values ∷ Object SST.DeclarationIndex
+  , constructorsOfData ∷ Object (Array Proper)
   }
 
 derive instance Eq Interface
+
+newtype Exported = Exported
+  { dataConstructors ∷ Object Unit
+  , newtypeConstructors ∷ Object Unit
+  , classMethods ∷ Object Unit
+  , types ∷ Object Unit
+  , values ∷ Object Unit
+  }
+
+derive instance Eq Exported
 
 data InterfaceError
   = MissingMember Proper
@@ -35,8 +49,83 @@ derive instance Eq InterfaceError
 
 type InterfaceWithErrors =
   { interface ∷ Interface
+  , exported ∷ Exported
   , errors ∷ Array InterfaceError
   }
+
+pokeMulti ∷ ∀ r k v. Coercible k String ⇒ k → v → MutableObject r k (MutableArray r v) → ST r Unit
+pokeMulti k v o = do
+  vs ← MutableObject.peek k o >>= case _ of
+    Nothing → do
+      vs ← MutableArray.empty
+      MutableObject.poke k vs o
+      pure vs
+    Just vs →
+      pure vs
+  void $ MutableArray.push v vs
+
+lookupMulti ∷ ∀ v. String → Object (Array v) → Array v
+lookupMulti k o = fromMaybe [] $ Object.lookup k o
+
+unsafeFreezeMultiValue
+  ∷ ∀ r k v. Coercible k String ⇒ MutableObject r k (MutableArray r v) → ST r (Object (Array v))
+unsafeFreezeMultiValue = pure <<< unsafeCoerce
+
+collectExported ∷ ∀ r. Interface → Maybe (NonEmptyArray SST.Export) → ST r InterfaceWithErrors
+collectExported interface@(Interface interfaceInner) exports = do
+  dataConstructorsRaw ← MutableObject.empty
+  newtypeConstructorsRaw ← MutableObject.empty
+  classMethodsRaw ← MutableObject.empty @String
+  typesRaw ← MutableObject.empty
+  valuesRaw ← MutableObject.empty
+  errorsRaw ← MutableArray.empty
+
+  let
+    check ∷ ∀ k. Coercible k String ⇒ k → _ → MutableObject r k Unit → _
+    check name collection into error =
+      if Object.member (coerce name) collection then
+        MutableObject.poke name unit into
+      else
+        void $ MutableArray.push error errorsRaw
+
+  for_ exports $ traverse_ case _ of
+    SST.ExportType name memberList → do
+      check name interfaceInner.types typesRaw (MissingType name)
+      let
+        members ∷ Array Proper
+        members = case memberList of
+          Nothing →
+            []
+          Just SST.DataAll →
+            lookupMulti (coerce name) interfaceInner.constructorsOfData
+          Just (SST.DataEnumerated enumerated) →
+            enumerated
+      for_ members \member →
+        if Object.member (coerce member) interfaceInner.dataConstructors then
+          MutableObject.poke member unit dataConstructorsRaw
+        else if Object.member (coerce member) interfaceInner.newtypeConstructors then
+          MutableObject.poke member unit newtypeConstructorsRaw
+        else
+          void $ MutableArray.push (MissingMember member) errorsRaw
+    SST.ExportValue name →
+      check name interfaceInner.values valuesRaw (MissingValue name)
+    _ →
+      pure unit
+
+  exported ← map Exported do
+    { dataConstructors: _
+    , newtypeConstructors: _
+    , classMethods: _
+    , types: _
+    , values: _
+    } <$> MutableObject.unsafeFreeze dataConstructorsRaw
+      <*> MutableObject.unsafeFreeze newtypeConstructorsRaw
+      <*> MutableObject.unsafeFreeze classMethodsRaw
+      <*> MutableObject.unsafeFreeze typesRaw
+      <*> MutableObject.unsafeFreeze valuesRaw
+  errors ← MutableArray.unsafeFreeze errorsRaw
+
+  pure $ { interface, exported, errors }
 
 checkExports ∷ Interface → Maybe (NonEmptyArray SST.Export) → Array InterfaceError
 checkExports (Interface { dataConstructors, newtypeConstructors, types, values }) = case _ of
@@ -82,17 +171,20 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
   classMethodsRaw ← MutableObject.empty
   typesRaw ← MutableObject.empty
   valuesRaw ← MutableObject.empty
+  constructorsOfDataRaw ← MutableObject.empty
 
   let
-    collectDataCtor ∷ SST.DataConstructor → _
-    collectDataCtor = case _ of
-      SST.DataConstructor { annotation: SST.Annotation { index }, name } →
+    collectDataCtor ∷ Proper → SST.DataConstructor → _
+    collectDataCtor typeName = case _ of
+      SST.DataConstructor { annotation: SST.Annotation { index }, name } → do
         MutableObject.poke name index dataConstructorsRaw
+        pokeMulti typeName name constructorsOfDataRaw
 
-    collectNewtypeCtor ∷ SST.NewtypeConstructor → _
-    collectNewtypeCtor = case _ of
-      SST.NewtypeConstructor { annotation: SST.Annotation { index }, name } →
+    collectNewtypeCtor ∷ Proper → SST.NewtypeConstructor → _
+    collectNewtypeCtor typeName = case _ of
+      SST.NewtypeConstructor { annotation: SST.Annotation { index }, name } → do
         MutableObject.poke name index newtypeConstructorsRaw
+        pokeMulti typeName name constructorsOfDataRaw
 
     collectMethod ∷ SST.ClassMethod → _
     collectMethod = case _ of
@@ -102,13 +194,13 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
   for_ declarations case _ of
     SST.DeclarationData (SST.Annotation { index }) name _ (SST.DataEquation { constructors }) →
       do
-        traverse_ (traverse_ collectDataCtor) constructors
+        traverse_ (traverse_ $ collectDataCtor name) constructors
         MutableObject.poke name index typesRaw
     SST.DeclarationType (SST.Annotation { index }) name _ _ →
       MutableObject.poke name index typesRaw
     SST.DeclarationNewtype (SST.Annotation { index }) name _ (SST.NewtypeEquation { constructor }) →
       do
-        collectNewtypeCtor constructor
+        collectNewtypeCtor name constructor
         MutableObject.poke name index typesRaw
     SST.DeclarationClass (SST.Annotation { index }) name _ (SST.ClassEquation { methods }) → do
       traverse_ (traverse_ collectMethod) methods
@@ -118,20 +210,18 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
     SST.DeclarationNotImplemented _ →
       pure unit
 
-  interface ← coerce do
+  interface ← map Interface do
     { dataConstructors: _
     , newtypeConstructors: _
     , classMethods: _
     , types: _
     , values: _
+    , constructorsOfData: _
     } <$> MutableObject.unsafeFreeze dataConstructorsRaw
       <*> MutableObject.unsafeFreeze newtypeConstructorsRaw
       <*> MutableObject.unsafeFreeze classMethodsRaw
       <*> MutableObject.unsafeFreeze typesRaw
       <*> MutableObject.unsafeFreeze valuesRaw
+      <*> unsafeFreezeMultiValue constructorsOfDataRaw
 
-  let
-    errors ∷ Array InterfaceError
-    errors = checkExports interface exports
-
-  pure { interface, errors }
+  collectExported interface exports
