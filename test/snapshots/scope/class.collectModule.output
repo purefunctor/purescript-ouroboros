@@ -9,7 +9,8 @@
         classMethods: { f: 0 },
         types: { F: 0 },
         values: {},
-        constructorsOfData: {}
+        constructorsOfData: {},
+        methodsOfClass: { F: [ 'f' ] }
       }
     },
     TopLevel {
@@ -20,7 +21,8 @@
         classMethods: { f: 0 },
         types: { F: 0 },
         values: {},
-        constructorsOfData: {}
+        constructorsOfData: {},
+        methodsOfClass: { F: [ 'f' ] }
       }
     },
     TopLevel {
@@ -31,7 +33,8 @@
         classMethods: { f: 0 },
         types: { F: 0 },
         values: {},
-        constructorsOfData: {}
+        constructorsOfData: {},
+        methodsOfClass: { F: [ 'f' ] }
       }
     },
     TypeVar {
@@ -43,7 +46,8 @@
           classMethods: { f: 0 },
           types: { F: 0 },
           values: {},
-          constructorsOfData: {}
+          constructorsOfData: {},
+          methodsOfClass: { F: [ 'f' ] }
         }
       },
       value1: 'a',
@@ -58,7 +62,8 @@
           classMethods: { f: 0 },
           types: { F: 0 },
           values: {},
-          constructorsOfData: {}
+          constructorsOfData: {},
+          methodsOfClass: { F: [ 'f' ] }
         }
       },
       value1: 'a',
@@ -73,7 +78,8 @@
           classMethods: { f: 0 },
           types: { F: 0 },
           values: {},
-          constructorsOfData: {}
+          constructorsOfData: {},
+          methodsOfClass: { F: [ 'f' ] }
         }
       },
       value1: 'a',

@@ -26,6 +26,7 @@ newtype Interface = Interface
   , types ∷ Object SST.DeclarationIndex
   , values ∷ Object SST.DeclarationIndex
   , constructorsOfData ∷ Object (Array Proper)
+  , methodsOfClass ∷ Object (Array Ident)
   }
 
 derive instance Eq Interface
@@ -75,7 +76,7 @@ collectExported ∷ ∀ r. Interface → Maybe (NonEmptyArray SST.Export) → ST
 collectExported interface@(Interface interfaceInner) exports = do
   dataConstructorsRaw ← MutableObject.empty
   newtypeConstructorsRaw ← MutableObject.empty
-  classMethodsRaw ← MutableObject.empty @String
+  classMethodsRaw ← MutableObject.empty
   typesRaw ← MutableObject.empty
   valuesRaw ← MutableObject.empty
   errorsRaw ← MutableArray.empty
@@ -89,6 +90,8 @@ collectExported interface@(Interface interfaceInner) exports = do
         void $ MutableArray.push error errorsRaw
 
   for_ exports $ traverse_ case _ of
+    SST.ExportValue name →
+      check name interfaceInner.values valuesRaw (MissingValue name)
     SST.ExportType name memberList → do
       check name interfaceInner.types typesRaw (MissingType name)
       let
@@ -107,8 +110,13 @@ collectExported interface@(Interface interfaceInner) exports = do
           MutableObject.poke member unit newtypeConstructorsRaw
         else
           void $ MutableArray.push (MissingMember member) errorsRaw
-    SST.ExportValue name →
-      check name interfaceInner.values valuesRaw (MissingValue name)
+    SST.ExportClass name -> do
+      check name interfaceInner.types typesRaw (MissingType name)
+      let
+        members :: Array Ident
+        members = lookupMulti (coerce name) interfaceInner.methodsOfClass
+      for_ members \member ->
+        MutableObject.poke member unit classMethodsRaw
     _ →
       pure unit
 
@@ -172,6 +180,7 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
   typesRaw ← MutableObject.empty
   valuesRaw ← MutableObject.empty
   constructorsOfDataRaw ← MutableObject.empty
+  methodsOfClassRaw ← MutableObject.empty
 
   let
     collectDataCtor ∷ Proper → SST.DataConstructor → _
@@ -186,10 +195,11 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
         MutableObject.poke name index newtypeConstructorsRaw
         pokeMulti typeName name constructorsOfDataRaw
 
-    collectMethod ∷ SST.ClassMethod → _
-    collectMethod = case _ of
-      SST.ClassMethod { annotation: SST.Annotation { index }, name } →
+    collectMethod ∷ Proper → SST.ClassMethod → _
+    collectMethod typeName = case _ of
+      SST.ClassMethod { annotation: SST.Annotation { index }, name } → do
         MutableObject.poke name index classMethodsRaw
+        pokeMulti typeName name methodsOfClassRaw
 
   for_ declarations case _ of
     SST.DeclarationData (SST.Annotation { index }) name _ (SST.DataEquation { constructors }) →
@@ -203,7 +213,7 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
         collectNewtypeCtor name constructor
         MutableObject.poke name index typesRaw
     SST.DeclarationClass (SST.Annotation { index }) name _ (SST.ClassEquation { methods }) → do
-      traverse_ (traverse_ collectMethod) methods
+      traverse_ (traverse_ $ collectMethod name) methods
       MutableObject.poke name index typesRaw
     SST.DeclarationValue (SST.Annotation { index }) name _ _ →
       MutableObject.poke name index valuesRaw
@@ -217,11 +227,13 @@ collectInterface (SST.Module { exports, declarations }) = ST.run do
     , types: _
     , values: _
     , constructorsOfData: _
+    , methodsOfClass: _
     } <$> MutableObject.unsafeFreeze dataConstructorsRaw
       <*> MutableObject.unsafeFreeze newtypeConstructorsRaw
       <*> MutableObject.unsafeFreeze classMethodsRaw
       <*> MutableObject.unsafeFreeze typesRaw
       <*> MutableObject.unsafeFreeze valuesRaw
       <*> unsafeFreezeMultiValue constructorsOfDataRaw
+      <*> unsafeFreezeMultiValue methodsOfClassRaw
 
   collectExported interface exports

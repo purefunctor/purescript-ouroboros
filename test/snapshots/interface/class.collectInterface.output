@@ -2,22 +2,18 @@
   interface: {
     dataConstructors: {},
     newtypeConstructors: {},
-    classMethods: {},
-    types: {},
+    classMethods: { a: 0 },
+    types: { A: 0 },
     values: {},
     constructorsOfData: {},
-    methodsOfClass: {}
+    methodsOfClass: { A: [ 'a' ] }
   },
   exported: {
     dataConstructors: {},
     newtypeConstructors: {},
-    classMethods: {},
-    types: {},
+    classMethods: { a: undefined },
+    types: { A: undefined },
     values: {}
   },
-  errors: [
-    MissingType { value0: 'A' },
-    MissingType { value0: 'B' },
-    MissingType { value0: 'C' }
-  ]
+  errors: []
 }

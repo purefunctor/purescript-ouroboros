@@ -5,7 +5,8 @@
     classMethods: {},
     types: {},
     values: {},
-    constructorsOfData: {}
+    constructorsOfData: {},
+    methodsOfClass: {}
   },
   exported: {
     dataConstructors: {},
