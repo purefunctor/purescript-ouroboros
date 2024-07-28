@@ -54,6 +54,8 @@ import PureScript.Driver.Interner (ModuleNameIndex, ModuleNameInterner)
 import PureScript.Driver.Interner as ModuleNameInterner
 import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
+import PureScript.Surface.Interface (InterfaceWithErrors)
+import PureScript.Surface.Interface as SurfaceInterface
 import PureScript.Surface.Lower (ModuleWithSourceRanges)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
@@ -64,6 +66,7 @@ data Query
   = OnParsedFile ModuleNameIndex
   | OnSurfaceFull ModuleNameIndex
   | OnSurface ModuleNameIndex
+  | OnInterface ModuleNameIndex
   | OnScopeGraph ModuleNameIndex
 
 derive instance Eq Query
@@ -95,12 +98,14 @@ emptyHitMiss = { hit: _, miss: _ } <$> STRef.new 0 <*> STRef.new 0
 type QueryStats r =
   { surfaceFull ∷ HitMiss r
   , surface ∷ HitMiss r
+  , interface ∷ HitMiss r
   , scopeGraph ∷ HitMiss r
   }
 
 emptyQueryStats ∷ ∀ r. ST r (QueryStats r)
-emptyQueryStats = { surfaceFull: _, surface: _, scopeGraph: _ }
+emptyQueryStats = { surfaceFull: _, surface: _, interface: _, scopeGraph: _ }
   <$> emptyHitMiss
+  <*> emptyHitMiss
   <*> emptyHitMiss
   <*> emptyHitMiss
 
@@ -110,6 +115,7 @@ newtype QueryEngine r = QueryEngine
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
   , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex ModuleWithSourceRanges
   , surfaceStorage ∷ QueryStorage r ModuleNameIndex Module
+  , interfaceStorage ∷ QueryStorage r ModuleNameIndex InterfaceWithErrors
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   , queryStats ∷ QueryStats r
@@ -122,6 +128,7 @@ emptyQueryEngine = do
   parsedFileStorage ← STRef.new Map.empty
   surfaceFullStorage ← STRef.new Map.empty
   surfaceStorage ← STRef.new Map.empty
+  interfaceStorage ← STRef.new Map.empty
   scopeGraphStorage ← STRef.new Map.empty
   activeQuery ← MutableArray.empty
   queryStats ← emptyQueryStats
@@ -130,6 +137,7 @@ emptyQueryEngine = do
     , moduleNameInterner
     , parsedFileStorage
     , surfaceFullStorage
+    , interfaceStorage
     , surfaceStorage
     , scopeGraphStorage
     , activeQuery
@@ -206,6 +214,7 @@ queryGet
         , parsedFileStorage
         , surfaceFullStorage
         , surfaceStorage
+        , interfaceStorage
         , scopeGraphStorage
         , queryStats
         }
@@ -226,6 +235,8 @@ queryGet
             Just queryStats.surfaceFull
           OnSurface _ →
             Just queryStats.surface
+          OnInterface _ →
+            Just queryStats.interface
           OnScopeGraph _ →
             Just queryStats.scopeGraph
       case hitMiss of
@@ -297,6 +308,8 @@ queryGet
             checkDependency k getSurfaceFull surfaceFullStorage
           OnSurface k →
             checkDependency k getSurface surfaceStorage
+          OnInterface k →
+            checkDependency k getInterface interfaceStorage
           OnScopeGraph k →
             checkDependency k getScopeGraph scopeGraphStorage
 
@@ -368,10 +381,23 @@ getSurface = do
   queryGet OnSurface getStorage \storage moduleNameIndex → do
     getSurfaceFull storage moduleNameIndex <#> _.surface
 
+computeInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceWithErrors
+computeInterface storage moduleNameIndex = do
+  m ← getSurface storage moduleNameIndex
+  SurfaceInterface.collectInterface m
+
+getInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceWithErrors
+getInterface = do
+  let
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex InterfaceWithErrors
+    getStorage (QueryEngine { interfaceStorage }) = interfaceStorage
+  queryGet OnInterface getStorage computeInterface
+
 computeScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
 computeScopeGraph storage moduleNameIndex = do
-  m ← getSurface storage moduleNameIndex
-  ScopeCollect.collectModule m
+  surface ← getSurface storage moduleNameIndex
+  { interface } <- getInterface storage moduleNameIndex
+  ScopeCollect.collectModule surface interface
 
 getScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
 getScopeGraph = do

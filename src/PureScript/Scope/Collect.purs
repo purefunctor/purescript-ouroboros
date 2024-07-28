@@ -17,7 +17,7 @@ import Foreign.Object.ST as STO
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
 import PureScript.Scope.Types (ScopeNode(..))
-import PureScript.Surface.Interface (collectInterface)
+import PureScript.Surface.Interface as SSI
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
@@ -468,13 +468,11 @@ collectPushLetBindings state letBindings = do
 
   pure unit
 
-collectModule ∷ ∀ r. SST.Module → ST r ScopeNodes
-collectModule m@(SST.Module { declarations }) = do
+collectModule ∷ ∀ r. SST.Module -> SSI.Interface → ST r ScopeNodes
+collectModule (SST.Module { declarations }) interface = do
   state ← defaultState
 
-  { interface } ← collectInterface m
   parentScope ← currentScope state
-
   pushScope state (TopLevel parentScope interface)
   traverse_ (collectDeclaration state) declarations
 

@@ -9,6 +9,7 @@ import Node.Path (FilePath)
 import Node.Path as Path
 import PureScript.Debug (inspect)
 import PureScript.Scope.Collect (collectModule)
+import PureScript.Surface.Interface (collectInterface)
 import PureScript.Surface.Lower (lowerModule)
 import Test.Snapshot (SnapshotSpec, findInputs, makeSnapshotsNamed)
 import Test.Spec (describe)
@@ -26,6 +27,7 @@ spec = do
           liftEffect $ toEffect do
             let cst = parseTotal inputFile
             { surface } ← lowerModule cst
-            scope ← collectModule surface
+            { interface } <- collectInterface surface
+            scope ← collectModule surface interface
             pure $ inspect scope
       ]
