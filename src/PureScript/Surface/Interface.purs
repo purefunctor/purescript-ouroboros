@@ -110,12 +110,12 @@ collectExported interface@(Interface interfaceInner) exports = do
           MutableObject.poke member unit newtypeConstructorsRaw
         else
           void $ MutableArray.push (MissingMember member) errorsRaw
-    SST.ExportClass name -> do
+    SST.ExportClass name → do
       check name interfaceInner.types typesRaw (MissingType name)
       let
-        members :: Array Ident
+        members ∷ Array Ident
         members = lookupMulti (coerce name) interfaceInner.methodsOfClass
-      for_ members \member ->
+      for_ members \member →
         MutableObject.poke member unit classMethodsRaw
     _ →
       pure unit
