@@ -9,6 +9,7 @@ package:
     - language-cst-parser
     - prelude
     - refs
+    - variant
   test:
     main: Test.Main
     dependencies:

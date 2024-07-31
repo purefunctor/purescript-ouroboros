@@ -11,6 +11,7 @@ workspace:
         - language-cst-parser
         - prelude
         - refs
+        - variant
       test_dependencies:
         - aff
         - heterogeneous

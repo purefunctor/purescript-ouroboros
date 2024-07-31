@@ -2,119 +2,107 @@ module Test.PureScript.Query where
 
 import Prelude
 
-import Control.Monad.ST (ST)
-import Control.Monad.ST.Global (Global, toEffect)
-import Control.Monad.ST.Ref as STRef
+import Control.Monad.ST.Global (toEffect)
 import Data.Either (Either(..))
-import Effect.Class (class MonadEffect, liftEffect)
+import Effect.Class (liftEffect)
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.Driver.Files (ParsedFile, parseFile)
-import PureScript.Driver.Interner (ModuleNameIndex(..))
-import PureScript.Driver.Query
-  ( HitMiss
-  , QueryEngine(..)
-  , QueryStats
-  , emptyQueryEngine
-  , getScopeGraph
-  , getSurface
-  , getSurfaceFull
-  , setParsedFile
-  )
-import Safe.Coerce (coerce)
+import PureScript.Driver.Query.Engine (Engine(..))
+import PureScript.Driver.Query.Engine as Engine
+import PureScript.Driver.Query.Stats as Stats
+import PureScript.Driver.StringInterner (Id(..))
 import Test.Snapshot (SnapshotSpec)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)
 
 parseTotal ∷ String → ParsedFile
-parseTotal source = case parseFile source of
+parseTotal = parseFile >>> case _ of
   Left _ →
-    unsafeCrashWith "Oops!"
+    unsafeCrashWith "Oops! Fixture is invalid!"
   Right parsedFile →
     parsedFile
-
-a1 ∷ ParsedFile
-a1 = parseTotal "module A where\na = 0"
-
-a2 ∷ ParsedFile
-a2 = parseTotal "module A where\na  =  0"
-
-b1 ∷ ParsedFile
-b1 = parseTotal "module B where\nb = 0"
-
-i ∷ ModuleNameIndex
-i = coerce 0
-
-j ∷ ModuleNameIndex
-j = coerce 1
-
-runQuery ∷ ∀ m a. MonadEffect m ⇒ ST Global a → m a
-runQuery = liftEffect <<< toEffect
-
-getHitMiss
-  ∷ QueryEngine Global
-  → (QueryStats Global → HitMiss Global)
-  → ST Global { hit ∷ Int, miss ∷ Int }
-getHitMiss (QueryEngine { queryStats }) innerStats = do
-  case innerStats queryStats of
-    { hit, miss } → do
-      { hit: _, miss: _ } <$> STRef.read hit <*> STRef.read miss
 
 spec ∷ SnapshotSpec Unit
 spec = do
   describe "PureScript.Driver.Query" do
-    -- Tests on edits that don't change semantics.
+
     describe "Non-Semantic Edits" do
-      -- Will always miss because of modified SourceRanges
-      it "misses on full lowering" do
-        hitMiss ← runQuery do
-          engine ← emptyQueryEngine
-          setParsedFile engine i a1
-          void $ getSurfaceFull engine i
-          setParsedFile engine i a2
-          void $ getSurfaceFull engine i
-          getHitMiss engine _.surfaceFull
-        hitMiss `shouldEqual` { hit: 0, miss: 2 }
-      -- Will always miss because of modified SourceRanges
-      it "misses on partial lowering" do
-        hitMiss ← runQuery do
-          engine ← emptyQueryEngine
-          setParsedFile engine i a1
-          void $ getSurface engine i
-          setParsedFile engine i a2
-          void $ getSurface engine i
-          getHitMiss engine _.surface
-        hitMiss `shouldEqual` { hit: 0, miss: 2 }
-      -- Since getSurface hides SourceRanges, we get a
-      -- cache hit on getScopeGraph despite the former
-      -- having misses.
-      it "caches on scope graphs v1" do
-        hitMiss ← runQuery do
-          engine ← emptyQueryEngine
-          setParsedFile engine i a1
-          void $ getScopeGraph engine i
-          setParsedFile engine i a2
-          void $ getScopeGraph engine i
-          getHitMiss engine _.scopeGraph
-        hitMiss `shouldEqual` { hit: 1, miss: 1 }
-      -- Editing a different input should not miss.
-      it "caches on scope graphs v2" do
-        hitMiss ← runQuery do
-          engine ← emptyQueryEngine
-          setParsedFile engine i a1
-          void $ getScopeGraph engine i
-          setParsedFile engine j b1
-          void $ getScopeGraph engine i
-          getHitMiss engine _.scopeGraph
-        hitMiss `shouldEqual` { hit: 1, miss: 1 }
-    -- Tests on edits that do change semantics.
+      let
+        baseModule = parseTotal "module Main where\nmain = pure unit"
+        editedModule = parseTotal "module Main where\n\nmain = pure unit"
+        otherModule = parseTotal "module Library where\nlife = 42"
+
+      it "should miss on full lowering" do
+        stat ← liftEffect $ toEffect do
+          engine@(Engine { stats }) ← Engine.empty
+
+          Engine.inputSet @"parsedFile" engine (Id 0) baseModule
+          _ ← Engine.queryGet @"surfaceFull" engine (Id 0)
+
+          Engine.inputSet @"parsedFile" engine (Id 0) editedModule
+          _ ← Engine.queryGet @"surfaceFull" engine (Id 0)
+
+          Stats.getStat @"surfaceFull" stats
+
+        stat `shouldEqual` { hit: 0, miss: 2 }
+
+      it "should miss on partial lowering" do
+        stat ← liftEffect $ toEffect do
+          engine@(Engine { stats }) ← Engine.empty
+
+          Engine.inputSet @"parsedFile" engine (Id 0) baseModule
+          _ ← Engine.queryGet @"surface" engine (Id 0)
+
+          Engine.inputSet @"parsedFile" engine (Id 0) editedModule
+          _ ← Engine.queryGet @"surface" engine (Id 0)
+
+          Stats.getStat @"surface" stats
+
+        stat `shouldEqual` { hit: 0, miss: 2 }
+
+      it "should hit on scope graphs v1" do
+        stat <- liftEffect $ toEffect do
+          engine@(Engine { stats }) ← Engine.empty
+
+          Engine.inputSet @"parsedFile" engine (Id 0) baseModule
+          _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
+
+          Engine.inputSet @"parsedFile" engine (Id 0) editedModule
+          _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
+
+          Stats.getStat @"scopeGraph" stats
+        
+        stat `shouldEqual` { hit: 1, miss: 1 }
+
+      it "should hit on scope graphs v2" do
+        stat <- liftEffect $ toEffect do
+          engine@(Engine { stats }) <- Engine.empty
+
+          Engine.inputSet @"parsedFile" engine (Id 0) baseModule
+          _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
+
+          Engine.inputSet @"parsedFile" engine (Id 1) otherModule
+          _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
+        
+          Stats.getStat @"scopeGraph" stats
+        
+        stat `shouldEqual` { hit: 1, miss: 1 }
+
     describe "Semantic Edits" do
-      -- different module = different scope graph
-      it "misses on scope graphs" do
-        hitMiss ← runQuery do
-          engine ← emptyQueryEngine
-          setParsedFile engine i a1
-          void $ getScopeGraph engine i
-          setParsedFile engine i b1
-          void $ getScopeGraph engine i
-          getHitMiss engine _.scopeGraph
-        hitMiss `shouldEqual` { hit: 0, miss: 2 }
+      let
+        baseModule = parseTotal "module Main where\nmain = pure unit"
+        editedModule = parseTotal "module Main where\nmain = pure unit\nlife = 42"
+
+      it "should miss on scope graphs" do
+        stat <- liftEffect $ toEffect do
+          engine@(Engine { stats }) <- Engine.empty
+
+          Engine.inputSet @"parsedFile" engine (Id 0) baseModule
+          _ <- Engine.queryGet @"scopeGraph" engine (Id 0)
+
+          Engine.inputSet @"parsedFile" engine (Id 0) editedModule
+          _ <- Engine.queryGet @"scopeGraph" engine (Id 0)
+
+          Stats.getStat @"scopeGraph" stats
+        
+        stat `shouldEqual` { hit: 0, miss: 2 }
