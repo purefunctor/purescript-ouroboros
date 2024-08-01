@@ -40,21 +40,24 @@ intern (Interner { array, index }) t = do
       MutableObject.poke t id index
       pure id
 
-lookup ∷ ∀ r t. Interner r t → Id t → ST r t
-lookup (Interner { array }) i = do
+get ∷ ∀ r t. Interner r t → Id t → ST r t
+get (Interner { array }) i = do
   MutableArray.peek i array >>= case _ of
     Just t →
       pure t
     Nothing →
       unsafeCrashWith "invariant violated: invalid id"
 
+lookup ∷ ∀ r t. Coercible t String ⇒ Interner r t → t → ST r (Maybe (Id t))
+lookup (Interner { index }) t = MutableObject.peek t index
+
 delete ∷ ∀ r t. Coercible t String ⇒ Interner r t → Id t → ST r Unit
 delete interner@(Interner { index }) i = do
-  t ← lookup interner i
+  t ← get interner i
   MutableObject.delete t index
 
 rename ∷ ∀ r t. Coercible t String ⇒ Interner r t → Id t → t → ST r Unit
 rename interner@(Interner { array, index }) i t' = do
-  t ← lookup interner i
+  t ← get interner i
   MutableObject.delete t index
   MutableArray.poke i t' array
