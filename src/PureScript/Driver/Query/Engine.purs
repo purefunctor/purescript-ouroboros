@@ -24,8 +24,8 @@ import PureScript.Driver.Query.Storage (InputStorage, QueryStorage, QueryStorage
 import PureScript.Driver.Query.Storage as Storage
 import PureScript.Driver.Query.Types (class GetQueryTag, Queries, QueryTag(..), queryTag)
 import PureScript.Scope.Collect (ScopeNodes, collectModule)
-import PureScript.Surface.Interface (InterfaceError, InterfaceWithErrors, collectInterface)
-import PureScript.Surface.Lower (ModuleSourceRanges)
+import PureScript.Surface.Interface (InterfaceError, InterfaceResult, collectInterface)
+import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -258,7 +258,7 @@ queryFns =
   , diagnostics: diagnosticsImpl
   }
 
-surfaceFullImpl ∷ ∀ r. QueryFn r FileId ModuleSourceRanges
+surfaceFullImpl ∷ ∀ r. QueryFn r FileId LowerResult
 surfaceFullImpl engine id = do
   parsedFile ← inputGet @"parsedFile" engine id
   case parsedFile of
@@ -271,7 +271,7 @@ surfaceImpl ∷ ∀ r. QueryFn r FileId Module
 surfaceImpl engine id =
   queryGet @"surfaceFull" engine id <#> _.surface
 
-interfaceImpl ∷ ∀ r. QueryFn r FileId InterfaceWithErrors
+interfaceImpl ∷ ∀ r. QueryFn r FileId InterfaceResult
 interfaceImpl engine id = do
   surface ← queryGet @"surface" engine id
   collectInterface surface

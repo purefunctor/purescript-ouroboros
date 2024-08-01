@@ -49,7 +49,7 @@ data InterfaceError
 derive instance Eq InterfaceError
 derive instance Ord InterfaceError
 
-type InterfaceWithErrors =
+type InterfaceResult =
   { interface ∷ Interface
   , exported ∷ Exported
   , errors ∷ Array InterfaceError
@@ -73,7 +73,7 @@ unsafeFreezeMultiValue
   ∷ ∀ r k v. Coercible k String ⇒ MutableObject r k (MutableArray r v) → ST r (Object (Array v))
 unsafeFreezeMultiValue = pure <<< unsafeCoerce
 
-collectExported ∷ ∀ r. Interface → Maybe (NonEmptyArray SST.Export) → ST r InterfaceWithErrors
+collectExported ∷ ∀ r. Interface → Maybe (NonEmptyArray SST.Export) → ST r InterfaceResult
 collectExported interface@(Interface interfaceInner) exports = do
   dataConstructorsRaw ← MutableObject.empty
   newtypeConstructorsRaw ← MutableObject.empty
@@ -173,7 +173,7 @@ checkExports (Interface { dataConstructors, newtypeConstructors, types, values }
 
     MutableArray.unsafeFreeze errorsRaw
 
-collectInterface ∷ ∀ r. SST.Module → ST r InterfaceWithErrors
+collectInterface ∷ ∀ r. SST.Module → ST r InterfaceResult
 collectInterface (SST.Module { exports, declarations }) = do
   dataConstructorsRaw ← MutableObject.empty
   newtypeConstructorsRaw ← MutableObject.empty

@@ -54,9 +54,9 @@ import PureScript.Driver.Interner (ModuleNameIndex, ModuleNameInterner)
 import PureScript.Driver.Interner as ModuleNameInterner
 import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
-import PureScript.Surface.Interface (InterfaceWithErrors)
+import PureScript.Surface.Interface (InterfaceResult)
 import PureScript.Surface.Interface as SurfaceInterface
-import PureScript.Surface.Lower (ModuleSourceRanges)
+import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -113,9 +113,9 @@ newtype QueryEngine r = QueryEngine
   { revisionRef ∷ STRef r Int
   , moduleNameInterner ∷ ModuleNameInterner r
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex ModuleSourceRanges
+  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex LowerResult
   , surfaceStorage ∷ QueryStorage r ModuleNameIndex Module
-  , interfaceStorage ∷ QueryStorage r ModuleNameIndex InterfaceWithErrors
+  , interfaceStorage ∷ QueryStorage r ModuleNameIndex InterfaceResult
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   , queryStats ∷ QueryStats r
@@ -357,7 +357,7 @@ getParsedFile = inputGet OnParsedFile \(QueryEngine { parsedFileStorage }) → p
 setParsedFile ∷ ∀ r. QueryEngine r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(QueryEngine { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleSourceRanges
+computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r LowerResult
 computeSurfaceFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
@@ -366,10 +366,10 @@ computeSurfaceFull storage moduleNameIndex = do
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleSourceRanges
+getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r LowerResult
 getSurfaceFull = do
   let
-    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ModuleSourceRanges
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex LowerResult
     getStorage (QueryEngine { surfaceFullStorage }) = surfaceFullStorage
   queryGet OnSurfaceFull getStorage computeSurfaceFull
 
@@ -381,15 +381,15 @@ getSurface = do
   queryGet OnSurface getStorage \storage moduleNameIndex → do
     getSurfaceFull storage moduleNameIndex <#> _.surface
 
-computeInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceWithErrors
+computeInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceResult
 computeInterface storage moduleNameIndex = do
   m ← getSurface storage moduleNameIndex
   SurfaceInterface.collectInterface m
 
-getInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceWithErrors
+getInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceResult
 getInterface = do
   let
-    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex InterfaceWithErrors
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex InterfaceResult
     getStorage (QueryEngine { interfaceStorage }) = interfaceStorage
   queryGet OnInterface getStorage computeInterface
 

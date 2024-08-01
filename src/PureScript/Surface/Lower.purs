@@ -1062,12 +1062,12 @@ lowerDeclarations state cstDeclarations = do
 
   STA.freeze declarationsRaw
 
-type ModuleSourceRanges =
+type LowerResult =
   { surface ∷ SST.Module
   , sourceRanges ∷ SourceRanges
   }
 
-lowerModule ∷ ∀ r. CST.Module Void → ST r ModuleSourceRanges
+lowerModule ∷ ∀ r. CST.Module Void → ST r LowerResult
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader

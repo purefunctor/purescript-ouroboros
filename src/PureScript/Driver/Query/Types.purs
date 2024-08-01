@@ -11,17 +11,17 @@ import PureScript.Diagnostic.Types (Diagnostic)
 import PureScript.Driver.Files (ParsedFile)
 import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Scope.Collect (ScopeNodes)
-import PureScript.Surface.Interface (InterfaceWithErrors)
-import PureScript.Surface.Lower (ModuleSourceRanges)
+import PureScript.Surface.Interface (InterfaceResult)
+import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Types (Module)
 import Type.Proxy (Proxy(..))
 
 type Queries ∷ ∀ k. (Type → Type → k) → (Type → Type → k) → Row k
 type Queries onInput onQuery =
   ( parsedFile ∷ onInput FileId ParsedFile
-  , surfaceFull ∷ onQuery FileId ModuleSourceRanges
+  , surfaceFull ∷ onQuery FileId LowerResult
   , surface ∷ onQuery FileId Module
-  , interface ∷ onQuery FileId InterfaceWithErrors
+  , interface ∷ onQuery FileId InterfaceResult
   , scopeGraph ∷ onQuery FileId ScopeNodes
   , diagnostics ∷ onQuery FileId (Set Diagnostic)
   )
