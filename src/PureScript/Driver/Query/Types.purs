@@ -7,7 +7,7 @@ import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, inj)
 import Prim.Row as Row
 import PureScript.Driver.Files (ParsedFile)
-import PureScript.Driver.Query.Stable (ModuleNameId)
+import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Surface.Interface (InterfaceWithErrors)
 import PureScript.Surface.Lower (ModuleWithSourceRanges)
@@ -16,11 +16,11 @@ import Type.Proxy (Proxy(..))
 
 type Queries ∷ ∀ k. (Type → Type → k) → (Type → Type → k) → Row k
 type Queries onInput onQuery =
-  ( parsedFile ∷ onInput ModuleNameId ParsedFile
-  , surfaceFull ∷ onQuery ModuleNameId ModuleWithSourceRanges
-  , surface ∷ onQuery ModuleNameId Module
-  , interface ∷ onQuery ModuleNameId InterfaceWithErrors
-  , scopeGraph ∷ onQuery ModuleNameId ScopeNodes
+  ( parsedFile ∷ onInput FileId ParsedFile
+  , surfaceFull ∷ onQuery FileId ModuleWithSourceRanges
+  , surface ∷ onQuery FileId Module
+  , interface ∷ onQuery FileId InterfaceWithErrors
+  , scopeGraph ∷ onQuery FileId ScopeNodes
   )
 
 type Key ∷ Type → Type → Type

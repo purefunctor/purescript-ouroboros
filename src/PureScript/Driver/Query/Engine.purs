@@ -15,7 +15,7 @@ import Data.Variant (match)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Row as Row
 import PureScript.Driver.Files (ParsedFile(..))
-import PureScript.Driver.Query.Stable (ModuleNameId, Stable)
+import PureScript.Driver.Query.Stable (FileId, Stable)
 import PureScript.Driver.Query.Stable as Stable
 import PureScript.Driver.Query.Stats (class HasStats, Stats, addHit, addMiss)
 import PureScript.Driver.Query.Stats as Stats
@@ -255,7 +255,7 @@ queryFns =
   , scopeGraph: scopeGraphImpl
   }
 
-surfaceFullImpl ∷ ∀ r. QueryFn r ModuleNameId ModuleWithSourceRanges
+surfaceFullImpl ∷ ∀ r. QueryFn r FileId ModuleWithSourceRanges
 surfaceFullImpl engine id = do
   parsedFile ← inputGet @"parsedFile" engine id
   case parsedFile of
@@ -264,16 +264,16 @@ surfaceFullImpl engine id = do
     ParsedPartial _ _ →
       unsafeCrashWith "TODO: ParsedPartial"
 
-surfaceImpl ∷ ∀ r. QueryFn r ModuleNameId Module
+surfaceImpl ∷ ∀ r. QueryFn r FileId Module
 surfaceImpl engine id =
   queryGet @"surfaceFull" engine id <#> _.surface
 
-interfaceImpl ∷ ∀ r. QueryFn r ModuleNameId InterfaceWithErrors
+interfaceImpl ∷ ∀ r. QueryFn r FileId InterfaceWithErrors
 interfaceImpl engine id = do
   surface ← queryGet @"surface" engine id
   collectInterface surface
 
-scopeGraphImpl ∷ ∀ r. QueryFn r ModuleNameId ScopeNodes
+scopeGraphImpl ∷ ∀ r. QueryFn r FileId ScopeNodes
 scopeGraphImpl engine id = do
   surface ← queryGet @"surface" engine id
   { interface } ← queryGet @"interface" engine id
