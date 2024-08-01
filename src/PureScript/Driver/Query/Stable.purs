@@ -3,6 +3,7 @@ module PureScript.Driver.Query.Stable where
 import Prelude
 
 import Control.Monad.ST (ST)
+import Data.Maybe (Maybe)
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.StringInterner (Id, Interner)
 import PureScript.Driver.StringInterner as Interner
@@ -40,3 +41,11 @@ editModule (Stable { moduleNames }) moduleNameId moduleName =
 editFilePath ∷ ∀ r. Stable r → FileId → String → ST r Unit
 editFilePath (Stable { filePaths }) fileId filePath =
   Interner.rename filePaths fileId filePath
+
+lookupModuleNameId ∷ ∀ r. Stable r → ModuleName → ST r (Maybe ModuleNameId)
+lookupModuleNameId (Stable { moduleNames }) moduleName =
+  Interner.lookup moduleNames moduleName
+
+lookupFileId ∷ ∀ r. Stable r → String → ST r (Maybe FileId)
+lookupFileId (Stable { filePaths }) filePath =
+  Interner.lookup filePaths filePath
