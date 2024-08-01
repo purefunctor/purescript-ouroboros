@@ -35,4 +35,5 @@ empty = do
   surface ← STRef.new Map.empty
   interface ← STRef.new Map.empty
   scopeGraph ← STRef.new Map.empty
-  pure $ Storage { parsedFile, surfaceFull, surface, interface, scopeGraph }
+  diagnostics ← STRef.new Map.empty
+  pure $ Storage { parsedFile, surfaceFull, surface, interface, scopeGraph, diagnostics }

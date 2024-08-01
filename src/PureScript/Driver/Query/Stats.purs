@@ -34,7 +34,8 @@ empty = do
   surface ← emptyStat
   interface ← emptyStat
   scopeGraph ← emptyStat
-  pure $ Stats { parsedFile, surfaceFull, surface, interface, scopeGraph }
+  diagnostics ← emptyStat
+  pure $ Stats { parsedFile, surfaceFull, surface, interface, scopeGraph, diagnostics }
 
 class HasStats ∷ Symbol → Region → Constraint
 class HasStats name region where

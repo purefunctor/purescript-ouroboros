@@ -14,6 +14,7 @@ import Data.Traversable (for_)
 import Data.Variant (match)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Row as Row
+import PureScript.Diagnostic.Types (Diagnostic(..), DiagnosticKind(..))
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Query.Stable (FileId, Stable)
 import PureScript.Driver.Query.Stable as Stable
@@ -23,7 +24,7 @@ import PureScript.Driver.Query.Storage (InputStorage, QueryStorage, QueryStorage
 import PureScript.Driver.Query.Storage as Storage
 import PureScript.Driver.Query.Types (class GetQueryTag, Queries, QueryTag(..), queryTag)
 import PureScript.Scope.Collect (ScopeNodes, collectModule)
-import PureScript.Surface.Interface (InterfaceWithErrors, collectInterface)
+import PureScript.Surface.Interface (InterfaceError, InterfaceWithErrors, collectInterface)
 import PureScript.Surface.Lower (ModuleWithSourceRanges)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
@@ -202,6 +203,7 @@ instance engineQueryCoreInstance ∷
           , surface: checkDependency @"surface"
           , interface: checkDependency @"interface"
           , scopeGraph: checkDependency @"scopeGraph"
+          , diagnostics: checkDependency @"diagnostics"
           }
         STRef.read isClean
 
@@ -253,6 +255,7 @@ queryFns =
   , surface: surfaceImpl
   , interface: interfaceImpl
   , scopeGraph: scopeGraphImpl
+  , diagnostics: diagnosticsImpl
   }
 
 surfaceFullImpl ∷ ∀ r. QueryFn r FileId ModuleWithSourceRanges
@@ -279,19 +282,11 @@ scopeGraphImpl engine id = do
   { interface } ← queryGet @"interface" engine id
   collectModule surface interface
 
--- example ∷ ∀ r. Engine r → ST r Unit
--- example engine = do
---   inputSet @"parsedFile" engine (Id 0) (unsafeCoerce unit)
---   void $ inputGet @"parsedFile" engine (Id 0)
---   queryGet @"interface" engine (Id 0) >>= traceM
---   queryGet @"scopeGraph" engine (Id 0) >>= traceM
-
---   inputSet @"parsedFile" engine (Id 1) (unsafeCoerce unit)
---   void $ inputGet @"parsedFile" engine (Id 1)
---   queryGet @"interface" engine (Id 1) >>= traceM
---   queryGet @"scopeGraph" engine (Id 1) >>= traceM
-
---   inputSet @"parsedFile" engine (Id 2) (unsafeCoerce unit)
---   void $ inputGet @"parsedFile" engine (Id 2)
---   queryGet @"interface" engine (Id 2) >>= traceM
---   queryGet @"scopeGraph" engine (Id 2) >>= traceM
+diagnosticsImpl ∷ ∀ r. QueryFn r FileId (Set Diagnostic)
+diagnosticsImpl engine id = do
+  interfaceDiagnostics ← do
+    let
+      make ∷ InterfaceError → Diagnostic
+      make error = Diagnostic { kind: DiagnosticInterfaceError error }
+    queryGet @"interface" engine id <#> _.errors >>> map make <#> Set.fromFoldable
+  pure interfaceDiagnostics

@@ -3,9 +3,11 @@ module PureScript.Driver.Query.Types where
 import Prelude
 
 import Data.Newtype (class Newtype)
+import Data.Set (Set)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, inj)
 import Prim.Row as Row
+import PureScript.Diagnostic.Types (Diagnostic)
 import PureScript.Driver.Files (ParsedFile)
 import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Scope.Collect (ScopeNodes)
@@ -21,6 +23,7 @@ type Queries onInput onQuery =
   , surface ∷ onQuery FileId Module
   , interface ∷ onQuery FileId InterfaceWithErrors
   , scopeGraph ∷ onQuery FileId ScopeNodes
+  , diagnostics ∷ onQuery FileId (Set Diagnostic)
   )
 
 type Key ∷ Type → Type → Type
