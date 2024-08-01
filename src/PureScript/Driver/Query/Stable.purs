@@ -34,6 +34,10 @@ stabilize (Stable { moduleNames, filePaths, pathsOfModule }) filePath moduleName
   JsMap.set moduleNameId fileId pathsOfModule
   pure { moduleNameId, fileId }
 
+internModule ∷ ∀ r. Stable r → ModuleName → ST r ModuleNameId
+internModule (Stable { moduleNames }) moduleName =
+  Interner.intern moduleNames moduleName
+
 editModule ∷ ∀ r. Stable r → ModuleNameId → ModuleName → ST r Unit
 editModule (Stable { moduleNames }) moduleNameId moduleName =
   Interner.rename moduleNames moduleNameId moduleName
