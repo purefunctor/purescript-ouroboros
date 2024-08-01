@@ -3,12 +3,16 @@ module PureScript.Driver.Core.Interactive where
 import Prelude
 
 import Control.Monad.ST (ST)
+import Control.Monad.ST.Ref (STRef)
+import Control.Monad.ST.Ref as STRef
 import Data.Either (Either(..))
 import Data.Maybe (Maybe(..))
 import Data.Set (Set)
+import Data.Set as Set
 import Data.Traversable (for_)
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types (ModuleName)
+import PureScript.Diagnostic.Types (Diagnostic(..), DiagnosticKind(..))
 import PureScript.Driver.Files (ParsedFile, parseFile, parsedImports, parsedModuleName)
 import PureScript.Driver.Query.Engine (Engine(..))
 import PureScript.Driver.Query.Engine as Engine
@@ -20,6 +24,7 @@ import PureScript.Utils.Mutable.GraphMap as GraphMap
 newtype Interactive r = Interactive
   { engine ∷ Engine r
   , graph ∷ GraphMap r ModuleNameId
+  , diagnostics ∷ STRef r (Set Diagnostic)
   }
 
 updateGraph ∷ ∀ r. Interactive r → ModuleNameId → ParsedFile → ST r Unit
@@ -33,11 +38,16 @@ updateGraph (Interactive { engine: Engine { stable }, graph }) moduleNameId pars
     GraphMap.addNode graph importedModuleNameId
     GraphMap.addEdge graph moduleNameId importedModuleNameId
 
+updateDiagnostics ∷ ∀ r. Interactive r → Diagnostic → ST r Unit
+updateDiagnostics (Interactive { diagnostics }) diagnostic =
+  void $ STRef.modify (Set.insert diagnostic) diagnostics
+
 createFile ∷ ∀ r. Interactive r → String → String → ST r Unit
 createFile interactive@(Interactive { engine: engine@(Engine { stable }) }) filePath fileSource = do
   case parseFile fileSource of
-    Left _ →
-      unsafeCrashWith "TODO: ParseError"
+    Left { error } →
+      updateDiagnostics interactive $
+        Diagnostic { kind: DiagnosticParseError error }
     Right parsedFile → do
       let
         moduleName ∷ ModuleName
@@ -60,8 +70,9 @@ editFile interactive@(Interactive { engine: engine@(Engine { stable }) }) filePa
         Nothing →
           unsafeCrashWith "invariant violated: oldModuleName should have been stabilized."
       case parseFile fileSource of
-        Left _ →
-          unsafeCrashWith "TODO: ParseError"
+        Left { error } →
+          updateDiagnostics interactive $
+            Diagnostic { kind: DiagnosticParseError error }
         Right parsedFile → do
           let
             moduleName ∷ ModuleName

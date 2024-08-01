@@ -47,6 +47,7 @@ data InterfaceError
   | MissingValue Ident
 
 derive instance Eq InterfaceError
+derive instance Ord InterfaceError
 
 type InterfaceWithErrors =
   { interface ∷ Interface

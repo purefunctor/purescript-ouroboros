@@ -21,4 +21,35 @@ package:
 workspace:
   packageSet:
     registry: 51.2.0
-  extraPackages: {}
+  extraPackages:
+    language-cst-parser:
+      git: https://github.com/purefunctor/purescript-language-cst-parser.git
+      ref: 069932af3eddb98791fe3ab502bbb17b2eb26b23
+      dependencies:
+        - "arrays"
+        - "const"
+        - "control"
+        - "effect"
+        - "either"
+        - "enums"
+        - "foldable-traversable"
+        - "free"
+        - "functions"
+        - "functors"
+        - "identity"
+        - "integers"
+        - "lazy"
+        - "lists"
+        - "maybe"
+        - "newtype"
+        - "numbers"
+        - "ordered-collections"
+        - "partial"
+        - "prelude"
+        - "st"
+        - "strings"
+        - "transformers"
+        - "tuples"
+        - "typelevel-prelude"
+        - "unfoldable"
+        - "unsafe-coerce" 
