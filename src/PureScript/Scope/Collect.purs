@@ -468,7 +468,7 @@ collectPushLetBindings state letBindings = do
 
   pure unit
 
-collectModule ∷ ∀ r. SST.Module -> SSI.Interface → ST r ScopeNodes
+collectModule ∷ ∀ r. SST.Module → SSI.Interface → ST r ScopeNodes
 collectModule (SST.Module { declarations }) interface = do
   state ← defaultState
 

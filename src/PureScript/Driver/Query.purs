@@ -396,7 +396,7 @@ getInterface = do
 computeScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
 computeScopeGraph storage moduleNameIndex = do
   surface ← getSurface storage moduleNameIndex
-  { interface } <- getInterface storage moduleNameIndex
+  { interface } ← getInterface storage moduleNameIndex
   ScopeCollect.collectModule surface interface
 
 getScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes

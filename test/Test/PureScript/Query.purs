@@ -61,7 +61,7 @@ spec = do
         stat `shouldEqual` { hit: 0, miss: 2 }
 
       it "should hit on scope graphs v1" do
-        stat <- liftEffect $ toEffect do
+        stat ← liftEffect $ toEffect do
           engine@(Engine { stats }) ← Engine.empty
 
           Engine.inputSet @"parsedFile" engine (Id 0) baseModule
@@ -71,21 +71,21 @@ spec = do
           _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
 
           Stats.getStat @"scopeGraph" stats
-        
+
         stat `shouldEqual` { hit: 1, miss: 1 }
 
       it "should hit on scope graphs v2" do
-        stat <- liftEffect $ toEffect do
-          engine@(Engine { stats }) <- Engine.empty
+        stat ← liftEffect $ toEffect do
+          engine@(Engine { stats }) ← Engine.empty
 
           Engine.inputSet @"parsedFile" engine (Id 0) baseModule
           _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
 
           Engine.inputSet @"parsedFile" engine (Id 1) otherModule
           _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
-        
+
           Stats.getStat @"scopeGraph" stats
-        
+
         stat `shouldEqual` { hit: 1, miss: 1 }
 
     describe "Semantic Edits" do
@@ -94,15 +94,15 @@ spec = do
         editedModule = parseTotal "module Main where\nmain = pure unit\nlife = 42"
 
       it "should miss on scope graphs" do
-        stat <- liftEffect $ toEffect do
-          engine@(Engine { stats }) <- Engine.empty
+        stat ← liftEffect $ toEffect do
+          engine@(Engine { stats }) ← Engine.empty
 
           Engine.inputSet @"parsedFile" engine (Id 0) baseModule
-          _ <- Engine.queryGet @"scopeGraph" engine (Id 0)
+          _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
 
           Engine.inputSet @"parsedFile" engine (Id 0) editedModule
-          _ <- Engine.queryGet @"scopeGraph" engine (Id 0)
+          _ ← Engine.queryGet @"scopeGraph" engine (Id 0)
 
           Stats.getStat @"scopeGraph" stats
-        
+
         stat `shouldEqual` { hit: 0, miss: 2 }

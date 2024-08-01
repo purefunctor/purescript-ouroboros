@@ -27,7 +27,7 @@ spec = do
           liftEffect $ toEffect do
             let cst = parseTotal inputFile
             { surface } ← lowerModule cst
-            { interface } <- collectInterface surface
+            { interface } ← collectInterface surface
             scope ← collectModule surface interface
             pure $ inspect scope
       ]
