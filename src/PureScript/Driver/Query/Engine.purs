@@ -14,6 +14,7 @@ import Data.Traversable (for_)
 import Data.Variant (match)
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Row as Row
+import PureScript.CST.Parser.Monad (PositionedError)
 import PureScript.Diagnostic.Types (Diagnostic(..), DiagnosticKind(..))
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Query.Stable (FileId, Stable)
@@ -284,9 +285,18 @@ scopeGraphImpl engine id = do
 
 diagnosticsImpl ∷ ∀ r. QueryFn r FileId (Set Diagnostic)
 diagnosticsImpl engine id = do
+  parsedFileDiagnostics ← do
+    let
+      make ∷ PositionedError → Diagnostic
+      make { error } = Diagnostic { kind: DiagnosticParseError error }
+    inputGet @"parsedFile" engine id >>= case _ of
+      ParsedTotal _ →
+        pure Set.empty
+      ParsedPartial _ errors →
+        pure $ Set.fromFoldable $ map make errors
   interfaceDiagnostics ← do
     let
       make ∷ InterfaceError → Diagnostic
       make error = Diagnostic { kind: DiagnosticInterfaceError error }
     queryGet @"interface" engine id <#> _.errors >>> map make <#> Set.fromFoldable
-  pure interfaceDiagnostics
+  pure $ Set.unions [ parsedFileDiagnostics, interfaceDiagnostics ]
