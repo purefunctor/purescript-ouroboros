@@ -56,7 +56,7 @@ import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
 import PureScript.Surface.Interface (InterfaceWithErrors)
 import PureScript.Surface.Interface as SurfaceInterface
-import PureScript.Surface.Lower (ModuleWithSourceRanges)
+import PureScript.Surface.Lower (ModuleSourceRanges)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -113,7 +113,7 @@ newtype QueryEngine r = QueryEngine
   { revisionRef ∷ STRef r Int
   , moduleNameInterner ∷ ModuleNameInterner r
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex ModuleWithSourceRanges
+  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex ModuleSourceRanges
   , surfaceStorage ∷ QueryStorage r ModuleNameIndex Module
   , interfaceStorage ∷ QueryStorage r ModuleNameIndex InterfaceWithErrors
   , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
@@ -357,7 +357,7 @@ getParsedFile = inputGet OnParsedFile \(QueryEngine { parsedFileStorage }) → p
 setParsedFile ∷ ∀ r. QueryEngine r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(QueryEngine { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleWithSourceRanges
+computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleSourceRanges
 computeSurfaceFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
@@ -366,10 +366,10 @@ computeSurfaceFull storage moduleNameIndex = do
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleWithSourceRanges
+getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ModuleSourceRanges
 getSurfaceFull = do
   let
-    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ModuleWithSourceRanges
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ModuleSourceRanges
     getStorage (QueryEngine { surfaceFullStorage }) = surfaceFullStorage
   queryGet OnSurfaceFull getStorage computeSurfaceFull
 
