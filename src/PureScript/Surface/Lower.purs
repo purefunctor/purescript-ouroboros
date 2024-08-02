@@ -2,7 +2,7 @@ module PureScript.Surface.Lower where
 
 import Prelude
 
-import Control.Monad.ST (ST)
+import Control.Monad.ST (Region, ST)
 import Control.Monad.ST.Internal (STRef)
 import Control.Monad.ST.Ref as STRef
 import Control.Monad.ST.Uncurried (STFn1, STFn2, mkSTFn1, mkSTFn2, runSTFn1, runSTFn2)
@@ -12,17 +12,22 @@ import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Maybe (Maybe(..), isJust)
+import Data.Symbol (class IsSymbol)
 import Data.Traversable (class Traversable, for, for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
+import Prim.Row as Row
+import Prim.Symbol as Symbol
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
-import Safe.Coerce (class Coercible, coerce)
+import Record as Record
+import Safe.Coerce (coerce)
+import Type.Proxy (Proxy(..))
 
 type SigDefSourceRange =
   { signature ∷ Maybe CST.SourceRange
@@ -46,8 +51,8 @@ type StateSourceRange r = MutableArray r CST.SourceRange
 type StateLetBindingSourceRange r = MutableArray r LetBindingSourceRange
 type StateDeclarationSourceRange r = MutableArray r DeclarationSourceRange
 
-newtype State r = State
-  { exprIndex ∷ StateIndex r
+type StateFields r =
+  ( exprIndex ∷ StateIndex r
   , binderIndex ∷ StateIndex r
   , typeIndex ∷ StateIndex r
   , letBindingIndex ∷ StateIndex r
@@ -65,7 +70,9 @@ newtype State r = State
   , newtypeSourceRange ∷ StateSourceRange r
   , classMethodSourceRange ∷ StateSourceRange r
   , typeVarBindingSourceRange ∷ StateSourceRange r
-  }
+  )
+
+newtype State r = State { | StateFields r }
 
 type SourceRanges =
   { exprSourceRange ∷ SST.SparseMap SST.Expr CST.SourceRange
@@ -143,86 +150,34 @@ freezeState (State state) = do
     , typeVarBindingSourceRange
     }
 
-nextIndex ∷ ∀ r a. (State r → StateIndex r) → State r → ST r (SST.Index a)
-nextIndex getRef state = do
-  let ref = getRef state
-  index ← STRef.read ref
-  void $ STRef.modify (_ + 1) ref
-  pure $ SST.Index index
+class EditState ∷ Symbol → Type → Type → Region → Constraint
+class EditState name ast sourceRange region | name → ast sourceRange where
+  nextIndex ∷ State region → ST region (SST.Index ast)
+  insertSourceRange ∷ State region → (SST.Index ast) → sourceRange → ST region Unit
 
-nextExprIndex ∷ ∀ r. State r → ST r SST.ExprIndex
-nextExprIndex = nextIndex \(State { exprIndex }) → exprIndex
+instance editStateInstance ∷
+  ( Symbol.Append name "Index" nameIndex
+  , Symbol.Append name "SourceRange" nameSourceRange
+  , IsSymbol nameIndex
+  , IsSymbol nameSourceRange
+  , Row.Cons nameIndex (StateIndex region) indexTail (StateFields region)
+  , Row.Cons nameSourceRange (MutableArray region sourceRange) sourceRangeTail (StateFields region)
+  ) ⇒
+  EditState name ast sourceRange region where
 
-nextBinderIndex ∷ ∀ r. State r → ST r SST.BinderIndex
-nextBinderIndex = nextIndex \(State { binderIndex }) → binderIndex
+  nextIndex (State state) = do
+    let
+      ref ∷ StateIndex region
+      ref = Record.get (Proxy ∷ _ nameIndex) state
+    index ← STRef.read ref
+    void $ STRef.modify (_ + 1) ref
+    pure $ SST.Index index
 
-nextTypeIndex ∷ ∀ r. State r → ST r SST.TypeIndex
-nextTypeIndex = nextIndex \(State { typeIndex }) → typeIndex
-
-nextLetBindingIndex ∷ ∀ r. State r → ST r SST.LetBindingIndex
-nextLetBindingIndex = nextIndex \(State { letBindingIndex }) → letBindingIndex
-
-nextDeclarationIndex ∷ ∀ r. State r → ST r SST.DeclarationIndex
-nextDeclarationIndex = nextIndex \(State { declarationIndex }) → declarationIndex
-
-nextConstructorIndex ∷ ∀ r. State r → ST r SST.ConstructorIndex
-nextConstructorIndex = nextIndex \(State { constructorIndex }) → constructorIndex
-
-nextNewtypeIndex ∷ ∀ r. State r → ST r SST.NewtypeIndex
-nextNewtypeIndex = nextIndex \(State { newtypeIndex }) → newtypeIndex
-
-nextClassMethodIndex ∷ ∀ r. State r → ST r SST.ClassMethodIndex
-nextClassMethodIndex = nextIndex \(State { classMethodIndex }) → classMethodIndex
-
-nextTypeVarBindingIndex ∷ ∀ r. State r → ST r SST.TypeVarBindingIndex
-nextTypeVarBindingIndex = nextIndex \(State { typeVarBindingIndex }) → typeVarBindingIndex
-
-insertSourceRange
-  ∷ ∀ r k v
-  . Coercible k Int
-  ⇒ (State r → MutableArray r v)
-  → State r
-  → k
-  → v
-  → ST r Unit
-insertSourceRange getRaw state k v = MutableArray.poke k v (getRaw state)
-
-insertExprSourceRange ∷ ∀ r. State r → SST.ExprIndex → CST.SourceRange → ST r Unit
-insertExprSourceRange = insertSourceRange \(State { exprSourceRange }) → exprSourceRange
-
-insertBinderSourceRange ∷ ∀ r. State r → SST.BinderIndex → CST.SourceRange → ST r Unit
-insertBinderSourceRange = insertSourceRange \(State { binderSourceRange }) → binderSourceRange
-
-insertTypeSourceRange ∷ ∀ r. State r → SST.TypeIndex → CST.SourceRange → ST r Unit
-insertTypeSourceRange = insertSourceRange \(State { typeSourceRange }) → typeSourceRange
-
-insertLetBindingSourceRange
-  ∷ ∀ r. State r → SST.LetBindingIndex → LetBindingSourceRange → ST r Unit
-insertLetBindingSourceRange =
-  insertSourceRange \(State { letBindingSourceRange }) → letBindingSourceRange
-
-insertConstructorSourceRange
-  ∷ ∀ r. State r → SST.ConstructorIndex → CST.SourceRange → ST r Unit
-insertConstructorSourceRange =
-  insertSourceRange \(State { constructorSourceRange }) → constructorSourceRange
-
-insertNewtypeSourceRange ∷ ∀ r. State r → SST.NewtypeIndex → CST.SourceRange → ST r Unit
-insertNewtypeSourceRange = insertSourceRange \(State { newtypeSourceRange }) → newtypeSourceRange
-
-insertClassMethodSourceRange
-  ∷ ∀ r. State r → SST.ClassMethodIndex → CST.SourceRange → ST r Unit
-insertClassMethodSourceRange =
-  insertSourceRange \(State { classMethodSourceRange }) → classMethodSourceRange
-
-insertDeclarationSourceRange
-  ∷ ∀ r. State r → SST.DeclarationIndex → DeclarationSourceRange → ST r Unit
-insertDeclarationSourceRange =
-  insertSourceRange \(State { declarationSourceRange }) → declarationSourceRange
-
-insertTypeVarBindingSourceRange
-  ∷ ∀ r. State r → SST.TypeVarBindingIndex → CST.SourceRange → ST r Unit
-insertTypeVarBindingSourceRange =
-  insertSourceRange \(State { typeVarBindingSourceRange }) → typeVarBindingSourceRange
+  insertSourceRange (State state) index sourceRange = do
+    let
+      ref ∷ MutableArray region sourceRange
+      ref = Record.get (Proxy ∷ _ nameSourceRange) state
+    MutableArray.poke index sourceRange ref
 
 unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name
@@ -273,12 +228,6 @@ lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
 lowerExpr ∷ ∀ r. State r → CST.Expr Void → ST r SST.Expr
 lowerExpr state = runSTFn1 go
   where
-  nextIndexWith ∷ CST.SourceRange → ST r SST.ExprIndex
-  nextIndexWith range = do
-    index ← nextExprIndex state
-    insertExprSourceRange state index range
-    pure index
-
   goAppSpine ∷ STFn1 (CST.AppSpine CST.Expr Void) r SST.AppSpine
   goAppSpine = mkSTFn1 case _ of
     CST.AppTerm e → SST.AppTerm <$> runSTFn1 go e
@@ -328,11 +277,11 @@ lowerExpr state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf e
-    index ← nextIndexWith range
+    index ← nextIndex @"expr" state
     let
       annotation ∷ SST.ExprAnnotation
       annotation = SST.Annotation { index }
-    insertExprSourceRange state index range
+    insertSourceRange @"expr" state index range
     case e of
       CST.ExprHole (CST.Name { name }) → do
         pure $ SST.ExprHole annotation name
@@ -437,12 +386,6 @@ lowerExpr state = runSTFn1 go
 lowerBinder ∷ ∀ r. State r → CST.Binder Void → ST r SST.Binder
 lowerBinder state = runSTFn1 go
   where
-  nextIndexWith ∷ CST.SourceRange → ST r SST.BinderIndex
-  nextIndexWith range = do
-    index ← nextBinderIndex state
-    insertBinderSourceRange state index range
-    pure index
-
   goRecordLabeled ∷ STFn1 (CST.RecordLabeled (CST.Binder Void)) r (SST.RecordLabeled SST.Binder)
   goRecordLabeled = mkSTFn1 case _ of
     CST.RecordPun (CST.Name { name }) → pure $ SST.RecordPun name
@@ -460,11 +403,11 @@ lowerBinder state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf b
-    index ← nextIndexWith range
+    index ← nextIndex @"binder" state
     let
       annotation ∷ SST.BinderAnnotation
       annotation = SST.Annotation { index }
-    insertBinderSourceRange state index range
+    insertSourceRange @"binder" state index range
     case b of
       CST.BinderWildcard _ →
         pure $ SST.BinderWildcard annotation
@@ -516,12 +459,6 @@ lowerBinder state = runSTFn1 go
 lowerType ∷ ∀ r. State r → CST.Type Void → ST r SST.Type
 lowerType state = runSTFn1 go
   where
-  nextIndexWith ∷ CST.SourceRange → ST r SST.TypeIndex
-  nextIndexWith range = do
-    index ← nextTypeIndex state
-    insertTypeSourceRange state index range
-    pure index
-
   goRowPair
     ∷ STFn1
         (CST.Labeled (CST.Name CST.Label) (CST.Type Void))
@@ -556,11 +493,11 @@ lowerType state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf t
-    index ← nextIndexWith range
+    index ← nextIndex @"type" state
     let
       annotation ∷ SST.TypeAnnotation
       annotation = SST.Annotation { index }
-    insertTypeSourceRange state index range
+    insertSourceRange @"type" state index range
     case t of
       CST.TypeVar (CST.Name { name }) →
         pure $ SST.TypeVar annotation name
@@ -636,11 +573,11 @@ lowerLetBindings state cstLetBindings = do
               { signature: signature <#> _.sourceRange
               , definitions: values <#> _.sourceRange
               }
-          index ← nextLetBindingIndex state
+          index ← nextIndex @"letBinding" state
           let
             annotation ∷ SST.LetBindingAnnotation
             annotation = SST.Annotation { index }
-          insertLetBindingSourceRange state index letBindingSourceRange
+          insertSourceRange @"letBinding" state index letBindingSourceRange
           let
             letBinding ∷ SST.LetBinding
             letBinding =
@@ -699,11 +636,11 @@ lowerLetBindings state cstLetBindings = do
         let
           letBindingSourceRange ∷ LetBindingSourceRange
           letBindingSourceRange = LetBindingPatternSourceRange sourceRange
-        index ← nextLetBindingIndex state
+        index ← nextIndex @"letBinding" state
         let
           annotation ∷ SST.LetBindingAnnotation
           annotation = SST.Annotation { index }
-        insertLetBindingSourceRange state index letBindingSourceRange
+        insertSourceRange @"letBinding" state index letBindingSourceRange
         sstBinder ← lowerBinder state cstBinder
         sstWhere ← lowerWhere state cstWhere
         let
@@ -821,11 +758,11 @@ bySignatureName = case _, _ of
 
 lowerDataCtor ∷ ∀ r. State r → CST.DataCtor Void → ST r SST.DataConstructor
 lowerDataCtor state dataCtor = do
-  index ← nextConstructorIndex state
+  index ← nextIndex @"constructor" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf dataCtor
-  insertConstructorSourceRange state index sourceRange
+  insertSourceRange @"constructor" state index sourceRange
   let
     annotation ∷ SST.ConstructorAnnotation
     annotation = SST.Annotation { index }
@@ -843,11 +780,11 @@ lowerTypeVarBindings_
   → t (CST.TypeVarBinding i Void)
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings_ un state = traverse \typeVarBinding → do
-  index ← nextTypeVarBindingIndex state
+  index ← nextIndex @"typeVarBinding" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf typeVarBinding
-  insertTypeVarBindingSourceRange state index sourceRange
+  insertSourceRange @"typeVarBinding" state index sourceRange
   let
     annotation ∷ SST.TypeVarBindingAnnotation
     annotation = SST.Annotation { index }
@@ -907,14 +844,14 @@ lowerNewtypeEquation
   → CST.Type Void
   → ST r SST.NewtypeEquation
 lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
-  index ← nextNewtypeIndex state
+  index ← nextIndex @"newtype" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange =
       { start: rangeOf cstName # _.start
       , end: rangeOf cstField # _.end
       }
-  insertNewtypeSourceRange state index sourceRange
+  insertSourceRange @"newtype" state index sourceRange
   variables ← lowerTypeVarBindings state vars
   let
     annotation ∷ SST.NewtypeAnnotation
@@ -935,11 +872,11 @@ type CSTClassMethod =
 
 lowerClassMethod ∷ ∀ r. State r → CSTClassMethod → ST r SST.ClassMethod
 lowerClassMethod state cstClassMethod = do
-  index ← nextClassMethodIndex state
+  index ← nextIndex @"classMethod" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf cstClassMethod
-  insertClassMethodSourceRange state index sourceRange
+  insertSourceRange @"classMethod" state index sourceRange
   let
     annotation ∷ SST.ClassMethodAnnotation
     annotation = SST.Annotation { index }
@@ -969,14 +906,14 @@ lowerDeclarations state cstDeclarations = do
 
     onTypeGroup ∷ CST.Proper → _ → _ → ST r Unit
     onTypeGroup cstName cstSignature cstDeclaration = do
-      index ← nextDeclarationIndex state
+      index ← nextIndex @"declaration" state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
           , definitions: cstDeclaration <#> rangeOf
           }
-      insertDeclarationSourceRange state index declarationSourceRange
+      insertSourceRange @"declaration" state index declarationSourceRange
 
       signature ← for cstSignature case _ of
         CST.DeclKindSignature _ (CST.Labeled { value: cstType }) →
@@ -1008,14 +945,14 @@ lowerDeclarations state cstDeclarations = do
 
     onDeclValueGroup ∷ CST.Ident → _ → _ → ST r Unit
     onDeclValueGroup cstName cstSignature cstValues = do
-      index ← nextDeclarationIndex state
+      index ← nextIndex @"declaration" state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
           , definitions: cstValues <#> rangeOf
           }
-      insertDeclarationSourceRange state index declarationSourceRange
+      insertSourceRange @"declaration" state index declarationSourceRange
 
       signature ← for cstSignature case _ of
         CST.DeclSignature (CST.Labeled { value: cstType }) →
