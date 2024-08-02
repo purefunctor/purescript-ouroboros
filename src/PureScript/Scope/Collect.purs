@@ -189,14 +189,14 @@ collectExpr state = runSTFn1 go
 
   goPushDoStatement ∷ STFn1 SST.DoStatement r Unit
   goPushDoStatement = mkSTFn1 case _ of
-    SST.DoLet bindings →
+    SST.DoLet _ bindings →
       collectPushLetBindings state $ NEA.toArray bindings
-    SST.DoDiscard term →
+    SST.DoDiscard _ term →
       runSTFn1 go term
-    SST.DoBind binder term → do
+    SST.DoBind _ binder term → do
       runSTFn1 go term
       collectPushBinders state [ binder ]
-    SST.DoNotImplemented →
+    SST.DoNotImplemented _ →
       pure unit
 
   go ∷ STFn1 SST.Expr r Unit

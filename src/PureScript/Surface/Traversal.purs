@@ -230,13 +230,13 @@ traverseAppSpine k s = case s of
 
 traverseDoStatement ∷ ∀ m. Monad m ⇒ { | OnPureScript (Rewrite m) } → Rewrite m DoStatement
 traverseDoStatement k d = case d of
-  DoLet b →
-    DoLet <$> traverse (traverseLetBinding k) b
-  DoDiscard e →
-    DoDiscard <$> k.onExpr e
-  DoBind b e →
-    DoBind <$> k.onBinder b <*> k.onExpr e
-  DoNotImplemented →
+  DoLet i b →
+    DoLet i <$> traverse (traverseLetBinding k) b
+  DoDiscard i e →
+    DoDiscard i <$> k.onExpr e
+  DoBind i b e →
+    DoBind i <$> k.onBinder b <*> k.onExpr e
+  DoNotImplemented _ →
     pure d
 
 traverseLetBinding ∷ ∀ m. Monad m ⇒ { | OnPureScript (Rewrite m) } → Rewrite m LetBinding

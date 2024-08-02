@@ -55,6 +55,7 @@ type StateFields r =
   ( exprIndex ∷ StateIndex r
   , binderIndex ∷ StateIndex r
   , typeIndex ∷ StateIndex r
+  , doStatementIndex ∷ StateIndex r
   , letBindingIndex ∷ StateIndex r
   , declarationIndex ∷ StateIndex r
   , constructorIndex ∷ StateIndex r
@@ -64,6 +65,7 @@ type StateFields r =
   , exprSourceRange ∷ StateSourceRange r
   , binderSourceRange ∷ StateSourceRange r
   , typeSourceRange ∷ StateSourceRange r
+  , doStatementSourceRange ∷ StateSourceRange r
   , letBindingSourceRange ∷ StateLetBindingSourceRange r
   , declarationSourceRange ∷ StateDeclarationSourceRange r
   , constructorSourceRange ∷ StateSourceRange r
@@ -78,6 +80,7 @@ type SourceRanges =
   { exprSourceRange ∷ SST.SparseMap SST.Expr CST.SourceRange
   , binderSourceRange ∷ SST.SparseMap SST.Binder CST.SourceRange
   , typeSourceRange ∷ SST.SparseMap SST.Type CST.SourceRange
+  , doStatementSourceRange :: SST.SparseMap SST.Type CST.SourceRange
   , letBindingSourceRange ∷ SST.SparseMap SST.LetBinding LetBindingSourceRange
   , declarationSourceRange ∷ SST.SparseMap SST.Declaration DeclarationSourceRange
   , constructorSourceRange ∷ SST.SparseMap SST.DataConstructor CST.SourceRange
@@ -91,6 +94,7 @@ defaultState = do
   exprIndex ← STRef.new 0
   binderIndex ← STRef.new 0
   typeIndex ← STRef.new 0
+  doStatementIndex ← STRef.new 0
   letBindingIndex ← STRef.new 0
   declarationIndex ← STRef.new 0
   constructorIndex ← STRef.new 0
@@ -100,6 +104,7 @@ defaultState = do
   exprSourceRange ← MutableArray.empty
   binderSourceRange ← MutableArray.empty
   typeSourceRange ← MutableArray.empty
+  doStatementSourceRange ← MutableArray.empty
   letBindingSourceRange ← MutableArray.empty
   declarationSourceRange ← MutableArray.empty
   constructorSourceRange ← MutableArray.empty
@@ -110,6 +115,7 @@ defaultState = do
     { exprIndex
     , binderIndex
     , typeIndex
+    , doStatementIndex
     , letBindingIndex
     , declarationIndex
     , constructorIndex
@@ -119,6 +125,7 @@ defaultState = do
     , exprSourceRange
     , binderSourceRange
     , typeSourceRange
+    , doStatementSourceRange
     , letBindingSourceRange
     , declarationSourceRange
     , constructorSourceRange
@@ -132,6 +139,7 @@ freezeState (State state) = do
   exprSourceRange ← coerce $ MutableArray.unsafeFreeze state.exprSourceRange
   binderSourceRange ← coerce $ MutableArray.unsafeFreeze state.binderSourceRange
   typeSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeSourceRange
+  doStatementSourceRange <- coerce $ MutableArray.unsafeFreeze state.doStatementSourceRange
   letBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.letBindingSourceRange
   declarationSourceRange ← coerce $ MutableArray.unsafeFreeze state.declarationSourceRange
   constructorSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
@@ -142,6 +150,7 @@ freezeState (State state) = do
     { exprSourceRange
     , binderSourceRange
     , typeSourceRange
+    , doStatementSourceRange
     , letBindingSourceRange
     , declarationSourceRange
     , constructorSourceRange
@@ -654,24 +663,28 @@ lowerLetBindings state cstLetBindings = do
   letBindings ← STA.unsafeFreeze letBindingsRaw
   pure $ NonEmptyArray letBindings
 
--- TODO: It might be useful to assign indices to do statements, like we do with let bindings,
--- so we keep the shape similar to other lowerX functions. For instance, indices could improve
--- error reporting for do blocks since we can recover the entire statement rather than just the
--- let binding.
 lowerDoStatement ∷ ∀ r. State r → CST.DoStatement Void → ST r SST.DoStatement
 lowerDoStatement state = runSTFn1 go
   where
   go ∷ STFn1 (CST.DoStatement Void) r SST.DoStatement
   go = mkSTFn1 \d → do
+    let
+      range ∷ CST.SourceRange
+      range = rangeOf d
+    index ← nextIndex @"doStatement" state
+    let
+      annotation ∷ SST.DoStatementAnnotation
+      annotation = SST.Annotation { index }
+    insertSourceRange @"doStatement" state index range
     case d of
       CST.DoLet _ cstLetBindings → do
-        SST.DoLet <$> lowerLetBindings state cstLetBindings
+        SST.DoLet annotation <$> lowerLetBindings state cstLetBindings
       CST.DoDiscard cstExpr → do
-        SST.DoDiscard <$> lowerExpr state cstExpr
+        SST.DoDiscard annotation <$> lowerExpr state cstExpr
       CST.DoBind cstBinder _ cstExpr → do
-        SST.DoBind <$> lowerBinder state cstBinder <*> lowerExpr state cstExpr
-      CST.DoError e →
-        absurd e
+        SST.DoBind annotation <$> lowerBinder state cstBinder <*> lowerExpr state cstExpr
+      CST.DoError _ →
+        pure $ SST.DoNotImplemented annotation
 
 lowerDataMembers ∷ Maybe CST.DataMembers → Maybe SST.DataMembers
 lowerDataMembers cstDataMembers = cstDataMembers >>= case _ of

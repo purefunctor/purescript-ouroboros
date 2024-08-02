@@ -237,11 +237,14 @@ data RecordUpdate
 
 derive instance Eq RecordUpdate
 
+type DoStatementAnnotation = Annotation DoStatement
+type DoStatementIndex = Index DoStatement
+
 data DoStatement
-  = DoLet (NonEmptyArray LetBinding)
-  | DoDiscard Expr
-  | DoBind Binder Expr
-  | DoNotImplemented
+  = DoLet DoStatementAnnotation (NonEmptyArray LetBinding)
+  | DoDiscard DoStatementAnnotation Expr
+  | DoBind DoStatementAnnotation Binder Expr
+  | DoNotImplemented DoStatementAnnotation
 
 derive instance Eq DoStatement
 
