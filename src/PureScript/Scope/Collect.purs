@@ -18,6 +18,8 @@ import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
 import PureScript.Scope.Types (ScopeNode(..))
 import PureScript.Surface.Interface as SSI
+import PureScript.Utils.Immutable.SparseMap (SparseMap)
+import PureScript.Utils.Immutable.SparseMap as SparseMap
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
@@ -30,8 +32,8 @@ type State r =
   }
 
 type ScopeNodes =
-  { exprScopeNode ∷ SST.SparseMap SST.Expr ScopeNode
-  , typeScopeNode ∷ SST.SparseMap SST.Type ScopeNode
+  { exprScopeNode ∷ SparseMap SST.Expr ScopeNode
+  , typeScopeNode ∷ SparseMap SST.Type ScopeNode
   }
 
 defaultState ∷ ∀ r. ST r (State r)
@@ -43,8 +45,8 @@ defaultState = do
 
 freezeState ∷ ∀ r. State r → ST r ScopeNodes
 freezeState state = do
-  exprScopeNode ← coerce $ MutableArray.unsafeFreeze state.exprScopeNode
-  typeScopeNode ← coerce $ MutableArray.unsafeFreeze state.typeScopeNode
+  exprScopeNode ← SparseMap.ofMutable state.exprScopeNode
+  typeScopeNode ← SparseMap.ofMutable state.typeScopeNode
   pure { exprScopeNode, typeScopeNode }
 
 currentScope ∷ ∀ r. State r → ST r ScopeNode

@@ -18,145 +18,129 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Row as Row
-import Prim.Symbol as Symbol
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
+import PureScript.Surface.SourceRange (DeclarationSourceRange(..), LetBindingSourceRange(..))
 import PureScript.Surface.Types as SST
+import PureScript.Utils.Immutable.SparseMap (SparseMap)
+import PureScript.Utils.Immutable.SparseMap as SparseMap
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 import Record as Record
-import Safe.Coerce (coerce)
 import Type.Proxy (Proxy(..))
 
-type SigDefSourceRange =
-  { signature ∷ Maybe CST.SourceRange
-  , definitions ∷ Array CST.SourceRange
-  }
+type FieldGroup ∷ (Type → Type → Type) → Row Type
+type FieldGroup f =
+  ( expr ∷ f SST.Expr CST.SourceRange
+  , binder ∷ f SST.Binder CST.SourceRange
+  , type ∷ f SST.Type CST.SourceRange
+  , doStatement ∷ f SST.DoStatement CST.SourceRange
+  , letBinding ∷ f SST.LetBinding LetBindingSourceRange
+  , declaration ∷ f SST.Declaration DeclarationSourceRange
+  , constructor ∷ f SST.DataConstructor CST.SourceRange
+  , newtype ∷ f SST.NewtypeConstructor CST.SourceRange
+  , classMethod ∷ f SST.ClassMethod CST.SourceRange
+  , typeVarBinding ∷ f SST.TypeVarBinding CST.SourceRange
+  )
 
-data LetBindingSourceRange
-  = LetBindingNameSourceRange SigDefSourceRange
-  | LetBindingPatternSourceRange CST.SourceRange
+type MakeIndexState ∷ Region → Type → Type → Type
+type MakeIndexState r t s = STRef r Int
 
-derive instance Eq LetBindingSourceRange
+type MakeSourceRangeState ∷ Region → Type → Type → Type
+type MakeSourceRangeState r t s = MutableArray r s
 
-data DeclarationSourceRange
-  = DeclarationDataSourceRange SigDefSourceRange
-  | DeclarationValueSourceRange SigDefSourceRange
+type MakeSourceRangeFrozen ∷ Type → Type → Type
+type MakeSourceRangeFrozen t s = SparseMap t s
 
-derive instance Eq DeclarationSourceRange
+type IndexStateFields r = FieldGroup (MakeIndexState r)
 
-type StateIndex r = STRef r Int
-type StateSourceRange r = MutableArray r CST.SourceRange
-type StateLetBindingSourceRange r = MutableArray r LetBindingSourceRange
-type StateDeclarationSourceRange r = MutableArray r DeclarationSourceRange
+type SourceRangeStateFields r = FieldGroup (MakeSourceRangeState r)
 
 type StateFields r =
-  ( exprIndex ∷ StateIndex r
-  , binderIndex ∷ StateIndex r
-  , typeIndex ∷ StateIndex r
-  , doStatementIndex ∷ StateIndex r
-  , letBindingIndex ∷ StateIndex r
-  , declarationIndex ∷ StateIndex r
-  , constructorIndex ∷ StateIndex r
-  , newtypeIndex ∷ StateIndex r
-  , classMethodIndex ∷ StateIndex r
-  , typeVarBindingIndex ∷ StateIndex r
-  , exprSourceRange ∷ StateSourceRange r
-  , binderSourceRange ∷ StateSourceRange r
-  , typeSourceRange ∷ StateSourceRange r
-  , doStatementSourceRange ∷ StateSourceRange r
-  , letBindingSourceRange ∷ StateLetBindingSourceRange r
-  , declarationSourceRange ∷ StateDeclarationSourceRange r
-  , constructorSourceRange ∷ StateSourceRange r
-  , newtypeSourceRange ∷ StateSourceRange r
-  , classMethodSourceRange ∷ StateSourceRange r
-  , typeVarBindingSourceRange ∷ StateSourceRange r
+  ( indices ∷ { | IndexStateFields r }
+  , sourceRanges ∷ { | SourceRangeStateFields r }
   )
 
 newtype State r = State { | StateFields r }
 
-type SourceRanges =
-  { exprSourceRange ∷ SST.SparseMap SST.Expr CST.SourceRange
-  , binderSourceRange ∷ SST.SparseMap SST.Binder CST.SourceRange
-  , typeSourceRange ∷ SST.SparseMap SST.Type CST.SourceRange
-  , doStatementSourceRange :: SST.SparseMap SST.Type CST.SourceRange
-  , letBindingSourceRange ∷ SST.SparseMap SST.LetBinding LetBindingSourceRange
-  , declarationSourceRange ∷ SST.SparseMap SST.Declaration DeclarationSourceRange
-  , constructorSourceRange ∷ SST.SparseMap SST.DataConstructor CST.SourceRange
-  , newtypeSourceRange ∷ SST.SparseMap SST.NewtypeConstructor CST.SourceRange
-  , classMethodSourceRange ∷ SST.SparseMap SST.ClassMethod CST.SourceRange
-  , typeVarBindingSourceRange ∷ SST.SparseMap SST.TypeVarBinding CST.SourceRange
-  }
+newtype SourceRanges = SourceRanges { | FieldGroup MakeSourceRangeFrozen }
+
+derive newtype instance Eq SourceRanges
 
 defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
-  exprIndex ← STRef.new 0
-  binderIndex ← STRef.new 0
-  typeIndex ← STRef.new 0
-  doStatementIndex ← STRef.new 0
-  letBindingIndex ← STRef.new 0
-  declarationIndex ← STRef.new 0
-  constructorIndex ← STRef.new 0
-  newtypeIndex ← STRef.new 0
-  classMethodIndex ← STRef.new 0
-  typeVarBindingIndex ← STRef.new 0
-  exprSourceRange ← MutableArray.empty
-  binderSourceRange ← MutableArray.empty
-  typeSourceRange ← MutableArray.empty
-  doStatementSourceRange ← MutableArray.empty
-  letBindingSourceRange ← MutableArray.empty
-  declarationSourceRange ← MutableArray.empty
-  constructorSourceRange ← MutableArray.empty
-  newtypeSourceRange ← MutableArray.empty
-  classMethodSourceRange ← MutableArray.empty
-  typeVarBindingSourceRange ← MutableArray.empty
-  pure $ State
-    { exprIndex
-    , binderIndex
-    , typeIndex
-    , doStatementIndex
-    , letBindingIndex
-    , declarationIndex
-    , constructorIndex
-    , newtypeIndex
-    , classMethodIndex
-    , typeVarBindingIndex
-    , exprSourceRange
-    , binderSourceRange
-    , typeSourceRange
-    , doStatementSourceRange
-    , letBindingSourceRange
-    , declarationSourceRange
-    , constructorSourceRange
-    , newtypeSourceRange
-    , classMethodSourceRange
-    , typeVarBindingSourceRange
-    }
+  indices ← do
+    expr ← STRef.new 0
+    binder ← STRef.new 0
+    type_ ← STRef.new 0
+    doStatement ← STRef.new 0
+    letBinding ← STRef.new 0
+    declaration ← STRef.new 0
+    constructor ← STRef.new 0
+    newtype_ ← STRef.new 0
+    classMethod ← STRef.new 0
+    typeVarBinding ← STRef.new 0
+    pure
+      { expr
+      , binder
+      , type: type_
+      , doStatement
+      , letBinding
+      , declaration
+      , constructor
+      , newtype: newtype_
+      , classMethod
+      , typeVarBinding
+      }
+  sourceRanges ← do
+    expr ← MutableArray.empty
+    binder ← MutableArray.empty
+    type_ ← MutableArray.empty
+    doStatement ← MutableArray.empty
+    letBinding ← MutableArray.empty
+    declaration ← MutableArray.empty
+    constructor ← MutableArray.empty
+    newtype_ ← MutableArray.empty
+    classMethod ← MutableArray.empty
+    typeVarBinding ← MutableArray.empty
+    pure
+      { expr
+      , binder
+      , type: type_
+      , doStatement
+      , letBinding
+      , declaration
+      , constructor
+      , newtype: newtype_
+      , classMethod
+      , typeVarBinding
+      }
+  pure $ State { indices, sourceRanges }
 
 freezeState ∷ ∀ r. State r → ST r SourceRanges
-freezeState (State state) = do
-  exprSourceRange ← coerce $ MutableArray.unsafeFreeze state.exprSourceRange
-  binderSourceRange ← coerce $ MutableArray.unsafeFreeze state.binderSourceRange
-  typeSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeSourceRange
-  doStatementSourceRange <- coerce $ MutableArray.unsafeFreeze state.doStatementSourceRange
-  letBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.letBindingSourceRange
-  declarationSourceRange ← coerce $ MutableArray.unsafeFreeze state.declarationSourceRange
-  constructorSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
-  newtypeSourceRange ← coerce $ MutableArray.unsafeFreeze state.constructorSourceRange
-  classMethodSourceRange ← coerce $ MutableArray.unsafeFreeze state.classMethodSourceRange
-  typeVarBindingSourceRange ← coerce $ MutableArray.unsafeFreeze state.typeVarBindingSourceRange
-  pure
-    { exprSourceRange
-    , binderSourceRange
-    , typeSourceRange
-    , doStatementSourceRange
-    , letBindingSourceRange
-    , declarationSourceRange
-    , constructorSourceRange
-    , newtypeSourceRange
-    , classMethodSourceRange
-    , typeVarBindingSourceRange
+freezeState (State { sourceRanges }) = do
+  expr ← SparseMap.ofMutable sourceRanges.expr
+  binder ← SparseMap.ofMutable sourceRanges.binder
+  type_ ← SparseMap.ofMutable sourceRanges."type"
+  doStatement ← SparseMap.ofMutable sourceRanges.doStatement
+  letBinding ← SparseMap.ofMutable sourceRanges.letBinding
+  declaration ← SparseMap.ofMutable sourceRanges.declaration
+  constructor ← SparseMap.ofMutable sourceRanges.constructor
+  newtype_ ← SparseMap.ofMutable sourceRanges."newtype"
+  classMethod ← SparseMap.ofMutable sourceRanges.classMethod
+  typeVarBinding ← SparseMap.ofMutable sourceRanges.typeVarBinding
+  pure $ SourceRanges
+    { expr
+    , binder
+    , type: type_
+    , doStatement
+    , letBinding
+    , declaration
+    , constructor
+    , newtype: newtype_
+    , classMethod
+    , typeVarBinding
     }
 
 class EditState ∷ Symbol → Type → Type → Region → Constraint
@@ -165,27 +149,30 @@ class EditState name ast sourceRange region | name → ast sourceRange where
   insertSourceRange ∷ State region → (SST.Index ast) → sourceRange → ST region Unit
 
 instance editStateInstance ∷
-  ( Symbol.Append name "Index" nameIndex
-  , Symbol.Append name "SourceRange" nameSourceRange
-  , IsSymbol nameIndex
-  , IsSymbol nameSourceRange
-  , Row.Cons nameIndex (StateIndex region) indexTail (StateFields region)
-  , Row.Cons nameSourceRange (MutableArray region sourceRange) sourceRangeTail (StateFields region)
+  ( IsSymbol name
+  , Row.Cons name
+      (STRef region Int)
+      indexTail
+      (IndexStateFields region)
+  , Row.Cons name
+      (MutableArray region sourceRange)
+      sourceRangeTail
+      (SourceRangeStateFields region)
   ) ⇒
   EditState name ast sourceRange region where
 
-  nextIndex (State state) = do
+  nextIndex (State { indices }) = do
     let
-      ref ∷ StateIndex region
-      ref = Record.get (Proxy ∷ _ nameIndex) state
+      ref ∷ STRef region Int
+      ref = Record.get (Proxy ∷ _ name) indices
     index ← STRef.read ref
     void $ STRef.modify (_ + 1) ref
     pure $ SST.Index index
 
-  insertSourceRange (State state) index sourceRange = do
+  insertSourceRange (State { sourceRanges }) index sourceRange = do
     let
       ref ∷ MutableArray region sourceRange
-      ref = Record.get (Proxy ∷ _ nameSourceRange) state
+      ref = Record.get (Proxy ∷ _ name) sourceRanges
     MutableArray.poke index sourceRange ref
 
 unName ∷ ∀ a. CST.Name a → a
