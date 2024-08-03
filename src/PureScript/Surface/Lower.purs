@@ -18,10 +18,11 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Row as Row
+import PureScript.CST.Errors (RecoveredError)
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
-import PureScript.Surface.Error (class IntoLowerError, LowerError, intoLowerError)
+import PureScript.Surface.Error (class IntoRecoveredError, intoRecoveredError)
 import PureScript.Surface.SourceRange (DeclarationSourceRange(..), LetBindingSourceRange(..))
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Immutable.SparseMap (SparseMap)
@@ -45,8 +46,8 @@ type FieldGroup f =
   , typeVarBinding ∷ f SST.TypeVarBinding CST.SourceRange
   )
 
-type LowerErrorFieldGroup ∷ (Type → Type) → Row Type
-type LowerErrorFieldGroup f =
+type ErrorFieldGroup ∷ (Type → Type) → Row Type
+type ErrorFieldGroup f =
   ( expr ∷ f SST.Expr
   , binder ∷ f SST.Binder
   , type ∷ f SST.Type
@@ -64,22 +65,22 @@ type MakeSourceRangeState r t s = MutableArray r s
 type MakeSourceRangeFrozen ∷ Type → Type → Type
 type MakeSourceRangeFrozen t s = SparseMap t s
 
-type MakeLowerErrorState ∷ Region → Type → Type
-type MakeLowerErrorState r t = MutableArray r LowerError
+type MakeRecoveredErrorState ∷ Region → Type → Type
+type MakeRecoveredErrorState r t = MutableArray r RecoveredError
 
-type MakeLowerErrorFrozen ∷ Type → Type
-type MakeLowerErrorFrozen t = SparseMap t LowerError
+type MakeRecoveredErrorFrozen ∷ Type → Type
+type MakeRecoveredErrorFrozen t = SparseMap t RecoveredError
 
 type IndexStateFields r = FieldGroup (MakeIndexState r)
 
 type SourceRangeStateFields r = FieldGroup (MakeSourceRangeState r)
 
-type LowerErrorStateFields r = LowerErrorFieldGroup (MakeLowerErrorState r)
+type RecoveredErrorStateFields r = ErrorFieldGroup (MakeRecoveredErrorState r)
 
 type StateFields r =
   ( indices ∷ { | IndexStateFields r }
   , sourceRanges ∷ { | SourceRangeStateFields r }
-  , errors ∷ { | LowerErrorStateFields r }
+  , errors ∷ { | RecoveredErrorStateFields r }
   )
 
 newtype State r = State { | StateFields r }
@@ -88,9 +89,9 @@ newtype SourceRanges = SourceRanges { | FieldGroup MakeSourceRangeFrozen }
 
 derive newtype instance Eq SourceRanges
 
-newtype LowerErrors = LowerErrors { | LowerErrorFieldGroup MakeLowerErrorFrozen }
+newtype RecoveredErrors = RecoveredErrors { | ErrorFieldGroup MakeRecoveredErrorFrozen }
 
-derive newtype instance Eq LowerErrors
+derive newtype instance Eq RecoveredErrors
 
 defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
@@ -157,7 +158,7 @@ defaultState = do
       }
   pure $ State { indices, sourceRanges, errors }
 
-freezeState ∷ ∀ r. State r → ST r { sourceRanges ∷ SourceRanges, errors ∷ LowerErrors }
+freezeState ∷ ∀ r. State r → ST r { sourceRanges ∷ SourceRanges, errors ∷ RecoveredErrors }
 freezeState (State { sourceRanges, errors }) = do
   sourceRanges' ← do
     expr ← SparseMap.ofMutable sourceRanges.expr
@@ -189,7 +190,7 @@ freezeState (State { sourceRanges, errors }) = do
     doStatement ← SparseMap.ofMutable errors.doStatement
     letBinding ← SparseMap.ofMutable errors.letBinding
     declaration ← SparseMap.ofMutable errors.declaration
-    pure $ LowerErrors
+    pure $ RecoveredErrors
       { expr
       , binder
       , type: type_
@@ -230,17 +231,17 @@ insertSourceRange (State { sourceRanges }) index sourceRange = do
 insertError
   ∷ ∀ @n r e t _t
   . IsSymbol n
-  ⇒ Row.Cons n (MutableArray r LowerError) _t (LowerErrorStateFields r)
-  ⇒ IntoLowerError e
+  ⇒ Row.Cons n (MutableArray r RecoveredError) _t (RecoveredErrorStateFields r)
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → SST.Index t
   → e
   → ST r Unit
 insertError (State { errors }) index error = do
   let
-    ref ∷ MutableArray r LowerError
+    ref ∷ MutableArray r RecoveredError
     ref = Record.get (Proxy ∷ _ n) errors
-  MutableArray.poke index (intoLowerError error) ref
+  MutableArray.poke index (intoRecoveredError error) ref
 
 unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name
@@ -249,13 +250,13 @@ lowerQualifiedName ∷ ∀ a. CST.QualifiedName a → SST.QualifiedName a
 lowerQualifiedName (CST.QualifiedName { module: moduleName, name }) =
   SST.QualifiedName { moduleName, name }
 
-lowerGuarded ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Guarded e → ST r SST.Guarded
+lowerGuarded ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Guarded e → ST r SST.Guarded
 lowerGuarded state = case _ of
   CST.Unconditional _ w → SST.Unconditional <$> lowerWhere state w
   CST.Guarded g → SST.Guarded <$> traverse (lowerGuardedExpr state) g
 
 lowerGuardedExpr
-  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.GuardedExpr e → ST r SST.GuardedExpr
+  ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.GuardedExpr e → ST r SST.GuardedExpr
 lowerGuardedExpr
   state
   ( CST.GuardedExpr
@@ -273,14 +274,14 @@ lowerGuardedExpr
   pure $ SST.GuardedExpr patterns sstWhere
 
 lowerPatternGuard
-  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.PatternGuard e → ST r SST.PatternGuard
+  ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.PatternGuard e → ST r SST.PatternGuard
 lowerPatternGuard state (CST.PatternGuard { binder: cstBinder, expr: cstExpr }) = do
   binder ← cstBinder # traverse case _ of
     Tuple cstBinder' _ → lowerBinder state cstBinder'
   expr ← lowerExpr state cstExpr
   pure $ SST.PatternGuard binder expr
 
-lowerWhere ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Where e → ST r SST.Where
+lowerWhere ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Where e → ST r SST.Where
 lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
   expr ← lowerExpr state cstExpr
   bindings ← case cstBindings of
@@ -290,7 +291,7 @@ lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
       pure []
   pure $ SST.Where expr bindings
 
-lowerExpr ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Expr e → ST r SST.Expr
+lowerExpr ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Expr e → ST r SST.Expr
 lowerExpr state = runSTFn1 go
   where
   goAppSpine ∷ STFn1 (CST.AppSpine CST.Expr e) r SST.AppSpine
@@ -449,7 +450,7 @@ lowerExpr state = runSTFn1 go
         insertError @"expr" state index error
         pure $ SST.ExprError annotation
 
-lowerBinder ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Binder e → ST r SST.Binder
+lowerBinder ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Binder e → ST r SST.Binder
 lowerBinder state = runSTFn1 go
   where
   goRecordLabeled
@@ -524,7 +525,7 @@ lowerBinder state = runSTFn1 go
         insertError @"binder" state index error
         pure $ SST.BinderError annotation
 
-lowerType ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Type e → ST r SST.Type
+lowerType ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Type e → ST r SST.Type
 lowerType state = runSTFn1 go
   where
   goRowPair
@@ -625,7 +626,7 @@ data LetLoweringGroup r = LetLoweringGroup
 lowerLetBindings
   ∷ ∀ r e
   . RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → NonEmptyArray (CST.LetBinding e)
   → ST r (NonEmptyArray SST.LetBinding)
@@ -742,7 +743,7 @@ lowerLetBindings state cstLetBindings = do
   pure $ NonEmptyArray letBindings
 
 lowerDoStatement
-  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.DoStatement e → ST r SST.DoStatement
+  ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.DoStatement e → ST r SST.DoStatement
 lowerDoStatement state = runSTFn1 go
   where
   go ∷ STFn1 (CST.DoStatement e) r SST.DoStatement
@@ -852,7 +853,7 @@ bySignatureName = case _, _ of
     false
 
 lowerDataCtor
-  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.DataCtor e → ST r SST.DataConstructor
+  ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.DataCtor e → ST r SST.DataConstructor
 lowerDataCtor state dataCtor = do
   index ← nextIndex @"constructor" state
   let
@@ -872,7 +873,7 @@ lowerTypeVarBindings_
   . Traversable t
   ⇒ RangeOf i
   ⇒ RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ (i → { visible ∷ Boolean, name ∷ CST.Ident })
   → State r
   → t (CST.TypeVarBinding i e)
@@ -899,7 +900,7 @@ lowerTypeVarBindings
   ∷ ∀ t r e
   . Traversable t
   ⇒ RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → t (CST.TypeVarBinding (CST.Name CST.Ident) e)
   → ST r (t SST.TypeVarBinding)
@@ -910,7 +911,7 @@ lowerTypeVarBindingsPrefixed
   ∷ ∀ t r e
   . Traversable t
   ⇒ RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → t (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) e)
   → ST r (t SST.TypeVarBinding)
@@ -920,7 +921,7 @@ lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
 lowerDataEquation
   ∷ ∀ r e
   . RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → CST.DataHead e
   → Maybe (Tuple CST.SourceToken (CST.Separated (CST.DataCtor e)))
@@ -937,7 +938,7 @@ lowerDataEquation state { vars } cstConstructors = do
 lowerTypeEquation
   ∷ ∀ r e
   . RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → CST.DataHead e
   → CST.Type e
@@ -950,7 +951,7 @@ lowerTypeEquation state { vars } cstType = do
 lowerNewtypeEquation
   ∷ ∀ r e
   . RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → CST.DataHead e
   → CST.Name CST.Proper
@@ -984,7 +985,7 @@ type CSTClassMethod e =
   CST.Labeled (CST.Name CST.Ident) (CST.Type e)
 
 lowerClassMethod
-  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CSTClassMethod e → ST r SST.ClassMethod
+  ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CSTClassMethod e → ST r SST.ClassMethod
 lowerClassMethod state cstClassMethod = do
   index ← nextIndex @"classMethod" state
   let
@@ -1005,7 +1006,7 @@ type CSTClassBody e =
 lowerClassBody
   ∷ ∀ r e
   . RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → CST.ClassHead e
   → Maybe (CSTClassBody e)
@@ -1020,7 +1021,7 @@ lowerClassBody state { vars } classBody = do
 lowerDeclarations
   ∷ ∀ r e
   . RangeOf e
-  ⇒ IntoLowerError e
+  ⇒ IntoRecoveredError e
   ⇒ State r
   → Array (CST.Declaration e)
   → ST r (Array SST.Declaration)
@@ -1136,10 +1137,10 @@ lowerDeclarations state cstDeclarations = do
 type Result =
   { surface ∷ SST.Module
   , sourceRanges ∷ SourceRanges
-  , errors ∷ LowerErrors
+  , errors ∷ RecoveredErrors
   }
 
-lowerModule ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ CST.Module e → ST r Result
+lowerModule ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ CST.Module e → ST r Result
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader
