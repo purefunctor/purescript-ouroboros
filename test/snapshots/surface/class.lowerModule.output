@@ -136,5 +136,13 @@
       { start: { line: 4, column: 11 }, end: { line: 4, column: 12 } },
       { start: { line: 8, column: 13 }, end: { line: 8, column: 14 } }
     ]
+  },
+  errors: {
+    expr: [],
+    binder: [],
+    type: [],
+    doStatement: [],
+    letBinding: [],
+    declaration: []
   }
 }

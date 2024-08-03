@@ -93,5 +93,13 @@
     newtype: [],
     classMethod: [],
     typeVarBinding: [ { start: { line: 5, column: 7 }, end: { line: 5, column: 8 } } ]
+  },
+  errors: {
+    expr: [],
+    binder: [],
+    type: [],
+    doStatement: [],
+    letBinding: [],
+    declaration: []
   }
 }

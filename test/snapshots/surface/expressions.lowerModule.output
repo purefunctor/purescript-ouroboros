@@ -1434,5 +1434,13 @@
     newtype: [],
     classMethod: [],
     typeVarBinding: []
+  },
+  errors: {
+    expr: [],
+    binder: [],
+    type: [],
+    doStatement: [],
+    letBinding: [],
+    declaration: []
   }
 }

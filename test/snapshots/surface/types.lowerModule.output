@@ -724,5 +724,13 @@
         end: { line: 14, column: 42 }
       }
     ]
+  },
+  errors: {
+    expr: [],
+    binder: [],
+    type: [],
+    doStatement: [],
+    letBinding: [],
+    declaration: []
   }
 }
