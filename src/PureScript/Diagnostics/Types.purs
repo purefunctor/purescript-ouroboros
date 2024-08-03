@@ -2,7 +2,7 @@ module PureScript.Diagnostics.Types where
 
 import Prelude
 
-import PureScript.CST.Errors (ParseError)
+import PureScript.CST.Errors (ParseError, RecoveredError)
 import PureScript.Interface.Error (InterfaceError)
 
 newtype Diagnostic = Diagnostic
@@ -14,6 +14,7 @@ derive newtype instance Ord Diagnostic
 
 data DiagnosticKind
   = DiagnosticParseError ParseError
+  | DiagnosticRecoveredError RecoveredError
   | DiagnosticInterfaceError InterfaceError
 
 derive instance Eq DiagnosticKind

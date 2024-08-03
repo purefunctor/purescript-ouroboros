@@ -8,6 +8,7 @@ workspace:
         - debug
         - effect
         - foreign-object
+        - heterogeneous
         - language-cst-parser
         - prelude
         - refs
@@ -595,7 +596,7 @@ workspace:
   extra_packages:
     language-cst-parser:
       git: https://github.com/purefunctor/purescript-language-cst-parser.git
-      ref: 2abe49b1c1da0370b9564d510f864bc89cd39a07
+      ref: 0cc70f935fba84e7ee6652bf2eabb17e534c73d9
       dependencies:
         - arrays
         - const
@@ -1007,7 +1008,7 @@ packages:
   language-cst-parser:
     type: git
     url: https://github.com/purefunctor/purescript-language-cst-parser.git
-    rev: 2abe49b1c1da0370b9564d510f864bc89cd39a07
+    rev: 0cc70f935fba84e7ee6652bf2eabb17e534c73d9
     dependencies:
       - arrays
       - const
