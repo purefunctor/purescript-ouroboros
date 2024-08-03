@@ -5,17 +5,12 @@ import Prelude
 import Control.Monad.ST (Region, ST)
 import Data.Maybe (Maybe(..))
 import Partial.Unsafe (unsafeCrashWith)
+import PureScript.Id (Id(..))
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 import PureScript.Utils.Mutable.Object (MutableObject)
 import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (class Coercible, coerce)
-
-newtype Id ∷ Type → Type
-newtype Id t = Id Int
-
-derive newtype instance Eq (Id t)
-derive newtype instance Ord (Id t)
 
 newtype Interner ∷ Region → Type → Type
 newtype Interner r t = Interner

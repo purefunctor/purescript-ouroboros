@@ -8,6 +8,7 @@ import Data.Maybe (Maybe)
 import Data.Tuple (Tuple)
 import Prim as Prim
 import PureScript.CST.Types (Ident, IntValue, Label, ModuleName, Operator, Proper)
+import PureScript.Id (Id)
 
 newtype QualifiedName a = QualifiedName
   { moduleName ∷ Maybe ModuleName
@@ -16,13 +17,8 @@ newtype QualifiedName a = QualifiedName
 
 derive newtype instance Eq a ⇒ Eq (QualifiedName a)
 
-newtype Index ∷ Prim.Type → Prim.Type
-newtype Index a = Index Int
-
-derive newtype instance Eq (Index a)
-
 newtype Annotation a = Annotation
-  { index ∷ Index a
+  { id ∷ Id a
   }
 
 derive newtype instance Eq (Annotation a)
@@ -60,7 +56,7 @@ newtype Import = Import
 derive newtype instance Eq Import
 
 type DeclarationAnnotation = Annotation Declaration
-type DeclarationIndex = Index Declaration
+type DeclarationId = Id Declaration
 
 newtype ValueEquation = ValueEquation
   { binders ∷ Array Binder
@@ -70,7 +66,7 @@ newtype ValueEquation = ValueEquation
 derive newtype instance Eq ValueEquation
 
 type ConstructorAnnotation = Annotation DataConstructor
-type ConstructorIndex = Index DataConstructor
+type ConstructorId = Id DataConstructor
 
 newtype DataConstructor = DataConstructor
   { annotation ∷ ConstructorAnnotation
@@ -95,7 +91,7 @@ newtype TypeEquation = TypeEquation
 derive newtype instance Eq TypeEquation
 
 type NewtypeAnnotation = Annotation NewtypeConstructor
-type NewtypeIndex = Index NewtypeConstructor
+type NewtypeId = Id NewtypeConstructor
 
 newtype NewtypeConstructor = NewtypeConstructor
   { annotation ∷ NewtypeAnnotation
@@ -120,7 +116,7 @@ newtype ClassEquation = ClassEquation
 derive newtype instance Eq ClassEquation
 
 type ClassMethodAnnotation = Annotation ClassMethod
-type ClassMethodIndex = Index ClassMethod
+type ClassMethodId = Id ClassMethod
 
 newtype ClassMethod = ClassMethod
   { annotation ∷ ClassMethodAnnotation
@@ -141,7 +137,7 @@ data Declaration
 derive instance Eq Declaration
 
 type TypeVarBindingAnnotation = Annotation TypeVarBinding
-type TypeVarBindingIndex = Index TypeVarBinding
+type TypeVarBindingId = Id TypeVarBinding
 
 data TypeVarBinding
   = TypeVarKinded TypeVarBindingAnnotation Boolean Ident Type
@@ -164,7 +160,7 @@ data PatternGuard = PatternGuard (Maybe Binder) Expr
 derive instance Eq PatternGuard
 
 type LetBindingAnnotation = Annotation LetBinding
-type LetBindingIndex = Index LetBinding
+type LetBindingId = Id LetBinding
 
 data LetBinding
   = LetBindingValue LetBindingAnnotation Ident (Maybe Type) (Array ValueEquation)
@@ -179,7 +175,7 @@ data Where = Where Expr (Array LetBinding)
 derive instance Eq Where
 
 type ExprAnnotation = Annotation Expr
-type ExprIndex = Index Expr
+type ExprId = Id Expr
 
 data Expr
   = ExprHole ExprAnnotation Ident
@@ -235,7 +231,7 @@ data RecordUpdate
 derive instance Eq RecordUpdate
 
 type DoStatementAnnotation = Annotation DoStatement
-type DoStatementIndex = Index DoStatement
+type DoStatementId = Id DoStatement
 
 data DoStatement
   = DoLet DoStatementAnnotation (NonEmptyArray LetBinding)
@@ -247,7 +243,7 @@ data DoStatement
 derive instance Eq DoStatement
 
 type BinderAnnotation = Annotation Binder
-type BinderIndex = Index Binder
+type BinderId = Id Binder
 
 data Binder
   = BinderWildcard BinderAnnotation
@@ -270,7 +266,7 @@ data Binder
 derive instance Eq Binder
 
 type TypeAnnotation = Annotation Type
-type TypeIndex = Index Type
+type TypeId = Id Type
 
 data Type
   = TypeVar TypeAnnotation Ident

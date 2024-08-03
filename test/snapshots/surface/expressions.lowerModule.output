@@ -5,7 +5,7 @@
     imports: [],
     declarations: [
       DeclarationValue {
-        value0: { index: 0 },
+        value0: { id: 0 },
         value1: 'hole',
         value2: Nothing {},
         value3: [
@@ -13,7 +13,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprHole { value0: { index: 0 }, value1: 'hole' },
+                value0: ExprHole { value0: { id: 0 }, value1: 'hole' },
                 value1: []
               }
             }
@@ -21,7 +21,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 1 },
+        value0: { id: 1 },
         value1: 'section',
         value2: Nothing {},
         value3: [
@@ -29,7 +29,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprSection { value0: { index: 1 } },
+                value0: ExprSection { value0: { id: 1 } },
                 value1: []
               }
             }
@@ -37,7 +37,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 2 },
+        value0: { id: 2 },
         value1: 'ident',
         value2: Nothing {},
         value3: [
@@ -46,7 +46,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprIdent {
-                  value0: { index: 2 },
+                  value0: { id: 2 },
                   value1: { moduleName: Nothing {}, name: 'ident' }
                 },
                 value1: []
@@ -56,7 +56,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 3 },
+        value0: { id: 3 },
         value1: 'constructor',
         value2: Nothing {},
         value3: [
@@ -65,7 +65,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprConstructor {
-                  value0: { index: 3 },
+                  value0: { id: 3 },
                   value1: { moduleName: Nothing {}, name: 'Constructor' }
                 },
                 value1: []
@@ -75,7 +75,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 4 },
+        value0: { id: 4 },
         value1: 'boolean',
         value2: Nothing {},
         value3: [
@@ -83,7 +83,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprBoolean { value0: { index: 4 }, value1: true },
+                value0: ExprBoolean { value0: { id: 4 }, value1: true },
                 value1: []
               }
             }
@@ -91,7 +91,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 5 },
+        value0: { id: 5 },
         value1: 'char',
         value2: Nothing {},
         value3: [
@@ -99,7 +99,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprChar { value0: { index: 5 }, value1: 'c' },
+                value0: ExprChar { value0: { id: 5 }, value1: 'c' },
                 value1: []
               }
             }
@@ -107,7 +107,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 6 },
+        value0: { id: 6 },
         value1: 'string',
         value2: Nothing {},
         value3: [
@@ -115,7 +115,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprString { value0: { index: 6 }, value1: 'string' },
+                value0: ExprString { value0: { id: 6 }, value1: 'string' },
                 value1: []
               }
             }
@@ -123,7 +123,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 7 },
+        value0: { id: 7 },
         value1: 'int',
         value2: Nothing {},
         value3: [
@@ -132,7 +132,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 7 },
+                  value0: { id: 7 },
                   value1: SmallInt { value0: 42 }
                 },
                 value1: []
@@ -142,7 +142,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 8 },
+        value0: { id: 8 },
         value1: 'number',
         value2: Nothing {},
         value3: [
@@ -150,7 +150,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprNumber { value0: { index: 8 }, value1: 9.19 },
+                value0: ExprNumber { value0: { id: 8 }, value1: 9.19 },
                 value1: []
               }
             }
@@ -158,7 +158,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 9 },
+        value0: { id: 9 },
         value1: 'arrayEmpty',
         value2: Nothing {},
         value3: [
@@ -166,7 +166,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprArray { value0: { index: 9 }, value1: [] },
+                value0: ExprArray { value0: { id: 9 }, value1: [] },
                 value1: []
               }
             }
@@ -174,7 +174,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 10 },
+        value0: { id: 10 },
         value1: 'arrayNonEmpty',
         value2: Nothing {},
         value3: [
@@ -183,13 +183,13 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprArray {
-                  value0: { index: 10 },
+                  value0: { id: 10 },
                   value1: [
                     ExprInt {
-                      value0: { index: 11 },
+                      value0: { id: 11 },
                       value1: SmallInt { value0: 42 }
                     },
-                    ExprNumber { value0: { index: 12 }, value1: 9.19 }
+                    ExprNumber { value0: { id: 12 }, value1: 9.19 }
                   ]
                 },
                 value1: []
@@ -199,7 +199,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 11 },
+        value0: { id: 11 },
         value1: 'recordEmpty',
         value2: Nothing {},
         value3: [
@@ -207,7 +207,7 @@
             binders: [],
             guarded: Unconditional {
               value0: Where {
-                value0: ExprRecord { value0: { index: 13 }, value1: [] },
+                value0: ExprRecord { value0: { id: 13 }, value1: [] },
                 value1: []
               }
             }
@@ -215,7 +215,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 12 },
+        value0: { id: 12 },
         value1: 'recordPun',
         value2: Nothing {},
         value3: [
@@ -224,7 +224,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprRecord {
-                  value0: { index: 14 },
+                  value0: { id: 14 },
                   value1: [ RecordPun { value0: 'a' } ]
                 },
                 value1: []
@@ -234,7 +234,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 13 },
+        value0: { id: 13 },
         value1: 'recordField',
         value2: Nothing {},
         value3: [
@@ -243,12 +243,12 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprRecord {
-                  value0: { index: 15 },
+                  value0: { id: 15 },
                   value1: [
                     RecordField {
                       value0: 'a',
                       value1: ExprInt {
-                        value0: { index: 16 },
+                        value0: { id: 16 },
                         value1: SmallInt { value0: 42 }
                       }
                     }
@@ -261,7 +261,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 14 },
+        value0: { id: 14 },
         value1: 'parens',
         value2: Nothing {},
         value3: [
@@ -270,9 +270,9 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprParens {
-                  value0: { index: 17 },
+                  value0: { id: 17 },
                   value1: ExprIdent {
-                    value0: { index: 18 },
+                    value0: { id: 18 },
                     value1: { moduleName: Nothing {}, name: 'f' }
                   }
                 },
@@ -283,7 +283,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 15 },
+        value0: { id: 15 },
         value1: 'typed',
         value2: Nothing {},
         value3: [
@@ -292,15 +292,15 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprParens {
-                  value0: { index: 19 },
+                  value0: { id: 19 },
                   value1: ExprTyped {
-                    value0: { index: 20 },
+                    value0: { id: 20 },
                     value1: ExprIdent {
-                      value0: { index: 21 },
+                      value0: { id: 21 },
                       value1: { moduleName: Nothing {}, name: 'x' }
                     },
                     value2: TypeConstructor {
-                      value0: { index: 0 },
+                      value0: { id: 0 },
                       value1: { moduleName: Nothing {}, name: 'T' }
                     }
                   }
@@ -312,7 +312,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 16 },
+        value0: { id: 16 },
         value1: 'infixE',
         value2: Nothing {},
         value3: [
@@ -321,29 +321,29 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInfix {
-                  value0: { index: 22 },
+                  value0: { id: 22 },
                   value1: ExprIdent {
-                    value0: { index: 23 },
+                    value0: { id: 23 },
                     value1: { moduleName: Nothing {}, name: 'a' }
                   },
                   value2: [
                     Tuple {
                       value0: ExprIdent {
-                        value0: { index: 24 },
+                        value0: { id: 24 },
                         value1: { moduleName: Nothing {}, name: 'operator' }
                       },
                       value1: ExprIdent {
-                        value0: { index: 25 },
+                        value0: { id: 25 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     },
                     Tuple {
                       value0: ExprIdent {
-                        value0: { index: 26 },
+                        value0: { id: 26 },
                         value1: { moduleName: Nothing {}, name: 'chain' }
                       },
                       value1: ExprIdent {
-                        value0: { index: 27 },
+                        value0: { id: 27 },
                         value1: { moduleName: Nothing {}, name: 'c' }
                       }
                     }
@@ -356,7 +356,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 17 },
+        value0: { id: 17 },
         value1: 'operatorE',
         value2: Nothing {},
         value3: [
@@ -365,23 +365,23 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprOp {
-                  value0: { index: 28 },
+                  value0: { id: 28 },
                   value1: ExprIdent {
-                    value0: { index: 29 },
+                    value0: { id: 29 },
                     value1: { moduleName: Nothing {}, name: 'a' }
                   },
                   value2: [
                     Tuple {
                       value0: { moduleName: Nothing {}, name: '+' },
                       value1: ExprIdent {
-                        value0: { index: 30 },
+                        value0: { id: 30 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     },
                     Tuple {
                       value0: { moduleName: Nothing {}, name: '*' },
                       value1: ExprIdent {
-                        value0: { index: 31 },
+                        value0: { id: 31 },
                         value1: { moduleName: Nothing {}, name: 'c' }
                       }
                     }
@@ -394,7 +394,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 18 },
+        value0: { id: 18 },
         value1: 'opName',
         value2: Nothing {},
         value3: [
@@ -403,7 +403,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprOpName {
-                  value0: { index: 32 },
+                  value0: { id: 32 },
                   value1: { moduleName: Nothing {}, name: '/' }
                 },
                 value1: []
@@ -413,7 +413,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 19 },
+        value0: { id: 19 },
         value1: 'negate',
         value2: Nothing {},
         value3: [
@@ -422,9 +422,9 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprNegate {
-                  value0: { index: 33 },
+                  value0: { id: 33 },
                   value1: ExprInt {
-                    value0: { index: 34 },
+                    value0: { id: 34 },
                     value1: SmallInt { value0: 1 }
                   }
                 },
@@ -435,7 +435,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 20 },
+        value0: { id: 20 },
         value1: 'accessor',
         value2: Nothing {},
         value3: [
@@ -444,9 +444,9 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprRecordAccessor {
-                  value0: { index: 35 },
+                  value0: { id: 35 },
                   value1: ExprIdent {
-                    value0: { index: 36 },
+                    value0: { id: 36 },
                     value1: { moduleName: Nothing {}, name: 'x' }
                   },
                   value2: [ 'a', 'b', 'c' ]
@@ -458,7 +458,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 21 },
+        value0: { id: 21 },
         value1: 'update',
         value2: Nothing {},
         value3: [
@@ -467,16 +467,16 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprRecordUpdate {
-                  value0: { index: 37 },
+                  value0: { id: 37 },
                   value1: ExprIdent {
-                    value0: { index: 38 },
+                    value0: { id: 38 },
                     value1: { moduleName: Nothing {}, name: 'w' }
                   },
                   value2: [
                     RecordUpdateLeaf {
                       value0: 'x',
                       value1: ExprInt {
-                        value0: { index: 39 },
+                        value0: { id: 39 },
                         value1: SmallInt { value0: 0 }
                       }
                     },
@@ -486,7 +486,7 @@
                         RecordUpdateLeaf {
                           value0: 'z',
                           value1: ExprInt {
-                            value0: { index: 40 },
+                            value0: { id: 40 },
                             value1: SmallInt { value0: 0 }
                           }
                         }
@@ -501,7 +501,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 22 },
+        value0: { id: 22 },
         value1: 'application',
         value2: Nothing {},
         value3: [
@@ -510,15 +510,15 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprApplication {
-                  value0: { index: 41 },
+                  value0: { id: 41 },
                   value1: ExprIdent {
-                    value0: { index: 42 },
+                    value0: { id: 42 },
                     value1: { moduleName: Nothing {}, name: 'f' }
                   },
                   value2: [
                     AppTerm {
                       value0: ExprIdent {
-                        value0: { index: 43 },
+                        value0: { id: 43 },
                         value1: { moduleName: Nothing {}, name: 'a' }
                       }
                     }
@@ -531,7 +531,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 23 },
+        value0: { id: 23 },
         value1: 'lambda',
         value2: Nothing {},
         value3: [
@@ -540,10 +540,10 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprLambda {
-                  value0: { index: 44 },
-                  value1: [ BinderVar { value0: { index: 0 }, value1: 'a' } ],
+                  value0: { id: 44 },
+                  value1: [ BinderVar { value0: { id: 0 }, value1: 'a' } ],
                   value2: ExprIdent {
-                    value0: { index: 45 },
+                    value0: { id: 45 },
                     value1: { moduleName: Nothing {}, name: 'a' }
                   }
                 },
@@ -554,7 +554,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 24 },
+        value0: { id: 24 },
         value1: 'ifThenElse',
         value2: Nothing {},
         value3: [
@@ -563,17 +563,17 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprIfThenElse {
-                  value0: { index: 46 },
+                  value0: { id: 46 },
                   value1: ExprIdent {
-                    value0: { index: 47 },
+                    value0: { id: 47 },
                     value1: { moduleName: Nothing {}, name: 'a' }
                   },
                   value2: ExprIdent {
-                    value0: { index: 48 },
+                    value0: { id: 48 },
                     value1: { moduleName: Nothing {}, name: 'b' }
                   },
                   value3: ExprIdent {
-                    value0: { index: 49 },
+                    value0: { id: 49 },
                     value1: { moduleName: Nothing {}, name: 'c' }
                   }
                 },
@@ -584,7 +584,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 25 },
+        value0: { id: 25 },
         value1: 'caseExpr',
         value2: Nothing {},
         value3: [
@@ -593,22 +593,20 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprCase {
-                  value0: { index: 50 },
+                  value0: { id: 50 },
                   value1: [
                     ExprInt {
-                      value0: { index: 51 },
+                      value0: { id: 51 },
                       value1: SmallInt { value0: 0 }
                     }
                   ],
                   value2: [
                     Tuple {
-                      value0: [
-                        BinderVar { value0: { index: 1 }, value1: 'a' }
-                      ],
+                      value0: [ BinderVar { value0: { id: 1 }, value1: 'a' } ],
                       value1: Unconditional {
                         value0: Where {
                           value0: ExprIdent {
-                            value0: { index: 52 },
+                            value0: { id: 52 },
                             value1: { moduleName: Nothing {}, name: 'a' }
                           },
                           value1: []
@@ -616,9 +614,7 @@
                       }
                     },
                     Tuple {
-                      value0: [
-                        BinderVar { value0: { index: 2 }, value1: 'b' }
-                      ],
+                      value0: [ BinderVar { value0: { id: 2 }, value1: 'b' } ],
                       value1: Guarded {
                         value0: [
                           GuardedExpr {
@@ -626,14 +622,14 @@
                               PatternGuard {
                                 value0: Nothing {},
                                 value1: ExprIdent {
-                                  value0: { index: 53 },
+                                  value0: { id: 53 },
                                   value1: { moduleName: Nothing {}, name: 'b' }
                                 }
                               }
                             ],
                             value1: Where {
                               value0: ExprIdent {
-                                value0: { index: 54 },
+                                value0: { id: 54 },
                                 value1: { moduleName: Nothing {}, name: 'b' }
                               },
                               value1: []
@@ -651,7 +647,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 26 },
+        value0: { id: 26 },
         value1: 'letExpr',
         value2: Nothing {},
         value3: [
@@ -660,10 +656,10 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprLet {
-                  value0: { index: 55 },
+                  value0: { id: 55 },
                   value1: [
                     LetBindingValue {
-                      value0: { index: 0 },
+                      value0: { id: 0 },
                       value1: 'a',
                       value2: Nothing {},
                       value3: [
@@ -672,7 +668,7 @@
                           guarded: Unconditional {
                             value0: Where {
                               value0: ExprInt {
-                                value0: { index: 56 },
+                                value0: { id: 56 },
                                 value1: SmallInt { value0: 0 }
                               },
                               value1: []
@@ -682,18 +678,18 @@
                       ]
                     },
                     LetBindingPattern {
-                      value0: { index: 1 },
-                      value1: BinderWildcard { value0: { index: 3 } },
+                      value0: { id: 1 },
+                      value1: BinderWildcard { value0: { id: 3 } },
                       value2: Where {
                         value0: ExprInt {
-                          value0: { index: 57 },
+                          value0: { id: 57 },
                           value1: SmallInt { value0: 1 }
                         },
                         value1: []
                       }
                     },
                     LetBindingValue {
-                      value0: { index: 2 },
+                      value0: { id: 2 },
                       value1: 'b',
                       value2: Nothing {},
                       value3: [
@@ -702,7 +698,7 @@
                           guarded: Unconditional {
                             value0: Where {
                               value0: ExprInt {
-                                value0: { index: 58 },
+                                value0: { id: 58 },
                                 value1: SmallInt { value0: 2 }
                               },
                               value1: []
@@ -713,14 +709,14 @@
                     }
                   ],
                   value2: ExprArray {
-                    value0: { index: 59 },
+                    value0: { id: 59 },
                     value1: [
                       ExprIdent {
-                        value0: { index: 60 },
+                        value0: { id: 60 },
                         value1: { moduleName: Nothing {}, name: 'a' }
                       },
                       ExprIdent {
-                        value0: { index: 61 },
+                        value0: { id: 61 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     ]
@@ -733,7 +729,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 27 },
+        value0: { id: 27 },
         value1: 'doExpr',
         value2: Nothing {},
         value3: [
@@ -742,21 +738,21 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprDo {
-                  value0: { index: 62 },
+                  value0: { id: 62 },
                   value1: [
                     DoBind {
-                      value0: { index: 0 },
-                      value1: BinderVar { value0: { index: 4 }, value1: 'a' },
+                      value0: { id: 0 },
+                      value1: BinderVar { value0: { id: 4 }, value1: 'a' },
                       value2: ExprIdent {
-                        value0: { index: 63 },
+                        value0: { id: 63 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     },
                     DoLet {
-                      value0: { index: 1 },
+                      value0: { id: 1 },
                       value1: [
                         LetBindingValue {
-                          value0: { index: 3 },
+                          value0: { id: 3 },
                           value1: 'c',
                           value2: Nothing {},
                           value3: [
@@ -765,7 +761,7 @@
                               guarded: Unconditional {
                                 value0: Where {
                                   value0: ExprIdent {
-                                    value0: { index: 64 },
+                                    value0: { id: 64 },
                                     value1: {
                                       moduleName: Nothing {},
                                       name: 'd'
@@ -780,9 +776,9 @@
                       ]
                     },
                     DoDiscard {
-                      value0: { index: 2 },
+                      value0: { id: 2 },
                       value1: ExprIdent {
-                        value0: { index: 65 },
+                        value0: { id: 65 },
                         value1: { moduleName: Nothing {}, name: 'e' }
                       }
                     }
@@ -795,7 +791,7 @@
         ]
       },
       DeclarationValue {
-        value0: { index: 28 },
+        value0: { id: 28 },
         value1: 'adoExpr',
         value2: Nothing {},
         value3: [
@@ -804,21 +800,21 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprAdo {
-                  value0: { index: 66 },
+                  value0: { id: 66 },
                   value1: [
                     DoBind {
-                      value0: { index: 3 },
-                      value1: BinderVar { value0: { index: 5 }, value1: 'a' },
+                      value0: { id: 3 },
+                      value1: BinderVar { value0: { id: 5 }, value1: 'a' },
                       value2: ExprIdent {
-                        value0: { index: 67 },
+                        value0: { id: 67 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     },
                     DoLet {
-                      value0: { index: 4 },
+                      value0: { id: 4 },
                       value1: [
                         LetBindingValue {
-                          value0: { index: 4 },
+                          value0: { id: 4 },
                           value1: 'c',
                           value2: Nothing {},
                           value3: [
@@ -827,7 +823,7 @@
                               guarded: Unconditional {
                                 value0: Where {
                                   value0: ExprIdent {
-                                    value0: { index: 68 },
+                                    value0: { id: 68 },
                                     value1: {
                                       moduleName: Nothing {},
                                       name: 'd'
@@ -843,7 +839,7 @@
                     }
                   ],
                   value2: ExprIdent {
-                    value0: { index: 69 },
+                    value0: { id: 69 },
                     value1: { moduleName: Nothing {}, name: 'e' }
                   }
                 },

@@ -5,13 +5,13 @@
     imports: [],
     declarations: [
       DeclarationClass {
-        value0: { index: 0 },
+        value0: { id: 0 },
         value1: 'Empty',
         value2: Nothing {},
         value3: {
           variables: [
             TypeVarName {
-              value0: { index: 0 },
+              value0: { id: 0 },
               value1: false,
               value2: 'a'
             }
@@ -20,13 +20,13 @@
         }
       },
       DeclarationClass {
-        value0: { index: 1 },
+        value0: { id: 1 },
         value1: 'Some',
         value2: Nothing {},
         value3: {
           variables: [
             TypeVarName {
-              value0: { index: 1 },
+              value0: { id: 1 },
               value1: false,
               value2: 'a'
             }
@@ -34,12 +34,12 @@
           methods: Just {
             value0: [
               {
-                annotation: { index: 0 },
+                annotation: { id: 0 },
                 name: 'some',
                 signature: TypeArrow {
-                  value0: { index: 0 },
-                  value1: TypeVar { value0: { index: 1 }, value1: 'a' },
-                  value2: TypeVar { value0: { index: 2 }, value1: 'a' }
+                  value0: { id: 0 },
+                  value1: TypeVar { value0: { id: 1 }, value1: 'a' },
+                  value2: TypeVar { value0: { id: 2 }, value1: 'a' }
                 }
               }
             ]
@@ -47,17 +47,17 @@
         }
       },
       DeclarationClass {
-        value0: { index: 2 },
+        value0: { id: 2 },
         value1: 'Kinded',
         value2: Just {
           value0: TypeArrow {
-            value0: { index: 3 },
+            value0: { id: 3 },
             value1: TypeConstructor {
-              value0: { index: 4 },
+              value0: { id: 4 },
               value1: { moduleName: Nothing {}, name: 'Type' }
             },
             value2: TypeConstructor {
-              value0: { index: 5 },
+              value0: { id: 5 },
               value1: { moduleName: Nothing {}, name: 'Constraint' }
             }
           }
@@ -65,7 +65,7 @@
         value3: {
           variables: [
             TypeVarName {
-              value0: { index: 2 },
+              value0: { id: 2 },
               value1: false,
               value2: 'a'
             }

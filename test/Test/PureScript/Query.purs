@@ -10,7 +10,7 @@ import PureScript.Driver.Files (ParsedFile, parseFile)
 import PureScript.Driver.Query.Engine (Engine(..))
 import PureScript.Driver.Query.Engine as Engine
 import PureScript.Driver.Query.Stats as Stats
-import PureScript.Driver.StringInterner (Id(..))
+import PureScript.Id (Id(..))
 import Test.Snapshot (SnapshotSpec)
 import Test.Spec (describe, it)
 import Test.Spec.Assertions (shouldEqual)

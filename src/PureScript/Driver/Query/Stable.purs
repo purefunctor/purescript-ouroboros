@@ -5,8 +5,9 @@ import Prelude
 import Control.Monad.ST (ST)
 import Data.Maybe (Maybe)
 import PureScript.CST.Types (ModuleName(..))
-import PureScript.Driver.StringInterner (Id, Interner)
+import PureScript.Driver.StringInterner (Interner)
 import PureScript.Driver.StringInterner as Interner
+import PureScript.Id (Id)
 import PureScript.Utils.Mutable.JsMap (JsMap)
 import PureScript.Utils.Mutable.JsMap as JsMap
 

@@ -158,38 +158,38 @@ collectInterface (SST.Module { exports, declarations }) = do
   let
     collectDataCtor ∷ Proper → SST.DataConstructor → _
     collectDataCtor typeName = case _ of
-      SST.DataConstructor { annotation: SST.Annotation { index }, name } → do
-        MutableObject.poke name index dataConstructorsRaw
+      SST.DataConstructor { annotation: SST.Annotation { id }, name } → do
+        MutableObject.poke name id dataConstructorsRaw
         pokeMulti typeName name constructorsOfDataRaw
 
     collectNewtypeCtor ∷ Proper → SST.NewtypeConstructor → _
     collectNewtypeCtor typeName = case _ of
-      SST.NewtypeConstructor { annotation: SST.Annotation { index }, name } → do
-        MutableObject.poke name index newtypeConstructorsRaw
+      SST.NewtypeConstructor { annotation: SST.Annotation { id }, name } → do
+        MutableObject.poke name id newtypeConstructorsRaw
         pokeMulti typeName name constructorsOfDataRaw
 
     collectMethod ∷ Proper → SST.ClassMethod → _
     collectMethod typeName = case _ of
-      SST.ClassMethod { annotation: SST.Annotation { index }, name } → do
-        MutableObject.poke name index classMethodsRaw
+      SST.ClassMethod { annotation: SST.Annotation { id }, name } → do
+        MutableObject.poke name id classMethodsRaw
         pokeMulti typeName name methodsOfClassRaw
 
   for_ declarations case _ of
-    SST.DeclarationData (SST.Annotation { index }) name _ (SST.DataEquation { constructors }) →
+    SST.DeclarationData (SST.Annotation { id }) name _ (SST.DataEquation { constructors }) →
       do
         traverse_ (traverse_ $ collectDataCtor name) constructors
-        MutableObject.poke name index typesRaw
-    SST.DeclarationType (SST.Annotation { index }) name _ _ →
-      MutableObject.poke name index typesRaw
-    SST.DeclarationNewtype (SST.Annotation { index }) name _ (SST.NewtypeEquation { constructor }) →
+        MutableObject.poke name id typesRaw
+    SST.DeclarationType (SST.Annotation { id }) name _ _ →
+      MutableObject.poke name id typesRaw
+    SST.DeclarationNewtype (SST.Annotation { id }) name _ (SST.NewtypeEquation { constructor }) →
       do
         collectNewtypeCtor name constructor
-        MutableObject.poke name index typesRaw
-    SST.DeclarationClass (SST.Annotation { index }) name _ (SST.ClassEquation { methods }) → do
+        MutableObject.poke name id typesRaw
+    SST.DeclarationClass (SST.Annotation { id }) name _ (SST.ClassEquation { methods }) → do
       traverse_ (traverse_ $ collectMethod name) methods
-      MutableObject.poke name index typesRaw
-    SST.DeclarationValue (SST.Annotation { index }) name _ _ →
-      MutableObject.poke name index valuesRaw
+      MutableObject.poke name id typesRaw
+    SST.DeclarationValue (SST.Annotation { id }) name _ _ →
+      MutableObject.poke name id valuesRaw
     SST.DeclarationNotImplemented _ →
       pure unit
 

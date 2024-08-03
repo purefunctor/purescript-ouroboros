@@ -5,17 +5,17 @@
     imports: [],
     declarations: [
       DeclarationNewtype {
-        value0: { index: 0 },
+        value0: { id: 0 },
         value1: 'Phantom',
         value2: Just {
           value0: TypeArrow {
-            value0: { index: 0 },
+            value0: { id: 0 },
             value1: TypeConstructor {
-              value0: { index: 1 },
+              value0: { id: 1 },
               value1: { moduleName: Nothing {}, name: 'Type' }
             },
             value2: TypeConstructor {
-              value0: { index: 2 },
+              value0: { id: 2 },
               value1: { moduleName: Nothing {}, name: 'Type' }
             }
           }
@@ -23,37 +23,37 @@
         value3: {
           variables: [
             TypeVarName {
-              value0: { index: 0 },
+              value0: { id: 0 },
               value1: false,
               value2: 'a'
             }
           ],
           constructor: {
-            annotation: { index: 0 },
+            annotation: { id: 0 },
             name: 'Phantom',
             field: TypeConstructor {
-              value0: { index: 3 },
+              value0: { id: 3 },
               value1: { moduleName: Nothing {}, name: 'Int' }
             }
           }
         }
       },
       DeclarationNewtype {
-        value0: { index: 1 },
+        value0: { id: 1 },
         value1: 'Identity',
         value2: Nothing {},
         value3: {
           variables: [
             TypeVarName {
-              value0: { index: 1 },
+              value0: { id: 1 },
               value1: false,
               value2: 'a'
             }
           ],
           constructor: {
-            annotation: { index: 1 },
+            annotation: { id: 1 },
             name: 'Identity',
-            field: TypeVar { value0: { index: 4 }, value1: 'a' }
+            field: TypeVar { value0: { id: 4 }, value1: 'a' }
           }
         }
       }

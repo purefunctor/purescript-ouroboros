@@ -9,9 +9,9 @@ import PureScript.Surface.Types as SST
 data ScopeNode
   = RootScope
   | TopLevel ScopeNode Interface
-  | Binders ScopeNode (Object SST.BinderIndex)
-  | LetBound ScopeNode (Object SST.LetBindingIndex)
-  | TypeVar ScopeNode String SST.TypeVarBindingIndex
+  | Binders ScopeNode (Object SST.BinderId)
+  | LetBound ScopeNode (Object SST.LetBindingId)
+  | TypeVar ScopeNode String SST.TypeVarBindingId
   | JoinScope ScopeNode ScopeNode
 
 derive instance Eq ScopeNode

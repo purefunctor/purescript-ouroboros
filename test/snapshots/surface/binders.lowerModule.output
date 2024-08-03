@@ -5,16 +5,16 @@
     imports: [],
     declarations: [
       DeclarationValue {
-        value0: { index: 0 },
+        value0: { id: 0 },
         value1: 'a',
         value2: Nothing {},
         value3: [
           {
-            binders: [ BinderWildcard { value0: { index: 0 } } ],
+            binders: [ BinderWildcard { value0: { id: 0 } } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 0 },
+                  value0: { id: 0 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -22,11 +22,11 @@
             }
           },
           {
-            binders: [ BinderVar { value0: { index: 1 }, value1: 'var' } ],
+            binders: [ BinderVar { value0: { id: 1 }, value1: 'var' } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 1 },
+                  value0: { id: 1 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -36,10 +36,10 @@
           {
             binders: [
               BinderNamed {
-                value0: { index: 2 },
+                value0: { id: 2 },
                 value1: 'named',
                 value2: BinderConstructor {
-                  value0: { index: 3 },
+                  value0: { id: 3 },
                   value1: { moduleName: Nothing {}, name: 'Named' },
                   value2: []
                 }
@@ -48,7 +48,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 2 },
+                  value0: { id: 2 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -58,7 +58,7 @@
           {
             binders: [
               BinderConstructor {
-                value0: { index: 4 },
+                value0: { id: 4 },
                 value1: { moduleName: Nothing {}, name: 'Constructor' },
                 value2: []
               }
@@ -66,7 +66,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 3 },
+                  value0: { id: 3 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -74,11 +74,11 @@
             }
           },
           {
-            binders: [ BinderBoolean { value0: { index: 5 }, value1: false } ],
+            binders: [ BinderBoolean { value0: { id: 5 }, value1: false } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 4 },
+                  value0: { id: 4 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -86,11 +86,11 @@
             }
           },
           {
-            binders: [ BinderChar { value0: { index: 6 }, value1: 'c' } ],
+            binders: [ BinderChar { value0: { id: 6 }, value1: 'c' } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 5 },
+                  value0: { id: 5 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -98,11 +98,11 @@
             }
           },
           {
-            binders: [ BinderString { value0: { index: 7 }, value1: 'string' } ],
+            binders: [ BinderString { value0: { id: 7 }, value1: 'string' } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 6 },
+                  value0: { id: 6 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -112,7 +112,7 @@
           {
             binders: [
               BinderInt {
-                value0: { index: 8 },
+                value0: { id: 8 },
                 value1: false,
                 value2: SmallInt { value0: 0 }
               }
@@ -120,7 +120,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 7 },
+                  value0: { id: 7 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -130,7 +130,7 @@
           {
             binders: [
               BinderNumber {
-                value0: { index: 9 },
+                value0: { id: 9 },
                 value1: false,
                 value2: 9.19
               }
@@ -138,7 +138,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 8 },
+                  value0: { id: 8 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -146,11 +146,11 @@
             }
           },
           {
-            binders: [ BinderArray { value0: { index: 10 }, value1: [] } ],
+            binders: [ BinderArray { value0: { id: 10 }, value1: [] } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 9 },
+                  value0: { id: 9 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -160,14 +160,14 @@
           {
             binders: [
               BinderArray {
-                value0: { index: 11 },
-                value1: [ BinderVar { value0: { index: 12 }, value1: 'a' } ]
+                value0: { id: 11 },
+                value1: [ BinderVar { value0: { id: 12 }, value1: 'a' } ]
               }
             ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 10 },
+                  value0: { id: 10 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -175,11 +175,11 @@
             }
           },
           {
-            binders: [ BinderRecord { value0: { index: 13 }, value1: [] } ],
+            binders: [ BinderRecord { value0: { id: 13 }, value1: [] } ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 11 },
+                  value0: { id: 11 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -189,14 +189,14 @@
           {
             binders: [
               BinderRecord {
-                value0: { index: 14 },
+                value0: { id: 14 },
                 value1: [ RecordPun { value0: 'a' } ]
               }
             ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 12 },
+                  value0: { id: 12 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -206,11 +206,11 @@
           {
             binders: [
               BinderRecord {
-                value0: { index: 15 },
+                value0: { id: 15 },
                 value1: [
                   RecordField {
                     value0: 'a',
-                    value1: BinderVar { value0: { index: 16 }, value1: 'b' }
+                    value1: BinderVar { value0: { id: 16 }, value1: 'b' }
                   }
                 ]
               }
@@ -218,7 +218,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 13 },
+                  value0: { id: 13 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -228,14 +228,14 @@
           {
             binders: [
               BinderParens {
-                value0: { index: 17 },
-                value1: BinderVar { value0: { index: 18 }, value1: 'a' }
+                value0: { id: 17 },
+                value1: BinderVar { value0: { id: 18 }, value1: 'a' }
               }
             ],
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 14 },
+                  value0: { id: 14 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -245,12 +245,12 @@
           {
             binders: [
               BinderParens {
-                value0: { index: 19 },
+                value0: { id: 19 },
                 value1: BinderTyped {
-                  value0: { index: 20 },
-                  value1: BinderVar { value0: { index: 21 }, value1: 'a' },
+                  value0: { id: 20 },
+                  value1: BinderVar { value0: { id: 21 }, value1: 'a' },
                   value2: TypeConstructor {
-                    value0: { index: 0 },
+                    value0: { id: 0 },
                     value1: { moduleName: Nothing {}, name: 'T' }
                   }
                 }
@@ -259,7 +259,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 15 },
+                  value0: { id: 15 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []
@@ -269,22 +269,22 @@
           {
             binders: [
               BinderParens {
-                value0: { index: 22 },
+                value0: { id: 22 },
                 value1: BinderOp {
-                  value0: { index: 23 },
-                  value1: BinderVar { value0: { index: 24 }, value1: 'h' },
+                  value0: { id: 23 },
+                  value1: BinderVar { value0: { id: 24 }, value1: 'h' },
                   value2: [
                     Tuple {
                       value0: { moduleName: Nothing {}, name: ':' },
-                      value1: BinderVar { value0: { index: 25 }, value1: 't' }
+                      value1: BinderVar { value0: { id: 25 }, value1: 't' }
                     },
                     Tuple {
                       value0: { moduleName: Nothing {}, name: ':' },
-                      value1: BinderVar { value0: { index: 26 }, value1: 'm' }
+                      value1: BinderVar { value0: { id: 26 }, value1: 'm' }
                     },
                     Tuple {
                       value0: { moduleName: Nothing {}, name: ':' },
-                      value1: BinderVar { value0: { index: 27 }, value1: 'x' }
+                      value1: BinderVar { value0: { id: 27 }, value1: 'x' }
                     }
                   ]
                 }
@@ -293,7 +293,7 @@
             guarded: Unconditional {
               value0: Where {
                 value0: ExprInt {
-                  value0: { index: 16 },
+                  value0: { id: 16 },
                   value1: SmallInt { value0: 0 }
                 },
                 value1: []

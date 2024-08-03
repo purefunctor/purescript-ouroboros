@@ -7,11 +7,11 @@ import PureScript.CST.Types (Ident, Proper)
 import PureScript.Surface.Types as SST
 
 newtype Interface = Interface
-  { dataConstructors ∷ Object SST.ConstructorIndex
-  , newtypeConstructors ∷ Object SST.NewtypeIndex
-  , classMethods ∷ Object SST.ClassMethodIndex
-  , types ∷ Object SST.DeclarationIndex
-  , values ∷ Object SST.DeclarationIndex
+  { dataConstructors ∷ Object SST.ConstructorId
+  , newtypeConstructors ∷ Object SST.NewtypeId
+  , classMethods ∷ Object SST.ClassMethodId
+  , types ∷ Object SST.DeclarationId
+  , values ∷ Object SST.DeclarationId
   , constructorsOfData ∷ Object (Array Proper)
   , methodsOfClass ∷ Object (Array Ident)
   }

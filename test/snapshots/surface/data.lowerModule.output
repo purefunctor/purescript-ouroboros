@@ -5,33 +5,33 @@
     imports: [],
     declarations: [
       DeclarationData {
-        value0: { index: 0 },
+        value0: { id: 0 },
         value1: 'Unit',
         value2: Just {
           value0: TypeConstructor {
-            value0: { index: 0 },
+            value0: { id: 0 },
             value1: { moduleName: Nothing {}, name: 'Type' }
           }
         },
         value3: {
           variables: [],
           constructors: Just {
-            value0: [ { annotation: { index: 0 }, name: 'Unit', fields: [] } ]
+            value0: [ { annotation: { id: 0 }, name: 'Unit', fields: [] } ]
           }
         }
       },
       DeclarationData {
-        value0: { index: 1 },
+        value0: { id: 1 },
         value1: 'Maybe',
         value2: Just {
           value0: TypeArrow {
-            value0: { index: 1 },
+            value0: { id: 1 },
             value1: TypeConstructor {
-              value0: { index: 2 },
+              value0: { id: 2 },
               value1: { moduleName: Nothing {}, name: 'Type' }
             },
             value2: TypeConstructor {
-              value0: { index: 3 },
+              value0: { id: 3 },
               value1: { moduleName: Nothing {}, name: 'Type' }
             }
           }
@@ -39,7 +39,7 @@
         value3: {
           variables: [
             TypeVarName {
-              value0: { index: 0 },
+              value0: { id: 0 },
               value1: false,
               value2: 'a'
             }
@@ -47,11 +47,11 @@
           constructors: Just {
             value0: [
               {
-                annotation: { index: 1 },
+                annotation: { id: 1 },
                 name: 'Just',
-                fields: [ TypeVar { value0: { index: 4 }, value1: 'a' } ]
+                fields: [ TypeVar { value0: { id: 4 }, value1: 'a' } ]
               },
-              { annotation: { index: 2 }, name: 'Nothing', fields: [] }
+              { annotation: { id: 2 }, name: 'Nothing', fields: [] }
             ]
           }
         }
