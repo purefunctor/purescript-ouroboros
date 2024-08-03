@@ -19,7 +19,6 @@ import Effect.Aff (launchAff_)
 import Effect.Class (liftEffect)
 import Effect.Class.Console (error)
 import Node.Process as Process
-import Test.PureScript.Driver as TestDriver
 import Test.PureScript.Graph as TestGraph
 import Test.PureScript.Query as TestQuery
 import Test.PureScript.Scope as TestScope
@@ -48,7 +47,6 @@ main = launchAff_ do
       liftEffect $ Process.exit' 1
     Right o →
       runSnapshotSpec o do
-        TestDriver.spec
         TestQuery.spec
         TestGraph.spec
         TestScope.spec
