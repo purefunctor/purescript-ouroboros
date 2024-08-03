@@ -301,8 +301,8 @@ surfaceFullImpl engine id = do
   case parsedFile of
     ParsedTotal m →
       SurfaceLower.lowerModule m
-    ParsedPartial _ _ →
-      unsafeCrashWith "TODO: ParsedPartial"
+    ParsedPartial m _ →
+      SurfaceLower.lowerModule m
 
 surfaceImpl ∷ ∀ r. QueryFn r FileId Module
 surfaceImpl engine id =
