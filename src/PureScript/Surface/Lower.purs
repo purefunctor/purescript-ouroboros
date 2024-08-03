@@ -18,6 +18,8 @@ import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
 import Prim.Row as Row
+import PureScript.CST.Errors (RecoveredError)
+import PureScript.CST.Parser (Recovered)
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
@@ -182,12 +184,12 @@ lowerQualifiedName ∷ ∀ a. CST.QualifiedName a → SST.QualifiedName a
 lowerQualifiedName (CST.QualifiedName { module: moduleName, name }) =
   SST.QualifiedName { moduleName, name }
 
-lowerGuarded ∷ ∀ r. State r → CST.Guarded Void → ST r SST.Guarded
+lowerGuarded ∷ ∀ r. State r → Recovered CST.Guarded → ST r SST.Guarded
 lowerGuarded state = case _ of
   CST.Unconditional _ w → SST.Unconditional <$> lowerWhere state w
   CST.Guarded g → SST.Guarded <$> traverse (lowerGuardedExpr state) g
 
-lowerGuardedExpr ∷ ∀ r. State r → CST.GuardedExpr Void → ST r SST.GuardedExpr
+lowerGuardedExpr ∷ ∀ r. State r → Recovered CST.GuardedExpr → ST r SST.GuardedExpr
 lowerGuardedExpr
   state
   ( CST.GuardedExpr
@@ -204,14 +206,14 @@ lowerGuardedExpr
   sstWhere ← lowerWhere state cstWhere
   pure $ SST.GuardedExpr patterns sstWhere
 
-lowerPatternGuard ∷ ∀ r. State r → CST.PatternGuard Void → ST r SST.PatternGuard
+lowerPatternGuard ∷ ∀ r. State r → Recovered CST.PatternGuard → ST r SST.PatternGuard
 lowerPatternGuard state (CST.PatternGuard { binder: cstBinder, expr: cstExpr }) = do
   binder ← cstBinder # traverse case _ of
     Tuple cstBinder' _ → lowerBinder state cstBinder'
   expr ← lowerExpr state cstExpr
   pure $ SST.PatternGuard binder expr
 
-lowerWhere ∷ ∀ r. State r → CST.Where Void → ST r SST.Where
+lowerWhere ∷ ∀ r. State r → Recovered CST.Where → ST r SST.Where
 lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
   expr ← lowerExpr state cstExpr
   bindings ← case cstBindings of
@@ -221,31 +223,31 @@ lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
       pure []
   pure $ SST.Where expr bindings
 
-lowerExpr ∷ ∀ r. State r → CST.Expr Void → ST r SST.Expr
+lowerExpr ∷ ∀ r. State r → Recovered CST.Expr → ST r SST.Expr
 lowerExpr state = runSTFn1 go
   where
-  goAppSpine ∷ STFn1 (CST.AppSpine CST.Expr Void) r SST.AppSpine
+  goAppSpine ∷ STFn1 (CST.AppSpine CST.Expr RecoveredError) r SST.AppSpine
   goAppSpine = mkSTFn1 case _ of
     CST.AppTerm e → SST.AppTerm <$> runSTFn1 go e
     CST.AppType _ t → SST.AppType <$> lowerType state t
 
-  goRecordLabeled ∷ STFn1 (CST.RecordLabeled (CST.Expr Void)) r (SST.RecordLabeled SST.Expr)
+  goRecordLabeled ∷ STFn1 (CST.RecordLabeled (Recovered CST.Expr)) r (SST.RecordLabeled SST.Expr)
   goRecordLabeled = mkSTFn1 case _ of
     CST.RecordPun (CST.Name { name }) → pure $ SST.RecordPun name
     CST.RecordField (CST.Name { name }) _ e → SST.RecordField name <$> runSTFn1 go e
 
-  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Expr Void)) r (Tuple b SST.Expr)
+  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (Recovered CST.Expr)) r (Tuple b SST.Expr)
   goChain = mkSTFn2 \onOperator (Tuple operator operand) →
     Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
 
-  goInfixOperator ∷ STFn1 (CST.Wrapped (CST.Expr Void)) r SST.Expr
+  goInfixOperator ∷ STFn1 (CST.Wrapped (Recovered CST.Expr)) r SST.Expr
   goInfixOperator = mkSTFn1 case _ of
     CST.Wrapped { value } → runSTFn1 go value
 
   goOperator ∷ STFn1 (CST.QualifiedName CST.Operator) r (SST.QualifiedName CST.Operator)
   goOperator = mkSTFn1 $ lowerQualifiedName >>> pure
 
-  goRecordUpdate ∷ STFn1 (CST.RecordUpdate Void) r SST.RecordUpdate
+  goRecordUpdate ∷ STFn1 (CST.RecordUpdate RecoveredError) r SST.RecordUpdate
   goRecordUpdate = mkSTFn1 case _ of
     CST.RecordUpdateLeaf (CST.Name { name }) _ e →
       SST.RecordUpdateLeaf name <$> runSTFn1 go e
@@ -257,7 +259,7 @@ lowerExpr state = runSTFn1 go
 
   goCaseBranch
     ∷ STFn1
-        (Tuple (CST.Separated (CST.Binder Void)) (CST.Guarded Void))
+        (Tuple (CST.Separated (Recovered CST.Binder)) (Recovered CST.Guarded))
         r
         (Tuple (NonEmptyArray SST.Binder) SST.Guarded)
   goCaseBranch = mkSTFn1 case _ of
@@ -268,7 +270,7 @@ lowerExpr state = runSTFn1 go
       guarded ← lowerGuarded state cstGuarded
       pure $ Tuple binders guarded
 
-  go ∷ STFn1 (CST.Expr Void) r SST.Expr
+  go ∷ STFn1 (Recovered CST.Expr) r SST.Expr
   go = mkSTFn1 \e → do
     let
       range ∷ CST.SourceRange
@@ -376,25 +378,26 @@ lowerExpr state = runSTFn1 go
         SST.ExprAdo annotation <$> traverse (lowerDoStatement state) cstStatements <*> runSTFn1
           go
           cstResult
-      CST.ExprError v → do
-        absurd v
+      CST.ExprError _ → do
+        pure $ SST.ExprNotImplemented annotation
 
-lowerBinder ∷ ∀ r. State r → CST.Binder Void → ST r SST.Binder
+lowerBinder ∷ ∀ r. State r → Recovered CST.Binder → ST r SST.Binder
 lowerBinder state = runSTFn1 go
   where
-  goRecordLabeled ∷ STFn1 (CST.RecordLabeled (CST.Binder Void)) r (SST.RecordLabeled SST.Binder)
+  goRecordLabeled
+    ∷ STFn1 (CST.RecordLabeled (Recovered CST.Binder)) r (SST.RecordLabeled SST.Binder)
   goRecordLabeled = mkSTFn1 case _ of
     CST.RecordPun (CST.Name { name }) → pure $ SST.RecordPun name
     CST.RecordField (CST.Name { name }) _ e → SST.RecordField name <$> runSTFn1 go e
 
-  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Binder Void)) r (Tuple b SST.Binder)
+  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (Recovered CST.Binder)) r (Tuple b SST.Binder)
   goChain = mkSTFn2 \onOperator (Tuple operator operand) →
     Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
 
   goOperator ∷ STFn1 (CST.QualifiedName CST.Operator) r (SST.QualifiedName CST.Operator)
   goOperator = mkSTFn1 $ lowerQualifiedName >>> pure
 
-  go ∷ STFn1 (CST.Binder Void) r SST.Binder
+  go ∷ STFn1 (Recovered CST.Binder) r SST.Binder
   go = mkSTFn1 \b → do
     let
       range ∷ CST.SourceRange
@@ -449,22 +452,22 @@ lowerBinder state = runSTFn1 go
         SST.BinderOp annotation
           <$> runSTFn1 go cstHead
           <*> traverse (runSTFn2 goChain goOperator) cstChain
-      CST.BinderError v →
-        absurd v
+      CST.BinderError _ →
+        pure $ SST.BinderNotImplemented annotation
 
-lowerType ∷ ∀ r. State r → CST.Type Void → ST r SST.Type
+lowerType ∷ ∀ r. State r → Recovered CST.Type → ST r SST.Type
 lowerType state = runSTFn1 go
   where
   goRowPair
     ∷ STFn1
-        (CST.Labeled (CST.Name CST.Label) (CST.Type Void))
+        (CST.Labeled (CST.Name CST.Label) (Recovered CST.Type))
         r
         (Tuple CST.Label SST.Type)
   goRowPair = mkSTFn1 case _ of
     CST.Labeled { label: (CST.Name { name: cstLabel }), value: cstValue } →
       Tuple cstLabel <$> runSTFn1 go cstValue
 
-  goRow ∷ STFn1 (CST.Wrapped (CST.Row Void)) r SST.Row
+  goRow ∷ STFn1 (CST.Wrapped (Recovered CST.Row)) r SST.Row
   goRow = mkSTFn1 case _ of
     CST.Wrapped { value: CST.Row { labels: cstLabels, tail: cstTail } } → do
       labels ← case cstLabels of
@@ -477,14 +480,14 @@ lowerType state = runSTFn1 go
       tail ← traverse (Tuple.snd >>> lowerType state) cstTail
       pure $ SST.Row { labels, tail }
 
-  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (CST.Type Void)) r (Tuple b SST.Type)
+  goChain ∷ ∀ a b. STFn2 (STFn1 a r b) (Tuple a (Recovered CST.Type)) r (Tuple b SST.Type)
   goChain = mkSTFn2 \onOperator (Tuple operator operand) →
     Tuple <$> runSTFn1 onOperator operator <*> runSTFn1 go operand
 
   goOperator ∷ STFn1 (CST.QualifiedName CST.Operator) r (SST.QualifiedName CST.Operator)
   goOperator = mkSTFn1 $ lowerQualifiedName >>> pure
 
-  go ∷ STFn1 (CST.Type Void) r SST.Type
+  go ∷ STFn1 (Recovered CST.Type) r SST.Type
   go = mkSTFn1 \t → do
     let
       range ∷ CST.SourceRange
@@ -541,8 +544,8 @@ lowerType state = runSTFn1 go
           <*> runSTFn1 go cstConstrained
       CST.TypeParens (CST.Wrapped { value }) →
         SST.TypeParens annotation <$> runSTFn1 go value
-      CST.TypeError v →
-        absurd v
+      CST.TypeError _ →
+        pure $ SST.TypeNotImplemented annotation
 
 data LetLoweringGroup r = LetLoweringGroup
   CST.Ident
@@ -550,7 +553,7 @@ data LetLoweringGroup r = LetLoweringGroup
   (STArray r { sourceRange ∷ CST.SourceRange, v ∷ SST.ValueEquation })
 
 lowerLetBindings
-  ∷ ∀ r. State r → NonEmptyArray (CST.LetBinding Void) → ST r (NonEmptyArray SST.LetBinding)
+  ∷ ∀ r. State r → NonEmptyArray (Recovered CST.LetBinding) → ST r (NonEmptyArray SST.LetBinding)
 lowerLetBindings state cstLetBindings = do
   currentGroupRef ← STRef.new Nothing
   letBindingsRaw ← STA.new
@@ -643,17 +646,17 @@ lowerLetBindings state cstLetBindings = do
           letBinding ∷ SST.LetBinding
           letBinding = SST.LetBindingPattern annotation sstBinder sstWhere
         void $ STA.push letBinding letBindingsRaw
-      CST.LetBindingError v →
-        absurd v
+      CST.LetBindingError _ →
+        pure unit
 
   dischargeGroup
   letBindings ← STA.unsafeFreeze letBindingsRaw
   pure $ NonEmptyArray letBindings
 
-lowerDoStatement ∷ ∀ r. State r → CST.DoStatement Void → ST r SST.DoStatement
+lowerDoStatement ∷ ∀ r. State r → Recovered CST.DoStatement → ST r SST.DoStatement
 lowerDoStatement state = runSTFn1 go
   where
-  go ∷ STFn1 (CST.DoStatement Void) r SST.DoStatement
+  go ∷ STFn1 (Recovered CST.DoStatement) r SST.DoStatement
   go = mkSTFn1 \d → do
     let
       range ∷ CST.SourceRange
@@ -689,11 +692,13 @@ lowerDataMembers cstDataMembers = cstDataMembers >>= case _ of
         SST.DataEnumerated $ Array.cons head' tail'
 
 lowerExports
-  ∷ ∀ r. Maybe (CST.DelimitedNonEmpty (CST.Export Void)) → ST r (Maybe (NonEmptyArray SST.Export))
+  ∷ ∀ r
+  . Maybe (CST.DelimitedNonEmpty (Recovered CST.Export))
+  → ST r (Maybe (NonEmptyArray SST.Export))
 lowerExports cstExports = for cstExports case _ of
   CST.Wrapped { value: CST.Separated { head: headExport, tail } } → do
     let
-      lowerExport ∷ CST.Export Void → SST.Export
+      lowerExport ∷ Recovered CST.Export → SST.Export
       lowerExport = case _ of
         CST.ExportValue v →
           SST.ExportValue (unName v)
@@ -707,8 +712,8 @@ lowerExports cstExports = for cstExports case _ of
           SST.ExportClass (unName n)
         CST.ExportModule _ m →
           SST.ExportModule (unName m)
-        CST.ExportError v →
-          absurd v
+        CST.ExportError _ →
+          SST.ExportNotImplemented
 
     exportsRaw ← STA.new
 
@@ -719,7 +724,7 @@ lowerExports cstExports = for cstExports case _ of
     exports ← STA.freeze exportsRaw
     pure $ NonEmptyArray exports
 
-lowerImportDecls ∷ ∀ r. Array (CST.ImportDecl Void) → ST r (Array SST.Import)
+lowerImportDecls ∷ ∀ r. Array (Recovered CST.ImportDecl) → ST r (Array SST.Import)
 lowerImportDecls cstImports = do
   importsRaw ← STA.new
 
@@ -756,7 +761,7 @@ bySignatureName = case _, _ of
   _, _ →
     false
 
-lowerDataCtor ∷ ∀ r. State r → CST.DataCtor Void → ST r SST.DataConstructor
+lowerDataCtor ∷ ∀ r. State r → Recovered CST.DataCtor → ST r SST.DataConstructor
 lowerDataCtor state dataCtor = do
   index ← nextIndex @"constructor" state
   let
@@ -777,7 +782,7 @@ lowerTypeVarBindings_
   ⇒ RangeOf i
   ⇒ (i → { visible ∷ Boolean, name ∷ CST.Ident })
   → State r
-  → t (CST.TypeVarBinding i Void)
+  → t (Recovered (CST.TypeVarBinding i))
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings_ un state = traverse \typeVarBinding → do
   index ← nextIndex @"typeVarBinding" state
@@ -801,7 +806,7 @@ lowerTypeVarBindings
   ∷ ∀ t r
   . Traversable t
   ⇒ State r
-  → t (CST.TypeVarBinding (CST.Name CST.Ident) Void)
+  → t (Recovered (CST.TypeVarBinding (CST.Name CST.Ident)))
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings = lowerTypeVarBindings_ case _ of
   CST.Name { name } → { visible: false, name }
@@ -810,7 +815,7 @@ lowerTypeVarBindingsPrefixed
   ∷ ∀ t r
   . Traversable t
   ⇒ State r
-  → t (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) Void)
+  → t (Recovered (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident))))
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
   CST.Prefixed { prefix, value: CST.Name { name } } → { visible: isJust prefix, name }
@@ -818,8 +823,8 @@ lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
 lowerDataEquation
   ∷ ∀ r
   . State r
-  → CST.DataHead Void
-  → Maybe (Tuple CST.SourceToken (CST.Separated (CST.DataCtor Void)))
+  → Recovered CST.DataHead
+  → Maybe (Tuple CST.SourceToken (CST.Separated (Recovered CST.DataCtor)))
   → ST r SST.DataEquation
 lowerDataEquation state { vars } cstConstructors = do
   variables ← lowerTypeVarBindings state vars
@@ -830,7 +835,8 @@ lowerDataEquation state { vars } cstConstructors = do
       pure $ NEA.cons' sstHead sstTail
   pure $ SST.DataEquation { variables, constructors }
 
-lowerTypeEquation ∷ ∀ r. State r → CST.DataHead Void → CST.Type Void → ST r SST.TypeEquation
+lowerTypeEquation
+  ∷ ∀ r. State r → Recovered CST.DataHead → Recovered CST.Type → ST r SST.TypeEquation
 lowerTypeEquation state { vars } cstType = do
   variables ← lowerTypeVarBindings state vars
   synonymTo ← lowerType state cstType
@@ -839,9 +845,9 @@ lowerTypeEquation state { vars } cstType = do
 lowerNewtypeEquation
   ∷ ∀ r
   . State r
-  → CST.DataHead Void
+  → Recovered CST.DataHead
   → CST.Name CST.Proper
-  → CST.Type Void
+  → Recovered CST.Type
   → ST r SST.NewtypeEquation
 lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
   index ← nextIndex @"newtype" state
@@ -868,7 +874,7 @@ lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
     }
 
 type CSTClassMethod =
-  CST.Labeled (CST.Name CST.Ident) (CST.Type Void)
+  CST.Labeled (CST.Name CST.Ident) (Recovered CST.Type)
 
 lowerClassMethod ∷ ∀ r. State r → CSTClassMethod → ST r SST.ClassMethod
 lowerClassMethod state cstClassMethod = do
@@ -888,7 +894,8 @@ lowerClassMethod state cstClassMethod = do
 type CSTClassBody =
   Tuple CST.SourceToken (NonEmptyArray CSTClassMethod)
 
-lowerClassBody ∷ ∀ r. State r → CST.ClassHead Void → Maybe CSTClassBody → ST r SST.ClassEquation
+lowerClassBody
+  ∷ ∀ r. State r → Recovered CST.ClassHead → Maybe CSTClassBody → ST r SST.ClassEquation
 lowerClassBody state { vars } classBody = do
   variables ← lowerTypeVarBindings state vars
   methods ← for classBody case _ of
@@ -896,12 +903,12 @@ lowerClassBody state { vars } classBody = do
       traverse (lowerClassMethod state) classMethods
   pure $ SST.ClassEquation { variables, methods }
 
-lowerDeclarations ∷ ∀ r. State r → Array (CST.Declaration Void) → ST r (Array SST.Declaration)
+lowerDeclarations ∷ ∀ r. State r → Array (Recovered CST.Declaration) → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
   declarationsRaw ← STA.new
 
   let
-    signatureNameGroups ∷ Array (NonEmptyArray (CST.Declaration Void))
+    signatureNameGroups ∷ Array (NonEmptyArray (Recovered CST.Declaration))
     signatureNameGroups = Array.groupBy bySignatureName cstDeclarations
 
     onTypeGroup ∷ CST.Proper → _ → _ → ST r Unit
@@ -1004,7 +1011,7 @@ type LowerResult =
   , sourceRanges ∷ SourceRanges
   }
 
-lowerModule ∷ ∀ r. CST.Module Void → ST r LowerResult
+lowerModule ∷ ∀ r. Recovered CST.Module → ST r LowerResult
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader

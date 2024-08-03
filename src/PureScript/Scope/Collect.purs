@@ -18,9 +18,9 @@ import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
 import PureScript.Scope.Types (ScopeNode(..))
 import PureScript.Surface.Interface as SSI
+import PureScript.Surface.Types as SST
 import PureScript.Utils.Immutable.SparseMap (SparseMap)
 import PureScript.Utils.Immutable.SparseMap as SparseMap
-import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 import Safe.Coerce (coerce)
