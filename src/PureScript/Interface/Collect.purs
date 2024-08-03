@@ -1,4 +1,4 @@
-module PureScript.Surface.Interface where
+module PureScript.Interface.Collect where
 
 import Prelude
 
@@ -11,6 +11,8 @@ import Data.Traversable (traverse_)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import PureScript.CST.Types (Ident(..), Proper(..))
+import PureScript.Interface.Error (InterfaceError(..))
+import PureScript.Interface.Types (Exported(..), Interface(..))
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
@@ -18,36 +20,6 @@ import PureScript.Utils.Mutable.Object (MutableObject)
 import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (class Coercible, coerce)
 import Unsafe.Coerce (unsafeCoerce)
-
-newtype Interface = Interface
-  { dataConstructors ∷ Object SST.ConstructorIndex
-  , newtypeConstructors ∷ Object SST.NewtypeIndex
-  , classMethods ∷ Object SST.ClassMethodIndex
-  , types ∷ Object SST.DeclarationIndex
-  , values ∷ Object SST.DeclarationIndex
-  , constructorsOfData ∷ Object (Array Proper)
-  , methodsOfClass ∷ Object (Array Ident)
-  }
-
-derive instance Eq Interface
-
-newtype Exported = Exported
-  { dataConstructors ∷ Object Unit
-  , newtypeConstructors ∷ Object Unit
-  , classMethods ∷ Object Unit
-  , types ∷ Object Unit
-  , values ∷ Object Unit
-  }
-
-derive instance Eq Exported
-
-data InterfaceError
-  = MissingMember Proper
-  | MissingType Proper
-  | MissingValue Ident
-
-derive instance Eq InterfaceError
-derive instance Ord InterfaceError
 
 type InterfaceResult =
   { interface ∷ Interface

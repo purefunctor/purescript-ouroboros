@@ -16,8 +16,8 @@ import Foreign.Object.ST (STObject)
 import Foreign.Object.ST as STO
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types as CST
+import PureScript.Interface.Types as IFT
 import PureScript.Scope.Types (ScopeNode(..))
-import PureScript.Surface.Interface as SSI
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Immutable.SparseMap (SparseMap)
 import PureScript.Utils.Immutable.SparseMap as SparseMap
@@ -478,7 +478,7 @@ collectPushLetBindings state letBindings = do
 
   pure unit
 
-collectModule ∷ ∀ r. SST.Module → SSI.Interface → ST r ScopeNodes
+collectModule ∷ ∀ r. SST.Module → IFT.Interface → ST r ScopeNodes
 collectModule (SST.Module { declarations }) interface = do
   state ← defaultState
 

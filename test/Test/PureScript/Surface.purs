@@ -8,7 +8,7 @@ import Effect.Class (liftEffect)
 import Node.Path (FilePath)
 import Node.Path as Path
 import PureScript.Debug (inspect)
-import PureScript.Surface.Interface (collectInterface)
+import PureScript.Interface.Collect (collectInterface)
 import PureScript.Surface.Lower (lowerModule)
 import Test.Snapshot (SnapshotSpec, findInputs, makeSnapshotsNamed)
 import Test.Spec (describe)

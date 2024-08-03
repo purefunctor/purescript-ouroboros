@@ -3,7 +3,7 @@ module PureScript.Diagnostic.Types where
 import Prelude
 
 import PureScript.CST.Errors (ParseError)
-import PureScript.Surface.Interface (InterfaceError)
+import PureScript.Interface.Error (InterfaceError)
 
 newtype Diagnostic = Diagnostic
   { kind ∷ DiagnosticKind

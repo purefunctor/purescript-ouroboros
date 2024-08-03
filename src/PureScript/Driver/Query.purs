@@ -52,10 +52,10 @@ import PureScript.CST.Types (ModuleName)
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex, ModuleNameInterner)
 import PureScript.Driver.Interner as ModuleNameInterner
+import PureScript.Interface.Collect (InterfaceResult)
+import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
-import PureScript.Surface.Interface (InterfaceResult)
-import PureScript.Surface.Interface as SurfaceInterface
 import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
@@ -384,7 +384,7 @@ getSurface = do
 computeInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceResult
 computeInterface storage moduleNameIndex = do
   m ← getSurface storage moduleNameIndex
-  SurfaceInterface.collectInterface m
+  InterfaceCollect.collectInterface m
 
 getInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceResult
 getInterface = do

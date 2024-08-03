@@ -3,7 +3,7 @@ module PureScript.Scope.Types where
 import Prelude
 
 import Foreign.Object (Object)
-import PureScript.Surface.Interface (Interface)
+import PureScript.Interface.Types (Interface)
 import PureScript.Surface.Types as SST
 
 data ScopeNode
