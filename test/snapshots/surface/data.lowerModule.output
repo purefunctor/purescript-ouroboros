@@ -115,7 +115,7 @@
       0 => { start: { line: 6, column: 11 }, end: { line: 6, column: 12 } }
     }
   },
-  errors: {
+  recoveredErrors: {
     expr: Map(0) {},
     binder: Map(0) {},
     type: Map(0) {},

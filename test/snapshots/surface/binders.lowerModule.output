@@ -459,7 +459,7 @@
     classMethod: Map(0) {},
     typeVarBinding: Map(0) {}
   },
-  errors: {
+  recoveredErrors: {
     expr: Map(0) {},
     binder: Map(0) {},
     type: Map(0) {},
