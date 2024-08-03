@@ -1,4 +1,4 @@
-module PureScript.Diagnostic.Types where
+module PureScript.Diagnostics.Types where
 
 import Prelude
 

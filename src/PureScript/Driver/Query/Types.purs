@@ -7,7 +7,7 @@ import Data.Set (Set)
 import Data.Symbol (class IsSymbol)
 import Data.Variant (Variant, inj)
 import Prim.Row as Row
-import PureScript.Diagnostic.Types (Diagnostic)
+import PureScript.Diagnostics.Types (Diagnostic)
 import PureScript.Driver.Files (ParsedFile)
 import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Interface.Collect as InterfaceCollect

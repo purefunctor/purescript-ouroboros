@@ -12,7 +12,7 @@ import Data.Set as Set
 import Data.Traversable (for_)
 import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types (ModuleName)
-import PureScript.Diagnostic.Types (Diagnostic(..), DiagnosticKind(..))
+import PureScript.Diagnostics.Types (Diagnostic(..), DiagnosticKind(..))
 import PureScript.Driver.Files (ParsedFile, parseFile, parsedImports, parsedModuleName)
 import PureScript.Driver.Query.Engine (Engine(..))
 import PureScript.Driver.Query.Engine as Engine
