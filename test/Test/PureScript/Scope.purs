@@ -10,10 +10,9 @@ import Node.Path as Path
 import PureScript.Debug (inspect)
 import PureScript.Interface.Collect (collectInterface)
 import PureScript.Scope.Collect (collectModule)
-import PureScript.Surface.Lower (lowerModule)
+import Test.PureScript.Surface (lowerTotal)
 import Test.Snapshot (SnapshotSpec, findInputs, makeSnapshotsNamed)
 import Test.Spec (describe)
-import Test.Utils (parseTotal)
 
 scopeGlob ∷ FilePath
 scopeGlob = Path.concat [ "test", "snapshots", "scope", "*.input" ]
@@ -25,8 +24,7 @@ spec = do
     makeSnapshotsNamed scopeInputs $ do
       [ "collectModule" /\ \inputFile → do
           liftEffect $ toEffect do
-            let cst = parseTotal inputFile
-            { surface } ← lowerModule cst
+            { surface } ← lowerTotal inputFile
             { interface } ← collectInterface surface
             scope ← collectModule surface interface
             pure $ inspect scope
