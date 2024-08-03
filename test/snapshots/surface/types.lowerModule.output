@@ -340,138 +340,138 @@
     ]
   },
   sourceRanges: {
-    expr: [],
-    binder: [],
-    type: [
-      { start: { line: 2, column: 7 }, end: { line: 2, column: 8 } },
-      { start: { line: 3, column: 15 }, end: { line: 3, column: 26 } },
-      { start: { line: 4, column: 12 }, end: { line: 4, column: 13 } },
-      { start: { line: 5, column: 8 }, end: { line: 5, column: 13 } },
-      { start: { line: 6, column: 10 }, end: { line: 6, column: 18 } },
-      { start: { line: 7, column: 7 }, end: { line: 7, column: 8 } },
-      { start: { line: 8, column: 12 }, end: { line: 8, column: 14 } },
-      { start: { line: 9, column: 11 }, end: { line: 9, column: 23 } },
-      { start: { line: 9, column: 18 }, end: { line: 9, column: 21 } },
-      {
+    expr: Map(0) {},
+    binder: Map(0) {},
+    type: Map(43) {
+      0 => { start: { line: 2, column: 7 }, end: { line: 2, column: 8 } },
+      1 => { start: { line: 3, column: 15 }, end: { line: 3, column: 26 } },
+      2 => { start: { line: 4, column: 12 }, end: { line: 4, column: 13 } },
+      3 => { start: { line: 5, column: 8 }, end: { line: 5, column: 13 } },
+      4 => { start: { line: 6, column: 10 }, end: { line: 6, column: 18 } },
+      5 => { start: { line: 7, column: 7 }, end: { line: 7, column: 8 } },
+      6 => { start: { line: 8, column: 12 }, end: { line: 8, column: 14 } },
+      7 => { start: { line: 9, column: 11 }, end: { line: 9, column: 23 } },
+      8 => { start: { line: 9, column: 18 }, end: { line: 9, column: 21 } },
+      9 => {
         start: { line: 10, column: 11 },
         end: { line: 10, column: 27 }
       },
-      {
+      10 => {
         start: { line: 10, column: 18 },
         end: { line: 10, column: 21 }
       },
-      {
+      11 => {
         start: { line: 10, column: 24 },
         end: { line: 10, column: 25 }
       },
-      {
+      12 => {
         start: { line: 11, column: 15 },
         end: { line: 11, column: 17 }
       },
-      {
+      13 => {
         start: { line: 12, column: 14 },
         end: { line: 12, column: 26 }
       },
-      {
+      14 => {
         start: { line: 12, column: 21 },
         end: { line: 12, column: 24 }
       },
-      {
+      15 => {
         start: { line: 13, column: 14 },
         end: { line: 13, column: 30 }
       },
-      {
+      16 => {
         start: { line: 13, column: 21 },
         end: { line: 13, column: 24 }
       },
-      {
+      17 => {
         start: { line: 13, column: 27 },
         end: { line: 13, column: 28 }
       },
-      {
+      18 => {
         start: { line: 14, column: 12 },
         end: { line: 14, column: 45 }
       },
-      {
+      19 => {
         start: { line: 14, column: 30 },
         end: { line: 14, column: 31 }
       },
-      {
+      20 => {
         start: { line: 14, column: 40 },
         end: { line: 14, column: 41 }
       },
-      {
+      21 => {
         start: { line: 14, column: 44 },
         end: { line: 14, column: 45 }
       },
-      {
+      22 => {
         start: { line: 15, column: 10 },
         end: { line: 15, column: 18 }
       },
-      {
+      23 => {
         start: { line: 15, column: 11 },
         end: { line: 15, column: 17 }
       },
-      {
+      24 => {
         start: { line: 15, column: 11 },
         end: { line: 15, column: 12 }
       },
-      {
+      25 => {
         start: { line: 15, column: 16 },
         end: { line: 15, column: 17 }
       },
-      { start: { line: 16, column: 7 }, end: { line: 16, column: 10 } },
-      { start: { line: 16, column: 7 }, end: { line: 16, column: 8 } },
-      { start: { line: 16, column: 9 }, end: { line: 16, column: 10 } },
-      { start: { line: 17, column: 6 }, end: { line: 17, column: 15 } },
-      { start: { line: 17, column: 6 }, end: { line: 17, column: 7 } },
-      {
+      26 => { start: { line: 16, column: 7 }, end: { line: 16, column: 10 } },
+      27 => { start: { line: 16, column: 7 }, end: { line: 16, column: 8 } },
+      28 => { start: { line: 16, column: 9 }, end: { line: 16, column: 10 } },
+      29 => { start: { line: 17, column: 6 }, end: { line: 17, column: 15 } },
+      30 => { start: { line: 17, column: 6 }, end: { line: 17, column: 7 } },
+      31 => {
         start: { line: 17, column: 10 },
         end: { line: 17, column: 11 }
       },
-      {
+      32 => {
         start: { line: 17, column: 14 },
         end: { line: 17, column: 15 }
       },
-      {
+      33 => {
         start: { line: 18, column: 10 },
         end: { line: 18, column: 13 }
       },
-      { start: { line: 19, column: 9 }, end: { line: 19, column: 15 } },
-      { start: { line: 19, column: 9 }, end: { line: 19, column: 10 } },
-      {
+      34 => { start: { line: 19, column: 9 }, end: { line: 19, column: 15 } },
+      35 => { start: { line: 19, column: 9 }, end: { line: 19, column: 10 } },
+      36 => {
         start: { line: 19, column: 14 },
         end: { line: 19, column: 15 }
       },
-      {
+      37 => {
         start: { line: 20, column: 13 },
         end: { line: 20, column: 17 }
       },
-      {
+      38 => {
         start: { line: 21, column: 15 },
         end: { line: 21, column: 21 }
       },
-      {
+      39 => {
         start: { line: 21, column: 15 },
         end: { line: 21, column: 16 }
       },
-      {
+      40 => {
         start: { line: 21, column: 20 },
         end: { line: 21, column: 21 }
       },
-      {
+      41 => {
         start: { line: 22, column: 10 },
         end: { line: 22, column: 13 }
       },
-      {
+      42 => {
         start: { line: 22, column: 11 },
         end: { line: 22, column: 12 }
       }
-    ],
-    doStatement: [],
-    letBinding: [],
-    declaration: [
-      DeclarationValueSourceRange {
+    },
+    doStatement: Map(0) {},
+    letBinding: Map(0) {},
+    declaration: Map(21) {
+      0 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -482,7 +482,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      1 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -493,7 +493,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      2 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -504,7 +504,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      3 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -515,7 +515,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      4 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -526,7 +526,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      5 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -537,7 +537,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      6 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -548,7 +548,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      7 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -559,7 +559,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      8 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -570,7 +570,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      9 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -581,7 +581,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      10 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -592,7 +592,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      11 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -603,7 +603,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      12 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -614,7 +614,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      13 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -625,7 +625,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      14 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -636,7 +636,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      15 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -647,7 +647,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      16 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -658,7 +658,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      17 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -669,7 +669,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      18 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -680,7 +680,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      19 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -691,7 +691,7 @@
           definitions: []
         }
       },
-      DeclarationValueSourceRange {
+      20 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -702,35 +702,35 @@
           definitions: []
         }
       }
-    ],
-    constructor: [],
-    newtype: [],
-    classMethod: [],
-    typeVarBinding: [
-      {
+    },
+    constructor: Map(0) {},
+    newtype: Map(0) {},
+    classMethod: Map(0) {},
+    typeVarBinding: Map(4) {
+      0 => {
         start: { line: 14, column: 19 },
         end: { line: 14, column: 20 }
       },
-      {
+      1 => {
         start: { line: 14, column: 21 },
         end: { line: 14, column: 23 }
       },
-      {
+      2 => {
         start: { line: 14, column: 24 },
         end: { line: 14, column: 32 }
       },
-      {
+      3 => {
         start: { line: 14, column: 33 },
         end: { line: 14, column: 42 }
       }
-    ]
+    }
   },
   errors: {
-    expr: [],
-    binder: [],
-    type: [],
-    doStatement: [],
-    letBinding: [],
-    declaration: []
+    expr: Map(0) {},
+    binder: Map(0) {},
+    type: Map(0) {},
+    doStatement: Map(0) {},
+    letBinding: Map(0) {},
+    declaration: Map(0) {}
   }
 }

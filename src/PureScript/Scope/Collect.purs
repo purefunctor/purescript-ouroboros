@@ -19,34 +19,33 @@ import PureScript.CST.Types as CST
 import PureScript.Interface.Types as IFT
 import PureScript.Scope.Types (ScopeNode(..))
 import PureScript.Surface.Types as SST
-import PureScript.Utils.Immutable.SparseMap (SparseMap)
-import PureScript.Utils.Immutable.SparseMap as SparseMap
-import PureScript.Utils.Mutable.Array (MutableArray)
-import PureScript.Utils.Mutable.Array as MutableArray
+import PureScript.Utils.Immutable.IntMap (IntMap)
+import PureScript.Utils.Mutable.STIntMap (STIntMap)
+import PureScript.Utils.Mutable.STIntMap as STIntMap
 import Safe.Coerce (coerce)
 
 type State r =
   { scope ∷ STRef r ScopeNode
-  , exprScopeNode ∷ MutableArray r ScopeNode
-  , typeScopeNode ∷ MutableArray r ScopeNode
+  , exprScopeNode ∷ STIntMap r ScopeNode
+  , typeScopeNode ∷ STIntMap r ScopeNode
   }
 
 type Result =
-  { exprScopeNode ∷ SparseMap SST.Expr ScopeNode
-  , typeScopeNode ∷ SparseMap SST.Type ScopeNode
+  { exprScopeNode ∷ IntMap ScopeNode
+  , typeScopeNode ∷ IntMap ScopeNode
   }
 
 defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
   scope ← STRef.new RootScope
-  exprScopeNode ← MutableArray.empty
-  typeScopeNode ← MutableArray.empty
+  exprScopeNode ← STIntMap.empty
+  typeScopeNode ← STIntMap.empty
   pure { scope, exprScopeNode, typeScopeNode }
 
 freezeState ∷ ∀ r. State r → ST r Result
 freezeState state = do
-  exprScopeNode ← SparseMap.ofMutable state.exprScopeNode
-  typeScopeNode ← SparseMap.ofMutable state.typeScopeNode
+  exprScopeNode ← STIntMap.freeze state.exprScopeNode
+  typeScopeNode ← STIntMap.freeze state.typeScopeNode
   pure { exprScopeNode, typeScopeNode }
 
 currentScope ∷ ∀ r. State r → ST r ScopeNode
@@ -58,12 +57,12 @@ pushScope state scope = void $ STRef.write scope state.scope
 pushExprScopeNode ∷ ∀ r. State r → SST.ExprIndex → ST r Unit
 pushExprScopeNode state@{ exprScopeNode } index = do
   scope ← currentScope state
-  MutableArray.poke index scope exprScopeNode
+  STIntMap.set (coerce index) scope exprScopeNode
 
 pushTypeScopeNode ∷ ∀ r. State r → SST.TypeIndex → ST r Unit
 pushTypeScopeNode state@{ typeScopeNode } index = do
   scope ← currentScope state
-  MutableArray.poke index scope typeScopeNode
+  STIntMap.set (coerce index) scope typeScopeNode
 
 withRevertingScope ∷ ∀ r a. State r → ST r a → ST r a
 withRevertingScope state action = do

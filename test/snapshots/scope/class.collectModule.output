@@ -1,7 +1,7 @@
 {
-  exprScopeNode: [],
-  typeScopeNode: [
-    TopLevel {
+  exprScopeNode: Map(0) {},
+  typeScopeNode: Map(6) {
+    0 => TopLevel {
       value0: RootScope {},
       value1: {
         dataConstructors: {},
@@ -13,7 +13,7 @@
         methodsOfClass: { F: [ 'f' ] }
       }
     },
-    TopLevel {
+    1 => TopLevel {
       value0: RootScope {},
       value1: {
         dataConstructors: {},
@@ -25,7 +25,7 @@
         methodsOfClass: { F: [ 'f' ] }
       }
     },
-    TopLevel {
+    2 => TopLevel {
       value0: RootScope {},
       value1: {
         dataConstructors: {},
@@ -37,7 +37,7 @@
         methodsOfClass: { F: [ 'f' ] }
       }
     },
-    TypeVar {
+    3 => TypeVar {
       value0: TopLevel {
         value0: RootScope {},
         value1: {
@@ -53,7 +53,7 @@
       value1: 'a',
       value2: 0
     },
-    TypeVar {
+    4 => TypeVar {
       value0: TopLevel {
         value0: RootScope {},
         value1: {
@@ -69,7 +69,7 @@
       value1: 'a',
       value2: 0
     },
-    TypeVar {
+    5 => TypeVar {
       value0: TopLevel {
         value0: RootScope {},
         value1: {
@@ -85,5 +85,5 @@
       value1: 'a',
       value2: 0
     }
-  ]
+  }
 }

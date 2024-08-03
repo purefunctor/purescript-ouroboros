@@ -76,20 +76,20 @@
     ]
   },
   sourceRanges: {
-    expr: [],
-    binder: [],
-    type: [
-      { start: { line: 5, column: 10 }, end: { line: 5, column: 16 } },
-      { start: { line: 5, column: 10 }, end: { line: 5, column: 11 } },
-      { start: { line: 5, column: 15 }, end: { line: 5, column: 16 } },
-      { start: { line: 7, column: 16 }, end: { line: 7, column: 34 } },
-      { start: { line: 7, column: 16 }, end: { line: 7, column: 20 } },
-      { start: { line: 7, column: 24 }, end: { line: 7, column: 34 } }
-    ],
-    doStatement: [],
-    letBinding: [],
-    declaration: [
-      DeclarationValueSourceRange {
+    expr: Map(0) {},
+    binder: Map(0) {},
+    type: Map(6) {
+      0 => { start: { line: 5, column: 10 }, end: { line: 5, column: 16 } },
+      1 => { start: { line: 5, column: 10 }, end: { line: 5, column: 11 } },
+      2 => { start: { line: 5, column: 15 }, end: { line: 5, column: 16 } },
+      3 => { start: { line: 7, column: 16 }, end: { line: 7, column: 34 } },
+      4 => { start: { line: 7, column: 16 }, end: { line: 7, column: 20 } },
+      5 => { start: { line: 7, column: 24 }, end: { line: 7, column: 34 } }
+    },
+    doStatement: Map(0) {},
+    letBinding: Map(0) {},
+    declaration: Map(3) {
+      0 => DeclarationValueSourceRange {
         value0: {
           signature: Nothing {},
           definitions: [
@@ -100,7 +100,7 @@
           ]
         }
       },
-      DeclarationValueSourceRange {
+      1 => DeclarationValueSourceRange {
         value0: {
           signature: Nothing {},
           definitions: [
@@ -111,7 +111,7 @@
           ]
         }
       },
-      DeclarationValueSourceRange {
+      2 => DeclarationValueSourceRange {
         value0: {
           signature: Just {
             value0: {
@@ -127,22 +127,24 @@
           ]
         }
       }
-    ],
-    constructor: [],
-    newtype: [],
-    classMethod: [ { start: { line: 5, column: 2 }, end: { line: 5, column: 16 } } ],
-    typeVarBinding: [
-      { start: { line: 2, column: 12 }, end: { line: 2, column: 13 } },
-      { start: { line: 4, column: 11 }, end: { line: 4, column: 12 } },
-      { start: { line: 8, column: 13 }, end: { line: 8, column: 14 } }
-    ]
+    },
+    constructor: Map(0) {},
+    newtype: Map(0) {},
+    classMethod: Map(1) {
+      0 => { start: { line: 5, column: 2 }, end: { line: 5, column: 16 } }
+    },
+    typeVarBinding: Map(3) {
+      0 => { start: { line: 2, column: 12 }, end: { line: 2, column: 13 } },
+      1 => { start: { line: 4, column: 11 }, end: { line: 4, column: 12 } },
+      2 => { start: { line: 8, column: 13 }, end: { line: 8, column: 14 } }
+    }
   },
   errors: {
-    expr: [],
-    binder: [],
-    type: [],
-    doStatement: [],
-    letBinding: [],
-    declaration: []
+    expr: Map(0) {},
+    binder: Map(0) {},
+    type: Map(0) {},
+    doStatement: Map(0) {},
+    letBinding: Map(0) {},
+    declaration: Map(0) {}
   }
 }

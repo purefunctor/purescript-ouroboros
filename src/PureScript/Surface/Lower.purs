@@ -25,11 +25,11 @@ import PureScript.CST.Types as CST
 import PureScript.Surface.Error (class IntoRecoveredError, intoRecoveredError)
 import PureScript.Surface.SourceRange (DeclarationSourceRange(..), LetBindingSourceRange(..))
 import PureScript.Surface.Types as SST
-import PureScript.Utils.Immutable.SparseMap (SparseMap)
-import PureScript.Utils.Immutable.SparseMap as SparseMap
-import PureScript.Utils.Mutable.Array (MutableArray)
-import PureScript.Utils.Mutable.Array as MutableArray
+import PureScript.Utils.Immutable.IntMap (IntMap)
+import PureScript.Utils.Mutable.STIntMap (STIntMap)
+import PureScript.Utils.Mutable.STIntMap as STIntMap
 import Record as Record
+import Safe.Coerce (coerce)
 import Type.Proxy (Proxy(..))
 
 type FieldGroup ∷ (Type → Type → Type) → Row Type
@@ -60,16 +60,16 @@ type MakeIndexState ∷ Region → Type → Type → Type
 type MakeIndexState r t s = STRef r Int
 
 type MakeSourceRangeState ∷ Region → Type → Type → Type
-type MakeSourceRangeState r t s = MutableArray r s
+type MakeSourceRangeState r t s = STIntMap r s
 
 type MakeSourceRangeFrozen ∷ Type → Type → Type
-type MakeSourceRangeFrozen t s = SparseMap t s
+type MakeSourceRangeFrozen t s = IntMap s
 
 type MakeRecoveredErrorState ∷ Region → Type → Type
-type MakeRecoveredErrorState r t = MutableArray r RecoveredError
+type MakeRecoveredErrorState r t = STIntMap r RecoveredError
 
 type MakeRecoveredErrorFrozen ∷ Type → Type
-type MakeRecoveredErrorFrozen t = SparseMap t RecoveredError
+type MakeRecoveredErrorFrozen t = IntMap RecoveredError
 
 type IndexStateFields r = FieldGroup (MakeIndexState r)
 
@@ -119,16 +119,16 @@ defaultState = do
       , typeVarBinding
       }
   sourceRanges ← do
-    expr ← MutableArray.empty
-    binder ← MutableArray.empty
-    type_ ← MutableArray.empty
-    doStatement ← MutableArray.empty
-    letBinding ← MutableArray.empty
-    declaration ← MutableArray.empty
-    constructor ← MutableArray.empty
-    newtype_ ← MutableArray.empty
-    classMethod ← MutableArray.empty
-    typeVarBinding ← MutableArray.empty
+    expr ← STIntMap.empty
+    binder ← STIntMap.empty
+    type_ ← STIntMap.empty
+    doStatement ← STIntMap.empty
+    letBinding ← STIntMap.empty
+    declaration ← STIntMap.empty
+    constructor ← STIntMap.empty
+    newtype_ ← STIntMap.empty
+    classMethod ← STIntMap.empty
+    typeVarBinding ← STIntMap.empty
     pure
       { expr
       , binder
@@ -142,12 +142,12 @@ defaultState = do
       , typeVarBinding
       }
   errors ← do
-    expr ← MutableArray.empty
-    binder ← MutableArray.empty
-    type_ ← MutableArray.empty
-    doStatement ← MutableArray.empty
-    letBinding ← MutableArray.empty
-    declaration ← MutableArray.empty
+    expr ← STIntMap.empty
+    binder ← STIntMap.empty
+    type_ ← STIntMap.empty
+    doStatement ← STIntMap.empty
+    letBinding ← STIntMap.empty
+    declaration ← STIntMap.empty
     pure
       { expr
       , binder
@@ -161,16 +161,16 @@ defaultState = do
 freezeState ∷ ∀ r. State r → ST r { sourceRanges ∷ SourceRanges, errors ∷ RecoveredErrors }
 freezeState (State { sourceRanges, errors }) = do
   sourceRanges' ← do
-    expr ← SparseMap.ofMutable sourceRanges.expr
-    binder ← SparseMap.ofMutable sourceRanges.binder
-    type_ ← SparseMap.ofMutable sourceRanges."type"
-    doStatement ← SparseMap.ofMutable sourceRanges.doStatement
-    letBinding ← SparseMap.ofMutable sourceRanges.letBinding
-    declaration ← SparseMap.ofMutable sourceRanges.declaration
-    constructor ← SparseMap.ofMutable sourceRanges.constructor
-    newtype_ ← SparseMap.ofMutable sourceRanges."newtype"
-    classMethod ← SparseMap.ofMutable sourceRanges.classMethod
-    typeVarBinding ← SparseMap.ofMutable sourceRanges.typeVarBinding
+    expr ← STIntMap.freeze sourceRanges.expr
+    binder ← STIntMap.freeze sourceRanges.binder
+    type_ ← STIntMap.freeze sourceRanges."type"
+    doStatement ← STIntMap.freeze sourceRanges.doStatement
+    letBinding ← STIntMap.freeze sourceRanges.letBinding
+    declaration ← STIntMap.freeze sourceRanges.declaration
+    constructor ← STIntMap.freeze sourceRanges.constructor
+    newtype_ ← STIntMap.freeze sourceRanges."newtype"
+    classMethod ← STIntMap.freeze sourceRanges.classMethod
+    typeVarBinding ← STIntMap.freeze sourceRanges.typeVarBinding
     pure $ SourceRanges
       { expr
       , binder
@@ -184,12 +184,12 @@ freezeState (State { sourceRanges, errors }) = do
       , typeVarBinding
       }
   errors' ← do
-    expr ← SparseMap.ofMutable errors.expr
-    binder ← SparseMap.ofMutable errors.binder
-    type_ ← SparseMap.ofMutable errors."type"
-    doStatement ← SparseMap.ofMutable errors.doStatement
-    letBinding ← SparseMap.ofMutable errors.letBinding
-    declaration ← SparseMap.ofMutable errors.declaration
+    expr ← STIntMap.freeze errors.expr
+    binder ← STIntMap.freeze errors.binder
+    type_ ← STIntMap.freeze errors."type"
+    doStatement ← STIntMap.freeze errors.doStatement
+    letBinding ← STIntMap.freeze errors.letBinding
+    declaration ← STIntMap.freeze errors.declaration
     pure $ RecoveredErrors
       { expr
       , binder
@@ -217,21 +217,21 @@ nextIndex (State { indices }) = do
 insertSourceRange
   ∷ ∀ @n r s t _t
   . IsSymbol n
-  ⇒ Row.Cons n (MutableArray r s) _t (SourceRangeStateFields r)
+  ⇒ Row.Cons n (STIntMap r s) _t (SourceRangeStateFields r)
   ⇒ State r
   → SST.Index t
   → s
   → ST r Unit
 insertSourceRange (State { sourceRanges }) index sourceRange = do
   let
-    ref ∷ MutableArray r s
+    ref ∷ STIntMap r s
     ref = Record.get (Proxy ∷ _ n) sourceRanges
-  MutableArray.poke index sourceRange ref
+  STIntMap.set (coerce index) sourceRange ref
 
 insertError
   ∷ ∀ @n r e t _t
   . IsSymbol n
-  ⇒ Row.Cons n (MutableArray r RecoveredError) _t (RecoveredErrorStateFields r)
+  ⇒ Row.Cons n (STIntMap r RecoveredError) _t (RecoveredErrorStateFields r)
   ⇒ IntoRecoveredError e
   ⇒ State r
   → SST.Index t
@@ -239,9 +239,9 @@ insertError
   → ST r Unit
 insertError (State { errors }) index error = do
   let
-    ref ∷ MutableArray r RecoveredError
+    ref ∷ STIntMap r RecoveredError
     ref = Record.get (Proxy ∷ _ n) errors
-  MutableArray.poke index (intoRecoveredError error) ref
+  STIntMap.set (coerce index) (intoRecoveredError error) ref
 
 unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name

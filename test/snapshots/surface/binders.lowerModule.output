@@ -305,80 +305,80 @@
     ]
   },
   sourceRanges: {
-    expr: [
-      { start: { line: 2, column: 6 }, end: { line: 2, column: 7 } },
-      { start: { line: 3, column: 8 }, end: { line: 3, column: 9 } },
-      { start: { line: 4, column: 16 }, end: { line: 4, column: 17 } },
-      { start: { line: 5, column: 16 }, end: { line: 5, column: 17 } },
-      { start: { line: 6, column: 10 }, end: { line: 6, column: 11 } },
-      { start: { line: 7, column: 8 }, end: { line: 7, column: 9 } },
-      { start: { line: 8, column: 13 }, end: { line: 8, column: 14 } },
-      { start: { line: 9, column: 6 }, end: { line: 9, column: 7 } },
-      { start: { line: 10, column: 9 }, end: { line: 10, column: 10 } },
-      { start: { line: 11, column: 7 }, end: { line: 11, column: 8 } },
-      { start: { line: 12, column: 8 }, end: { line: 12, column: 9 } },
-      { start: { line: 13, column: 7 }, end: { line: 13, column: 8 } },
-      {
+    expr: Map(17) {
+      0 => { start: { line: 2, column: 6 }, end: { line: 2, column: 7 } },
+      1 => { start: { line: 3, column: 8 }, end: { line: 3, column: 9 } },
+      2 => { start: { line: 4, column: 16 }, end: { line: 4, column: 17 } },
+      3 => { start: { line: 5, column: 16 }, end: { line: 5, column: 17 } },
+      4 => { start: { line: 6, column: 10 }, end: { line: 6, column: 11 } },
+      5 => { start: { line: 7, column: 8 }, end: { line: 7, column: 9 } },
+      6 => { start: { line: 8, column: 13 }, end: { line: 8, column: 14 } },
+      7 => { start: { line: 9, column: 6 }, end: { line: 9, column: 7 } },
+      8 => { start: { line: 10, column: 9 }, end: { line: 10, column: 10 } },
+      9 => { start: { line: 11, column: 7 }, end: { line: 11, column: 8 } },
+      10 => { start: { line: 12, column: 8 }, end: { line: 12, column: 9 } },
+      11 => { start: { line: 13, column: 7 }, end: { line: 13, column: 8 } },
+      12 => {
         start: { line: 14, column: 10 },
         end: { line: 14, column: 11 }
       },
-      {
+      13 => {
         start: { line: 15, column: 13 },
         end: { line: 15, column: 14 }
       },
-      { start: { line: 16, column: 8 }, end: { line: 16, column: 9 } },
-      {
+      14 => { start: { line: 16, column: 8 }, end: { line: 16, column: 9 } },
+      15 => {
         start: { line: 17, column: 13 },
         end: { line: 17, column: 14 }
       },
-      {
+      16 => {
         start: { line: 18, column: 20 },
         end: { line: 18, column: 21 }
       }
-    ],
-    binder: [
-      { start: { line: 2, column: 2 }, end: { line: 2, column: 3 } },
-      { start: { line: 3, column: 2 }, end: { line: 3, column: 5 } },
-      { start: { line: 4, column: 2 }, end: { line: 4, column: 13 } },
-      { start: { line: 4, column: 8 }, end: { line: 4, column: 13 } },
-      { start: { line: 5, column: 2 }, end: { line: 5, column: 13 } },
-      { start: { line: 6, column: 2 }, end: { line: 6, column: 7 } },
-      { start: { line: 7, column: 2 }, end: { line: 7, column: 5 } },
-      { start: { line: 8, column: 2 }, end: { line: 8, column: 10 } },
-      { start: { line: 9, column: 2 }, end: { line: 9, column: 3 } },
-      { start: { line: 10, column: 2 }, end: { line: 10, column: 6 } },
-      { start: { line: 11, column: 2 }, end: { line: 11, column: 4 } },
-      { start: { line: 12, column: 2 }, end: { line: 12, column: 5 } },
-      { start: { line: 12, column: 3 }, end: { line: 12, column: 4 } },
-      { start: { line: 13, column: 2 }, end: { line: 13, column: 4 } },
-      { start: { line: 14, column: 2 }, end: { line: 14, column: 7 } },
-      { start: { line: 15, column: 2 }, end: { line: 15, column: 10 } },
-      { start: { line: 15, column: 7 }, end: { line: 15, column: 8 } },
-      { start: { line: 16, column: 2 }, end: { line: 16, column: 5 } },
-      { start: { line: 16, column: 3 }, end: { line: 16, column: 4 } },
-      { start: { line: 17, column: 2 }, end: { line: 17, column: 10 } },
-      { start: { line: 17, column: 3 }, end: { line: 17, column: 9 } },
-      { start: { line: 17, column: 3 }, end: { line: 17, column: 4 } },
-      { start: { line: 18, column: 2 }, end: { line: 18, column: 17 } },
-      { start: { line: 18, column: 3 }, end: { line: 18, column: 16 } },
-      { start: { line: 18, column: 3 }, end: { line: 18, column: 4 } },
-      { start: { line: 18, column: 7 }, end: { line: 18, column: 8 } },
-      {
+    },
+    binder: Map(28) {
+      0 => { start: { line: 2, column: 2 }, end: { line: 2, column: 3 } },
+      1 => { start: { line: 3, column: 2 }, end: { line: 3, column: 5 } },
+      2 => { start: { line: 4, column: 2 }, end: { line: 4, column: 13 } },
+      3 => { start: { line: 4, column: 8 }, end: { line: 4, column: 13 } },
+      4 => { start: { line: 5, column: 2 }, end: { line: 5, column: 13 } },
+      5 => { start: { line: 6, column: 2 }, end: { line: 6, column: 7 } },
+      6 => { start: { line: 7, column: 2 }, end: { line: 7, column: 5 } },
+      7 => { start: { line: 8, column: 2 }, end: { line: 8, column: 10 } },
+      8 => { start: { line: 9, column: 2 }, end: { line: 9, column: 3 } },
+      9 => { start: { line: 10, column: 2 }, end: { line: 10, column: 6 } },
+      10 => { start: { line: 11, column: 2 }, end: { line: 11, column: 4 } },
+      11 => { start: { line: 12, column: 2 }, end: { line: 12, column: 5 } },
+      12 => { start: { line: 12, column: 3 }, end: { line: 12, column: 4 } },
+      13 => { start: { line: 13, column: 2 }, end: { line: 13, column: 4 } },
+      14 => { start: { line: 14, column: 2 }, end: { line: 14, column: 7 } },
+      15 => { start: { line: 15, column: 2 }, end: { line: 15, column: 10 } },
+      16 => { start: { line: 15, column: 7 }, end: { line: 15, column: 8 } },
+      17 => { start: { line: 16, column: 2 }, end: { line: 16, column: 5 } },
+      18 => { start: { line: 16, column: 3 }, end: { line: 16, column: 4 } },
+      19 => { start: { line: 17, column: 2 }, end: { line: 17, column: 10 } },
+      20 => { start: { line: 17, column: 3 }, end: { line: 17, column: 9 } },
+      21 => { start: { line: 17, column: 3 }, end: { line: 17, column: 4 } },
+      22 => { start: { line: 18, column: 2 }, end: { line: 18, column: 17 } },
+      23 => { start: { line: 18, column: 3 }, end: { line: 18, column: 16 } },
+      24 => { start: { line: 18, column: 3 }, end: { line: 18, column: 4 } },
+      25 => { start: { line: 18, column: 7 }, end: { line: 18, column: 8 } },
+      26 => {
         start: { line: 18, column: 11 },
         end: { line: 18, column: 12 }
       },
-      {
+      27 => {
         start: { line: 18, column: 15 },
         end: { line: 18, column: 16 }
       }
-    ],
-    type: [
-      { start: { line: 17, column: 8 }, end: { line: 17, column: 9 } }
-    ],
-    doStatement: [],
-    letBinding: [],
-    declaration: [
-      DeclarationValueSourceRange {
+    },
+    type: Map(1) {
+      0 => { start: { line: 17, column: 8 }, end: { line: 17, column: 9 } }
+    },
+    doStatement: Map(0) {},
+    letBinding: Map(0) {},
+    declaration: Map(1) {
+      0 => DeclarationValueSourceRange {
         value0: {
           signature: Nothing {},
           definitions: [
@@ -453,18 +453,18 @@
           ]
         }
       }
-    ],
-    constructor: [],
-    newtype: [],
-    classMethod: [],
-    typeVarBinding: []
+    },
+    constructor: Map(0) {},
+    newtype: Map(0) {},
+    classMethod: Map(0) {},
+    typeVarBinding: Map(0) {}
   },
   errors: {
-    expr: [],
-    binder: [],
-    type: [],
-    doStatement: [],
-    letBinding: [],
-    declaration: []
+    expr: Map(0) {},
+    binder: Map(0) {},
+    type: Map(0) {},
+    doStatement: Map(0) {},
+    letBinding: Map(0) {},
+    declaration: Map(0) {}
   }
 }
