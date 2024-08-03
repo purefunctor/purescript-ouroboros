@@ -169,6 +169,7 @@ type LetBindingIndex = Index LetBinding
 data LetBinding
   = LetBindingValue LetBindingAnnotation Ident (Maybe Type) (Array ValueEquation)
   | LetBindingPattern LetBindingAnnotation Binder Where
+  | LetBindingError LetBindingAnnotation
   | LetBindingNotImplemented LetBindingAnnotation
 
 derive instance Eq LetBinding
@@ -210,6 +211,7 @@ data Expr
   | ExprLet ExprAnnotation (NonEmptyArray LetBinding) Expr
   | ExprDo ExprAnnotation (NonEmptyArray DoStatement)
   | ExprAdo ExprAnnotation (Array DoStatement) Expr
+  | ExprError ExprAnnotation
   | ExprNotImplemented ExprAnnotation
 
 derive instance Eq Expr
@@ -239,6 +241,7 @@ data DoStatement
   = DoLet DoStatementAnnotation (NonEmptyArray LetBinding)
   | DoDiscard DoStatementAnnotation Expr
   | DoBind DoStatementAnnotation Binder Expr
+  | DoError DoStatementAnnotation
   | DoNotImplemented DoStatementAnnotation
 
 derive instance Eq DoStatement
@@ -261,6 +264,7 @@ data Binder
   | BinderParens BinderAnnotation Binder
   | BinderTyped BinderAnnotation Binder Type
   | BinderOp BinderAnnotation Binder (NonEmptyArray (Tuple (QualifiedName Operator) Binder))
+  | BinderError BinderAnnotation
   | BinderNotImplemented BinderAnnotation
 
 derive instance Eq Binder
@@ -286,6 +290,7 @@ data Type
   | TypeArrowName TypeAnnotation
   | TypeConstrained TypeAnnotation Type Type
   | TypeParens TypeAnnotation Type
+  | TypeError TypeAnnotation
   | TypeNotImplemented TypeAnnotation
 
 derive instance Eq Type

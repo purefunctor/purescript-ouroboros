@@ -198,6 +198,8 @@ collectExpr state = runSTFn1 go
     SST.DoBind _ binder term → do
       runSTFn1 go term
       collectPushBinders state [ binder ]
+    SST.DoError _ →
+      pure unit
     SST.DoNotImplemented _ →
       pure unit
 
@@ -294,6 +296,8 @@ collectExpr state = runSTFn1 go
         withRevertingScope state do
           traverse_ (runSTFn1 goPushDoStatement) statements
           runSTFn1 go body
+      SST.ExprError (SST.Annotation { index }) →
+        pushExprScopeNode state index
       SST.ExprNotImplemented (SST.Annotation { index }) →
         pushExprScopeNode state index
 
@@ -339,6 +343,8 @@ collectBinder _ perName = runSTFn1 go
       SST.BinderOp _ head chain → do
         runSTFn1 go head
         traverse_ (Tuple.snd >>> runSTFn1 go) chain
+      SST.BinderError _ →
+        pure unit
       SST.BinderNotImplemented _ →
         pure unit
 
@@ -406,6 +412,8 @@ collectPushType state = runSTFn1 go
       SST.TypeParens (SST.Annotation { index }) i → do
         pushTypeScopeNode state index
         runSTFn1 go i
+      SST.TypeError (SST.Annotation { index }) →
+        pushTypeScopeNode state index
       SST.TypeNotImplemented (SST.Annotation { index }) →
         pushTypeScopeNode state index
 

@@ -13,11 +13,13 @@ type SigDefSourceRange =
 data LetBindingSourceRange
   = LetBindingNameSourceRange SigDefSourceRange
   | LetBindingPatternSourceRange CST.SourceRange
+  | LetBindingErrorSourceRange CST.SourceRange
 
 derive instance Eq LetBindingSourceRange
 
 data DeclarationSourceRange
   = DeclarationDataSourceRange SigDefSourceRange
   | DeclarationValueSourceRange SigDefSourceRange
+  | DeclarationErrorSourceRange CST.SourceRange
 
 derive instance Eq DeclarationSourceRange

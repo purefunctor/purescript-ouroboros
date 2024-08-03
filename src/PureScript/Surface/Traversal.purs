@@ -236,6 +236,8 @@ traverseDoStatement k d = case d of
     DoDiscard i <$> k.onExpr e
   DoBind i b e →
     DoBind i <$> k.onBinder b <*> k.onExpr e
+  DoError _ →
+    pure d
   DoNotImplemented _ →
     pure d
 
@@ -245,6 +247,8 @@ traverseLetBinding k l = case l of
     LetBindingValue i n <$> traverse k.onType t <*> traverse (traverseValueEquation k) e
   LetBindingPattern i b w →
     LetBindingPattern i <$> k.onBinder b <*> traverseWhere k w
+  LetBindingError _ →
+    pure l
   LetBindingNotImplemented _ →
     pure l
 
