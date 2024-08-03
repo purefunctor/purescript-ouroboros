@@ -27,5 +27,5 @@ export function clearImpl(m) {
 }
 
 export function freezeImpl(m) {
-  return new Map(m);
+  return new Map([...m.entries()].sort((a, b) => a[0] - b[0]));
 }
