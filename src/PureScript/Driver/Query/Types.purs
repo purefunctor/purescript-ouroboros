@@ -10,19 +10,19 @@ import Prim.Row as Row
 import PureScript.Diagnostic.Types (Diagnostic)
 import PureScript.Driver.Files (ParsedFile)
 import PureScript.Driver.Query.Stable (FileId)
-import PureScript.Interface.Collect (InterfaceResult)
-import PureScript.Scope.Collect (ScopeNodes)
-import PureScript.Surface.Lower (LowerResult)
+import PureScript.Interface.Collect as InterfaceCollect
+import PureScript.Scope.Collect as ScopeCollect
+import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
 import Type.Proxy (Proxy(..))
 
 type Queries ∷ ∀ k. (Type → Type → k) → (Type → Type → k) → Row k
 type Queries onInput onQuery =
   ( parsedFile ∷ onInput FileId ParsedFile
-  , surfaceFull ∷ onQuery FileId LowerResult
+  , surfaceFull ∷ onQuery FileId SurfaceLower.Result
   , surface ∷ onQuery FileId Module
-  , interface ∷ onQuery FileId InterfaceResult
-  , scopeGraph ∷ onQuery FileId ScopeNodes
+  , interface ∷ onQuery FileId InterfaceCollect.Result
+  , scopeGraph ∷ onQuery FileId ScopeCollect.Result
   , diagnostics ∷ onQuery FileId (Set Diagnostic)
   )
 

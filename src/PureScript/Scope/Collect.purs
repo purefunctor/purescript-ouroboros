@@ -31,7 +31,7 @@ type State r =
   , typeScopeNode ∷ MutableArray r ScopeNode
   }
 
-type ScopeNodes =
+type Result =
   { exprScopeNode ∷ SparseMap SST.Expr ScopeNode
   , typeScopeNode ∷ SparseMap SST.Type ScopeNode
   }
@@ -43,7 +43,7 @@ defaultState = do
   typeScopeNode ← MutableArray.empty
   pure { scope, exprScopeNode, typeScopeNode }
 
-freezeState ∷ ∀ r. State r → ST r ScopeNodes
+freezeState ∷ ∀ r. State r → ST r Result
 freezeState state = do
   exprScopeNode ← SparseMap.ofMutable state.exprScopeNode
   typeScopeNode ← SparseMap.ofMutable state.typeScopeNode
@@ -478,7 +478,7 @@ collectPushLetBindings state letBindings = do
 
   pure unit
 
-collectModule ∷ ∀ r. SST.Module → IFT.Interface → ST r ScopeNodes
+collectModule ∷ ∀ r. SST.Module → IFT.Interface → ST r Result
 collectModule (SST.Module { declarations }) interface = do
   state ← defaultState
 

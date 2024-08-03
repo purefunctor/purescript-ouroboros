@@ -52,11 +52,8 @@ import PureScript.CST.Types (ModuleName)
 import PureScript.Driver.Files (ParsedFile(..))
 import PureScript.Driver.Interner (ModuleNameIndex, ModuleNameInterner)
 import PureScript.Driver.Interner as ModuleNameInterner
-import PureScript.Interface.Collect (InterfaceResult)
 import PureScript.Interface.Collect as InterfaceCollect
-import PureScript.Scope.Collect (ScopeNodes)
 import PureScript.Scope.Collect as ScopeCollect
-import PureScript.Surface.Lower (LowerResult)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Types (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -113,10 +110,10 @@ newtype QueryEngine r = QueryEngine
   { revisionRef ∷ STRef r Int
   , moduleNameInterner ∷ ModuleNameInterner r
   , parsedFileStorage ∷ InputStorage r ModuleNameIndex ParsedFile
-  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex LowerResult
+  , surfaceFullStorage ∷ QueryStorage r ModuleNameIndex SurfaceLower.Result
   , surfaceStorage ∷ QueryStorage r ModuleNameIndex Module
-  , interfaceStorage ∷ QueryStorage r ModuleNameIndex InterfaceResult
-  , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeNodes
+  , interfaceStorage ∷ QueryStorage r ModuleNameIndex InterfaceCollect.Result
+  , scopeGraphStorage ∷ QueryStorage r ModuleNameIndex ScopeCollect.Result
   , activeQuery ∷ MutableArray r { query ∷ Query, dependencies ∷ MutableArray r Query }
   , queryStats ∷ QueryStats r
   }
@@ -357,7 +354,7 @@ getParsedFile = inputGet OnParsedFile \(QueryEngine { parsedFileStorage }) → p
 setParsedFile ∷ ∀ r. QueryEngine r → ModuleNameIndex → ParsedFile → ST r Unit
 setParsedFile = inputSet \(QueryEngine { parsedFileStorage }) → parsedFileStorage
 
-computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r LowerResult
+computeSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r SurfaceLower.Result
 computeSurfaceFull storage moduleNameIndex = do
   parsedFile ← getParsedFile storage moduleNameIndex
   case parsedFile of
@@ -366,10 +363,10 @@ computeSurfaceFull storage moduleNameIndex = do
     ParsedPartial _ _ →
       unsafeCrashWith "todo: support partial lowering"
 
-getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r LowerResult
+getSurfaceFull ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r SurfaceLower.Result
 getSurfaceFull = do
   let
-    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex LowerResult
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex SurfaceLower.Result
     getStorage (QueryEngine { surfaceFullStorage }) = surfaceFullStorage
   queryGet OnSurfaceFull getStorage computeSurfaceFull
 
@@ -381,27 +378,27 @@ getSurface = do
   queryGet OnSurface getStorage \storage moduleNameIndex → do
     getSurfaceFull storage moduleNameIndex <#> _.surface
 
-computeInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceResult
+computeInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceCollect.Result
 computeInterface storage moduleNameIndex = do
   m ← getSurface storage moduleNameIndex
   InterfaceCollect.collectInterface m
 
-getInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceResult
+getInterface ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r InterfaceCollect.Result
 getInterface = do
   let
-    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex InterfaceResult
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex InterfaceCollect.Result
     getStorage (QueryEngine { interfaceStorage }) = interfaceStorage
   queryGet OnInterface getStorage computeInterface
 
-computeScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
+computeScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeCollect.Result
 computeScopeGraph storage moduleNameIndex = do
   surface ← getSurface storage moduleNameIndex
   { interface } ← getInterface storage moduleNameIndex
   ScopeCollect.collectModule surface interface
 
-getScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeNodes
+getScopeGraph ∷ ∀ r. QueryEngine r → ModuleNameIndex → ST r ScopeCollect.Result
 getScopeGraph = do
   let
-    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ScopeNodes
+    getStorage ∷ QueryEngine r → QueryStorage r ModuleNameIndex ScopeCollect.Result
     getStorage (QueryEngine { scopeGraphStorage }) = scopeGraphStorage
   queryGet OnScopeGraph getStorage computeScopeGraph
