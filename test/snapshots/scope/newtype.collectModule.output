@@ -1,5 +1,6 @@
 {
   exprScopeNode: Map(0) {},
+  binderScopeNode: Map(0) {},
   typeScopeNode: Map(6) {
     0 => TopLevel {
       value0: RootScope {},

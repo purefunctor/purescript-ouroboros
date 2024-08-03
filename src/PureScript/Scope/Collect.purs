@@ -27,11 +27,13 @@ import Safe.Coerce (coerce)
 type State r =
   { scope ∷ STRef r ScopeNode
   , exprScopeNode ∷ STIntMap r ScopeNode
+  , binderScopeNode ∷ STIntMap r ScopeNode
   , typeScopeNode ∷ STIntMap r ScopeNode
   }
 
 type Result =
   { exprScopeNode ∷ IdMap SST.Expr ScopeNode
+  , binderScopeNode ∷ IdMap SST.Binder ScopeNode
   , typeScopeNode ∷ IdMap SST.Type ScopeNode
   }
 
@@ -39,14 +41,16 @@ defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
   scope ← STRef.new RootScope
   exprScopeNode ← STIntMap.empty
+  binderScopeNode ← STIntMap.empty
   typeScopeNode ← STIntMap.empty
-  pure { scope, exprScopeNode, typeScopeNode }
+  pure { scope, exprScopeNode, binderScopeNode, typeScopeNode }
 
 freezeState ∷ ∀ r. State r → ST r Result
 freezeState state = do
   exprScopeNode ← STIntMap.freeze state.exprScopeNode
+  binderScopeNode ← STIntMap.freeze state.binderScopeNode
   typeScopeNode ← STIntMap.freeze state.typeScopeNode
-  pure $ coerce { exprScopeNode, typeScopeNode }
+  pure $ coerce { exprScopeNode, binderScopeNode, typeScopeNode }
 
 currentScope ∷ ∀ r. State r → ST r ScopeNode
 currentScope state = STRef.read state.scope
@@ -54,13 +58,18 @@ currentScope state = STRef.read state.scope
 pushScope ∷ ∀ r. State r → ScopeNode → ST r Unit
 pushScope state scope = void $ STRef.write scope state.scope
 
-pushExprScopeNode ∷ ∀ r. State r → SST.ExprId → ST r Unit
-pushExprScopeNode state@{ exprScopeNode } index = do
+assignExprScopeNode ∷ ∀ r. State r → SST.ExprId → ST r Unit
+assignExprScopeNode state@{ exprScopeNode } index = do
   scope ← currentScope state
   STIntMap.set (coerce index) scope exprScopeNode
 
-pushTypeScopeNode ∷ ∀ r. State r → SST.TypeId → ST r Unit
-pushTypeScopeNode state@{ typeScopeNode } index = do
+assignBinderScopeNode ∷ ∀ r. State r → SST.BinderId → ST r Unit
+assignBinderScopeNode state@{ binderScopeNode } index = do
+  scope ← currentScope state
+  STIntMap.set (coerce index) scope binderScopeNode
+
+assignTypeScopeNode ∷ ∀ r. State r → SST.TypeId → ST r Unit
+assignTypeScopeNode state@{ typeScopeNode } index = do
   scope ← currentScope state
   STIntMap.set (coerce index) scope typeScopeNode
 
@@ -206,146 +215,154 @@ collectExpr state = runSTFn1 go
   go = mkSTFn1 \e →
     case e of
       SST.ExprHole (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprSection (SST.Annotation { id }) →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprIdent (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprConstructor (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprBoolean (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprChar (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprString (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprInt (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprNumber (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprArray (SST.Annotation { id }) items → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         traverse_ (runSTFn1 go) items
       SST.ExprRecord (SST.Annotation { id }) items → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         for_ items case _ of
           SST.RecordPun _ → pure unit
           SST.RecordField _ item → runSTFn1 go item
       SST.ExprParens (SST.Annotation { id }) i → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go i
       SST.ExprTyped (SST.Annotation { id }) i t → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go i
         collectType state t
       SST.ExprInfix (SST.Annotation { id }) head chain → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go head
         for_ chain \(Tuple operator operand) → do
           runSTFn1 go operator
           runSTFn1 go operand
       SST.ExprOp (SST.Annotation { id }) head chain → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go head
         traverse_ (Tuple.snd >>> runSTFn1 go) chain
       SST.ExprOpName (SST.Annotation { id }) _ →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprNegate (SST.Annotation { id }) i → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go i
       SST.ExprRecordAccessor (SST.Annotation { id }) i _ → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go i
       SST.ExprRecordUpdate (SST.Annotation { id }) i r → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go i
         traverse_ (runSTFn1 goRecordUpdate) r
       SST.ExprApplication (SST.Annotation { id }) f s → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go f
         traverse_ (runSTFn1 goAppSpine) s
       SST.ExprLambda (SST.Annotation { id }) b i → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         withRevertingScope state do
           collectPushBinders state $ NEA.toArray b
           runSTFn1 go i
       SST.ExprIfThenElse (SST.Annotation { id }) c t f → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         runSTFn1 go c
         runSTFn1 go t
         runSTFn1 go f
       SST.ExprCase (SST.Annotation { id }) head branches → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         traverse_ (runSTFn1 go) head
         for_ branches \(Tuple binders guarded) → do
           withRevertingScope state do
             collectPushBinders state $ NEA.toArray binders
             collectGuarded state guarded
       SST.ExprLet (SST.Annotation { id }) bindings body → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         withRevertingScope state do
           collectPushLetBindings state $ NEA.toArray bindings
           runSTFn1 go body
       SST.ExprDo (SST.Annotation { id }) statements → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         withRevertingScope state do
           traverse_ (runSTFn1 goPushDoStatement) statements
       SST.ExprAdo (SST.Annotation { id }) statements body → do
-        pushExprScopeNode state id
+        assignExprScopeNode state id
         withRevertingScope state do
           traverse_ (runSTFn1 goPushDoStatement) statements
           runSTFn1 go body
       SST.ExprError (SST.Annotation { id }) →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
       SST.ExprNotImplemented (SST.Annotation { id }) →
-        pushExprScopeNode state id
+        assignExprScopeNode state id
 
 collectBinder ∷ ∀ r. State r → STObject r SST.BinderId → SST.Binder → ST r Unit
-collectBinder _ perName = runSTFn1 go
+collectBinder state perName = runSTFn1 go
   where
   insert ∷ String → SST.BinderId → ST r Unit
   insert k v = void $ STO.poke k v perName
 
   go ∷ STFn1 SST.Binder r Unit
-  go = mkSTFn1 \b →
+  go = mkSTFn1 \b → do
     case b of
-      SST.BinderWildcard _ →
-        pure unit
-      SST.BinderVar (SST.Annotation { id }) name →
+      SST.BinderWildcard (SST.Annotation { id }) →
+        assignBinderScopeNode state id
+      SST.BinderVar (SST.Annotation { id }) name → do
+        assignBinderScopeNode state id
         insert (coerce name) id
-      SST.BinderNamed (SST.Annotation { id }) name _ →
+      SST.BinderNamed (SST.Annotation { id }) name _ → do
+        assignBinderScopeNode state id
         insert (coerce name) id
-      SST.BinderConstructor _ _ arguments →
+      SST.BinderConstructor (SST.Annotation { id }) _ arguments → do
+        assignBinderScopeNode state id
         traverse_ (runSTFn1 go) arguments
-      SST.BinderBoolean _ _ →
-        pure unit
-      SST.BinderChar _ _ →
-        pure unit
-      SST.BinderString _ _ →
-        pure unit
-      SST.BinderInt _ _ _ →
-        pure unit
-      SST.BinderNumber _ _ _ →
-        pure unit
-      SST.BinderArray _ items →
+      SST.BinderBoolean (SST.Annotation { id }) _ →
+        assignBinderScopeNode state id
+      SST.BinderChar (SST.Annotation { id }) _ →
+        assignBinderScopeNode state id
+      SST.BinderString (SST.Annotation { id }) _ →
+        assignBinderScopeNode state id
+      SST.BinderInt (SST.Annotation { id }) _ _ →
+        assignBinderScopeNode state id
+      SST.BinderNumber (SST.Annotation { id }) _ _ →
+        assignBinderScopeNode state id
+      SST.BinderArray (SST.Annotation { id }) items → do
+        assignBinderScopeNode state id
         traverse_ (runSTFn1 go) items
-      SST.BinderRecord (SST.Annotation { id }) items →
+      SST.BinderRecord (SST.Annotation { id }) items → do
+        assignBinderScopeNode state id
         for_ items case _ of
           SST.RecordPun name →
             insert (coerce name) id
           SST.RecordField _ i →
             runSTFn1 go i
-      SST.BinderParens _ i →
+      SST.BinderParens (SST.Annotation { id }) i → do
+        assignBinderScopeNode state id
         runSTFn1 go i
-      SST.BinderTyped _ i _ →
+      SST.BinderTyped (SST.Annotation { id }) i _ → do
+        assignBinderScopeNode state id
         runSTFn1 go i
-      SST.BinderOp _ head chain → do
+      SST.BinderOp (SST.Annotation { id }) head chain → do
+        assignBinderScopeNode state id
         runSTFn1 go head
         traverse_ (Tuple.snd >>> runSTFn1 go) chain
-      SST.BinderError _ →
-        pure unit
-      SST.BinderNotImplemented _ →
-        pure unit
+      SST.BinderError (SST.Annotation { id }) →
+        assignBinderScopeNode state id
+      SST.BinderNotImplemented (SST.Annotation { id }) →
+        assignBinderScopeNode state id
 
 collectType ∷ ∀ r. State r → SST.Type → ST r Unit
 collectType state t = withRevertingScope state $ collectPushType state t
@@ -363,58 +380,58 @@ collectPushType state = runSTFn1 go
   go = mkSTFn1 \t → do
     case t of
       SST.TypeVar (SST.Annotation { id }) _ →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeConstructor (SST.Annotation { id }) _ →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeWildcard (SST.Annotation { id }) →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeHole (SST.Annotation { id }) _ →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeString (SST.Annotation { id }) _ →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeInt (SST.Annotation { id }) _ _ →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeRow (SST.Annotation { id }) r → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 goRow r
       SST.TypeRecord (SST.Annotation { id }) r → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 goRow r
       SST.TypeForall (SST.Annotation { id }) v i → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         collectPushTypeVars state v
         runSTFn1 go i
       SST.TypeKinded (SST.Annotation { id }) i k → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 go i
         runSTFn1 go k
       SST.TypeApp (SST.Annotation { id }) f a → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 go f
         traverse_ (runSTFn1 go) a
       SST.TypeOp (SST.Annotation { id }) head chain → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 go head
         traverse_ (Tuple.snd >>> runSTFn1 go) chain
       SST.TypeOpName (SST.Annotation { id }) _ → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeArrow (SST.Annotation { id }) a r → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 go a
         runSTFn1 go r
       SST.TypeArrowName (SST.Annotation { id }) →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeConstrained (SST.Annotation { id }) c i → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 go c
         runSTFn1 go i
       SST.TypeParens (SST.Annotation { id }) i → do
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
         runSTFn1 go i
       SST.TypeError (SST.Annotation { id }) →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
       SST.TypeNotImplemented (SST.Annotation { id }) →
-        pushTypeScopeNode state id
+        assignTypeScopeNode state id
 
 collectPushBinders ∷ ∀ r. State r → Array SST.Binder → ST r Unit
 collectPushBinders state binders = do

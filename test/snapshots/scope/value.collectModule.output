@@ -1,0 +1,34 @@
+{
+  exprScopeNode: Map(1) {
+    0 => Binders {
+      value0: TopLevel {
+        value0: RootScope {},
+        value1: {
+          dataConstructors: {},
+          newtypeConstructors: {},
+          classMethods: {},
+          types: {},
+          values: { f: 0 },
+          constructorsOfData: {},
+          methodsOfClass: {}
+        }
+      },
+      value1: { x: 0 }
+    }
+  },
+  binderScopeNode: Map(1) {
+    0 => TopLevel {
+      value0: RootScope {},
+      value1: {
+        dataConstructors: {},
+        newtypeConstructors: {},
+        classMethods: {},
+        types: {},
+        values: { f: 0 },
+        constructorsOfData: {},
+        methodsOfClass: {}
+      }
+    }
+  },
+  typeScopeNode: Map(0) {}
+}
