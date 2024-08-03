@@ -21,6 +21,7 @@ import Prim.Row as Row
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
+import PureScript.Surface.Error (class IntoLowerError, LowerError, intoLowerError)
 import PureScript.Surface.SourceRange (DeclarationSourceRange(..), LetBindingSourceRange(..))
 import PureScript.Surface.Types as SST
 import PureScript.Utils.Immutable.SparseMap (SparseMap)
@@ -44,6 +45,16 @@ type FieldGroup f =
   , typeVarBinding ∷ f SST.TypeVarBinding CST.SourceRange
   )
 
+type LowerErrorFieldGroup ∷ (Type → Type) → Row Type
+type LowerErrorFieldGroup f =
+  ( expr ∷ f SST.Expr
+  , binder ∷ f SST.Binder
+  , type ∷ f SST.Type
+  , doStatement ∷ f SST.DoStatement
+  , letBinding ∷ f SST.LetBinding
+  , declaration ∷ f SST.Declaration
+  )
+
 type MakeIndexState ∷ Region → Type → Type → Type
 type MakeIndexState r t s = STRef r Int
 
@@ -53,32 +64,35 @@ type MakeSourceRangeState r t s = MutableArray r s
 type MakeSourceRangeFrozen ∷ Type → Type → Type
 type MakeSourceRangeFrozen t s = SparseMap t s
 
+type MakeLowerErrorState ∷ Region → Type → Type
+type MakeLowerErrorState r t = MutableArray r LowerError
+
+type MakeLowerErrorFrozen ∷ Type → Type
+type MakeLowerErrorFrozen t = SparseMap t LowerError
+
 type IndexStateFields r = FieldGroup (MakeIndexState r)
 
 type SourceRangeStateFields r = FieldGroup (MakeSourceRangeState r)
 
-type ErrorStateFields r e =
-  ( expr ∷ MutableArray r e
-  , binder ∷ MutableArray r e
-  , type ∷ MutableArray r e
-  , doStatement ∷ MutableArray r e
-  , letBinding ∷ MutableArray r e
-  , declaration ∷ MutableArray r e
-  )
+type LowerErrorStateFields r = LowerErrorFieldGroup (MakeLowerErrorState r)
 
-type StateFields r e =
+type StateFields r =
   ( indices ∷ { | IndexStateFields r }
   , sourceRanges ∷ { | SourceRangeStateFields r }
-  , errors ∷ { | ErrorStateFields r e }
+  , errors ∷ { | LowerErrorStateFields r }
   )
 
-newtype State r e = State { | StateFields r e }
+newtype State r = State { | StateFields r }
 
 newtype SourceRanges = SourceRanges { | FieldGroup MakeSourceRangeFrozen }
 
 derive newtype instance Eq SourceRanges
 
-defaultState ∷ ∀ r e. ST r (State r e)
+newtype LowerErrors = LowerErrors { | LowerErrorFieldGroup MakeLowerErrorFrozen }
+
+derive newtype instance Eq LowerErrors
+
+defaultState ∷ ∀ r. ST r (State r)
 defaultState = do
   indices ← do
     expr ← STRef.new 0
@@ -143,36 +157,53 @@ defaultState = do
       }
   pure $ State { indices, sourceRanges, errors }
 
-freezeState ∷ ∀ r e. State r e → ST r SourceRanges
-freezeState (State { sourceRanges }) = do
-  expr ← SparseMap.ofMutable sourceRanges.expr
-  binder ← SparseMap.ofMutable sourceRanges.binder
-  type_ ← SparseMap.ofMutable sourceRanges."type"
-  doStatement ← SparseMap.ofMutable sourceRanges.doStatement
-  letBinding ← SparseMap.ofMutable sourceRanges.letBinding
-  declaration ← SparseMap.ofMutable sourceRanges.declaration
-  constructor ← SparseMap.ofMutable sourceRanges.constructor
-  newtype_ ← SparseMap.ofMutable sourceRanges."newtype"
-  classMethod ← SparseMap.ofMutable sourceRanges.classMethod
-  typeVarBinding ← SparseMap.ofMutable sourceRanges.typeVarBinding
-  pure $ SourceRanges
-    { expr
-    , binder
-    , type: type_
-    , doStatement
-    , letBinding
-    , declaration
-    , constructor
-    , newtype: newtype_
-    , classMethod
-    , typeVarBinding
-    }
+freezeState ∷ ∀ r. State r → ST r { sourceRanges ∷ SourceRanges, errors ∷ LowerErrors }
+freezeState (State { sourceRanges, errors }) = do
+  sourceRanges' ← do
+    expr ← SparseMap.ofMutable sourceRanges.expr
+    binder ← SparseMap.ofMutable sourceRanges.binder
+    type_ ← SparseMap.ofMutable sourceRanges."type"
+    doStatement ← SparseMap.ofMutable sourceRanges.doStatement
+    letBinding ← SparseMap.ofMutable sourceRanges.letBinding
+    declaration ← SparseMap.ofMutable sourceRanges.declaration
+    constructor ← SparseMap.ofMutable sourceRanges.constructor
+    newtype_ ← SparseMap.ofMutable sourceRanges."newtype"
+    classMethod ← SparseMap.ofMutable sourceRanges.classMethod
+    typeVarBinding ← SparseMap.ofMutable sourceRanges.typeVarBinding
+    pure $ SourceRanges
+      { expr
+      , binder
+      , type: type_
+      , doStatement
+      , letBinding
+      , declaration
+      , constructor
+      , newtype: newtype_
+      , classMethod
+      , typeVarBinding
+      }
+  errors' ← do
+    expr ← SparseMap.ofMutable errors.expr
+    binder ← SparseMap.ofMutable errors.binder
+    type_ ← SparseMap.ofMutable errors."type"
+    doStatement ← SparseMap.ofMutable errors.doStatement
+    letBinding ← SparseMap.ofMutable errors.letBinding
+    declaration ← SparseMap.ofMutable errors.declaration
+    pure $ LowerErrors
+      { expr
+      , binder
+      , type: type_
+      , doStatement
+      , letBinding
+      , declaration
+      }
+  pure $ { sourceRanges: sourceRanges', errors: errors' }
 
 nextIndex
-  ∷ ∀ @n r e t _t
+  ∷ ∀ @n r t _t
   . IsSymbol n
   ⇒ Row.Cons n (STRef r Int) _t (IndexStateFields r)
-  ⇒ State r e
+  ⇒ State r
   → ST r (SST.Index t)
 nextIndex (State { indices }) = do
   let
@@ -183,10 +214,10 @@ nextIndex (State { indices }) = do
   pure $ SST.Index index
 
 insertSourceRange
-  ∷ ∀ @n r e t s _t
+  ∷ ∀ @n r s t _t
   . IsSymbol n
   ⇒ Row.Cons n (MutableArray r s) _t (SourceRangeStateFields r)
-  ⇒ State r e
+  ⇒ State r
   → SST.Index t
   → s
   → ST r Unit
@@ -199,16 +230,17 @@ insertSourceRange (State { sourceRanges }) index sourceRange = do
 insertError
   ∷ ∀ @n r e t _t
   . IsSymbol n
-  ⇒ Row.Cons n (MutableArray r e) _t (ErrorStateFields r e)
-  ⇒ State r e
+  ⇒ Row.Cons n (MutableArray r LowerError) _t (LowerErrorStateFields r)
+  ⇒ IntoLowerError e
+  ⇒ State r
   → SST.Index t
   → e
   → ST r Unit
 insertError (State { errors }) index error = do
   let
-    ref ∷ MutableArray r e
+    ref ∷ MutableArray r LowerError
     ref = Record.get (Proxy ∷ _ n) errors
-  MutableArray.poke index error ref
+  MutableArray.poke index (intoLowerError error) ref
 
 unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name
@@ -217,12 +249,13 @@ lowerQualifiedName ∷ ∀ a. CST.QualifiedName a → SST.QualifiedName a
 lowerQualifiedName (CST.QualifiedName { module: moduleName, name }) =
   SST.QualifiedName { moduleName, name }
 
-lowerGuarded ∷ ∀ r e. RangeOf e ⇒ State r e → CST.Guarded e → ST r SST.Guarded
+lowerGuarded ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Guarded e → ST r SST.Guarded
 lowerGuarded state = case _ of
   CST.Unconditional _ w → SST.Unconditional <$> lowerWhere state w
   CST.Guarded g → SST.Guarded <$> traverse (lowerGuardedExpr state) g
 
-lowerGuardedExpr ∷ ∀ r e. RangeOf e ⇒ State r e → CST.GuardedExpr e → ST r SST.GuardedExpr
+lowerGuardedExpr
+  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.GuardedExpr e → ST r SST.GuardedExpr
 lowerGuardedExpr
   state
   ( CST.GuardedExpr
@@ -239,14 +272,15 @@ lowerGuardedExpr
   sstWhere ← lowerWhere state cstWhere
   pure $ SST.GuardedExpr patterns sstWhere
 
-lowerPatternGuard ∷ ∀ r e. RangeOf e ⇒ State r e → CST.PatternGuard e → ST r SST.PatternGuard
+lowerPatternGuard
+  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.PatternGuard e → ST r SST.PatternGuard
 lowerPatternGuard state (CST.PatternGuard { binder: cstBinder, expr: cstExpr }) = do
   binder ← cstBinder # traverse case _ of
     Tuple cstBinder' _ → lowerBinder state cstBinder'
   expr ← lowerExpr state cstExpr
   pure $ SST.PatternGuard binder expr
 
-lowerWhere ∷ ∀ r e. RangeOf e ⇒ State r e → CST.Where e → ST r SST.Where
+lowerWhere ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Where e → ST r SST.Where
 lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
   expr ← lowerExpr state cstExpr
   bindings ← case cstBindings of
@@ -256,7 +290,7 @@ lowerWhere state (CST.Where { expr: cstExpr, bindings: cstBindings }) = do
       pure []
   pure $ SST.Where expr bindings
 
-lowerExpr ∷ ∀ r e. RangeOf e ⇒ State r e → CST.Expr e → ST r SST.Expr
+lowerExpr ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Expr e → ST r SST.Expr
 lowerExpr state = runSTFn1 go
   where
   goAppSpine ∷ STFn1 (CST.AppSpine CST.Expr e) r SST.AppSpine
@@ -415,7 +449,7 @@ lowerExpr state = runSTFn1 go
         insertError @"expr" state index error
         pure $ SST.ExprError annotation
 
-lowerBinder ∷ ∀ r e. RangeOf e ⇒ State r e → CST.Binder e → ST r SST.Binder
+lowerBinder ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Binder e → ST r SST.Binder
 lowerBinder state = runSTFn1 go
   where
   goRecordLabeled
@@ -490,7 +524,7 @@ lowerBinder state = runSTFn1 go
         insertError @"binder" state index error
         pure $ SST.BinderError annotation
 
-lowerType ∷ ∀ r e. RangeOf e ⇒ State r e → CST.Type e → ST r SST.Type
+lowerType ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.Type e → ST r SST.Type
 lowerType state = runSTFn1 go
   where
   goRowPair
@@ -591,7 +625,8 @@ data LetLoweringGroup r = LetLoweringGroup
 lowerLetBindings
   ∷ ∀ r e
   . RangeOf e
-  ⇒ State r e
+  ⇒ IntoLowerError e
+  ⇒ State r
   → NonEmptyArray (CST.LetBinding e)
   → ST r (NonEmptyArray SST.LetBinding)
 lowerLetBindings state cstLetBindings = do
@@ -692,13 +727,13 @@ lowerLetBindings state cstLetBindings = do
           letBindingSourceRange ∷ LetBindingSourceRange
           letBindingSourceRange = LetBindingErrorSourceRange sourceRange
         index ← nextIndex @"letBinding" state
-        let 
-          annotation :: SST.LetBindingAnnotation
+        let
+          annotation ∷ SST.LetBindingAnnotation
           annotation = SST.Annotation { index }
         insertSourceRange @"letBinding" state index letBindingSourceRange
         insertError @"letBinding" state index error
         let
-          letBinding :: SST.LetBinding
+          letBinding ∷ SST.LetBinding
           letBinding = SST.LetBindingError annotation
         void $ STA.push letBinding letBindingsRaw
 
@@ -706,7 +741,8 @@ lowerLetBindings state cstLetBindings = do
   letBindings ← STA.unsafeFreeze letBindingsRaw
   pure $ NonEmptyArray letBindings
 
-lowerDoStatement ∷ ∀ r e. RangeOf e ⇒ State r e → CST.DoStatement e → ST r SST.DoStatement
+lowerDoStatement
+  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.DoStatement e → ST r SST.DoStatement
 lowerDoStatement state = runSTFn1 go
   where
   go ∷ STFn1 (CST.DoStatement e) r SST.DoStatement
@@ -815,7 +851,8 @@ bySignatureName = case _, _ of
   _, _ →
     false
 
-lowerDataCtor ∷ ∀ r e. RangeOf e ⇒ State r e → CST.DataCtor e → ST r SST.DataConstructor
+lowerDataCtor
+  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CST.DataCtor e → ST r SST.DataConstructor
 lowerDataCtor state dataCtor = do
   index ← nextIndex @"constructor" state
   let
@@ -835,8 +872,9 @@ lowerTypeVarBindings_
   . Traversable t
   ⇒ RangeOf i
   ⇒ RangeOf e
+  ⇒ IntoLowerError e
   ⇒ (i → { visible ∷ Boolean, name ∷ CST.Ident })
-  → State r e
+  → State r
   → t (CST.TypeVarBinding i e)
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings_ un state = traverse \typeVarBinding → do
@@ -861,7 +899,8 @@ lowerTypeVarBindings
   ∷ ∀ t r e
   . Traversable t
   ⇒ RangeOf e
-  ⇒ State r e
+  ⇒ IntoLowerError e
+  ⇒ State r
   → t (CST.TypeVarBinding (CST.Name CST.Ident) e)
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings = lowerTypeVarBindings_ case _ of
@@ -871,7 +910,8 @@ lowerTypeVarBindingsPrefixed
   ∷ ∀ t r e
   . Traversable t
   ⇒ RangeOf e
-  ⇒ State r e
+  ⇒ IntoLowerError e
+  ⇒ State r
   → t (CST.TypeVarBinding (CST.Prefixed (CST.Name CST.Ident)) e)
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
@@ -880,7 +920,8 @@ lowerTypeVarBindingsPrefixed = lowerTypeVarBindings_ case _ of
 lowerDataEquation
   ∷ ∀ r e
   . RangeOf e
-  ⇒ State r e
+  ⇒ IntoLowerError e
+  ⇒ State r
   → CST.DataHead e
   → Maybe (Tuple CST.SourceToken (CST.Separated (CST.DataCtor e)))
   → ST r SST.DataEquation
@@ -894,7 +935,13 @@ lowerDataEquation state { vars } cstConstructors = do
   pure $ SST.DataEquation { variables, constructors }
 
 lowerTypeEquation
-  ∷ ∀ r e. RangeOf e ⇒ State r e → CST.DataHead e → CST.Type e → ST r SST.TypeEquation
+  ∷ ∀ r e
+  . RangeOf e
+  ⇒ IntoLowerError e
+  ⇒ State r
+  → CST.DataHead e
+  → CST.Type e
+  → ST r SST.TypeEquation
 lowerTypeEquation state { vars } cstType = do
   variables ← lowerTypeVarBindings state vars
   synonymTo ← lowerType state cstType
@@ -903,7 +950,8 @@ lowerTypeEquation state { vars } cstType = do
 lowerNewtypeEquation
   ∷ ∀ r e
   . RangeOf e
-  ⇒ State r e
+  ⇒ IntoLowerError e
+  ⇒ State r
   → CST.DataHead e
   → CST.Name CST.Proper
   → CST.Type e
@@ -935,7 +983,8 @@ lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
 type CSTClassMethod e =
   CST.Labeled (CST.Name CST.Ident) (CST.Type e)
 
-lowerClassMethod ∷ ∀ r e. RangeOf e ⇒ State r e → CSTClassMethod e → ST r SST.ClassMethod
+lowerClassMethod
+  ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ State r → CSTClassMethod e → ST r SST.ClassMethod
 lowerClassMethod state cstClassMethod = do
   index ← nextIndex @"classMethod" state
   let
@@ -956,7 +1005,8 @@ type CSTClassBody e =
 lowerClassBody
   ∷ ∀ r e
   . RangeOf e
-  ⇒ State r e
+  ⇒ IntoLowerError e
+  ⇒ State r
   → CST.ClassHead e
   → Maybe (CSTClassBody e)
   → ST r SST.ClassEquation
@@ -968,7 +1018,12 @@ lowerClassBody state { vars } classBody = do
   pure $ SST.ClassEquation { variables, methods }
 
 lowerDeclarations
-  ∷ ∀ r e. RangeOf e ⇒ State r e → Array (CST.Declaration e) → ST r (Array SST.Declaration)
+  ∷ ∀ r e
+  . RangeOf e
+  ⇒ IntoLowerError e
+  ⇒ State r
+  → Array (CST.Declaration e)
+  → ST r (Array SST.Declaration)
 lowerDeclarations state cstDeclarations = do
   declarationsRaw ← STA.new
 
@@ -1081,9 +1136,10 @@ lowerDeclarations state cstDeclarations = do
 type LowerResult =
   { surface ∷ SST.Module
   , sourceRanges ∷ SourceRanges
+  , errors ∷ LowerErrors
   }
 
-lowerModule ∷ ∀ r e. RangeOf e ⇒ CST.Module e → ST r LowerResult
+lowerModule ∷ ∀ r e. RangeOf e ⇒ IntoLowerError e ⇒ CST.Module e → ST r LowerResult
 lowerModule
   ( CST.Module
       { header: CST.ModuleHeader
@@ -1100,5 +1156,5 @@ lowerModule
     imports ← lowerImportDecls cstImports
     declarations ← lowerDeclarations state cstDeclarations
     pure $ SST.Module { name, exports, imports, declarations }
-  sourceRanges ← freezeState state
-  pure { surface, sourceRanges }
+  { sourceRanges, errors } ← freezeState state
+  pure { surface, sourceRanges, errors }
