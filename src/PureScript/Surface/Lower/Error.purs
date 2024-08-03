@@ -1,4 +1,4 @@
-module PureScript.Surface.Error where
+module PureScript.Surface.Lower.Error where
 
 import Prelude
 

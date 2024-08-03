@@ -4,7 +4,7 @@ import Prelude
 
 import Foreign.Object (Object)
 import PureScript.Interface.Types (Interface)
-import PureScript.Surface.Types as SST
+import PureScript.Surface.Syntax.Tree as SST
 
 data ScopeNode
   = RootScope

@@ -4,7 +4,7 @@ import Prelude
 
 import Foreign.Object (Object)
 import PureScript.CST.Types (Ident, Proper)
-import PureScript.Surface.Types as SST
+import PureScript.Surface.Syntax.Tree as SST
 
 newtype Interface = Interface
   { dataConstructors ∷ Object SST.ConstructorId

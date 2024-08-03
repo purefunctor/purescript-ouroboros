@@ -19,7 +19,7 @@ import PureScript.CST.Types as CST
 import PureScript.Id (Id(..), IdMap(..))
 import PureScript.Interface.Types as IFT
 import PureScript.Scope.Types (ScopeNode(..))
-import PureScript.Surface.Types as SST
+import PureScript.Surface.Syntax.Tree as SST
 import PureScript.Utils.Mutable.STIntMap (STIntMap)
 import PureScript.Utils.Mutable.STIntMap as STIntMap
 import Safe.Coerce (coerce)

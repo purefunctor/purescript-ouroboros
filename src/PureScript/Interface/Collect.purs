@@ -13,7 +13,7 @@ import Foreign.Object as Object
 import PureScript.CST.Types (Ident(..), Proper(..))
 import PureScript.Interface.Error (InterfaceError(..))
 import PureScript.Interface.Types (Exported(..), Interface(..))
-import PureScript.Surface.Types as SST
+import PureScript.Surface.Syntax.Tree as SST
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 import PureScript.Utils.Mutable.Object (MutableObject)

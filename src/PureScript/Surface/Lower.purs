@@ -2,7 +2,7 @@ module PureScript.Surface.Lower where
 
 import Prelude
 
-import Control.Monad.ST (Region, ST)
+import Control.Monad.ST (ST)
 import Control.Monad.ST.Internal (STRef)
 import Control.Monad.ST.Ref as STRef
 import Control.Monad.ST.Uncurried (STFn1, STFn2, mkSTFn1, mkSTFn2, runSTFn1, runSTFn2)
@@ -12,236 +12,23 @@ import Data.Array.NonEmpty.Internal (NonEmptyArray(..))
 import Data.Array.ST (STArray)
 import Data.Array.ST as STA
 import Data.Maybe (Maybe(..), isJust)
-import Data.Symbol (class IsSymbol)
 import Data.Traversable (class Traversable, for, for_, traverse)
 import Data.Tuple (Tuple(..))
 import Data.Tuple as Tuple
 import Partial.Unsafe (unsafeCrashWith)
-import Prim.Row as Row
-import PureScript.CST.Errors (RecoveredError)
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf)
 import PureScript.CST.Types as CST
-import PureScript.Id (Id(..), IdMap(..))
-import PureScript.Surface.Error (class IntoRecoveredError, intoRecoveredError)
-import PureScript.Surface.SourceRange (DeclarationSourceRange(..), LetBindingSourceRange(..))
-import PureScript.Surface.Types as SST
-import PureScript.Utils.Mutable.STIntMap (STIntMap)
-import PureScript.Utils.Mutable.STIntMap as STIntMap
-import Record as Record
-import Safe.Coerce (coerce)
-import Type.Proxy (Proxy(..))
-
-type FieldGroup ∷ (Type → Type → Type) → Row Type
-type FieldGroup f =
-  ( expr ∷ f SST.Expr CST.SourceRange
-  , binder ∷ f SST.Binder CST.SourceRange
-  , type ∷ f SST.Type CST.SourceRange
-  , doStatement ∷ f SST.DoStatement CST.SourceRange
-  , letBinding ∷ f SST.LetBinding LetBindingSourceRange
-  , declaration ∷ f SST.Declaration DeclarationSourceRange
-  , constructor ∷ f SST.DataConstructor CST.SourceRange
-  , newtype ∷ f SST.NewtypeConstructor CST.SourceRange
-  , classMethod ∷ f SST.ClassMethod CST.SourceRange
-  , typeVarBinding ∷ f SST.TypeVarBinding CST.SourceRange
+import PureScript.Surface.Lower.Error (class IntoRecoveredError)
+import PureScript.Surface.Lower.State (State)
+import PureScript.Surface.Lower.State as State
+import PureScript.Surface.Lower.Types
+  ( DeclarationSourceRange(..)
+  , LetBindingSourceRange(..)
+  , RecoveredErrors
+  , SourceRanges
   )
-
-type ErrorFieldGroup ∷ (Type → Type) → Row Type
-type ErrorFieldGroup f =
-  ( expr ∷ f SST.Expr
-  , binder ∷ f SST.Binder
-  , type ∷ f SST.Type
-  , doStatement ∷ f SST.DoStatement
-  , letBinding ∷ f SST.LetBinding
-  , declaration ∷ f SST.Declaration
-  )
-
-type MakeIndexState ∷ Region → Type → Type → Type
-type MakeIndexState r t s = STRef r Int
-
-type MakeSourceRangeState ∷ Region → Type → Type → Type
-type MakeSourceRangeState r t s = STIntMap r s
-
-type MakeSourceRangeFrozen ∷ Type → Type → Type
-type MakeSourceRangeFrozen t s = IdMap t s
-
-type MakeRecoveredErrorState ∷ Region → Type → Type
-type MakeRecoveredErrorState r t = STIntMap r RecoveredError
-
-type MakeRecoveredErrorFrozen ∷ Type → Type
-type MakeRecoveredErrorFrozen t = IdMap t RecoveredError
-
-type IndexStateFields r = FieldGroup (MakeIndexState r)
-
-type SourceRangeStateFields r = FieldGroup (MakeSourceRangeState r)
-
-type RecoveredErrorStateFields r = ErrorFieldGroup (MakeRecoveredErrorState r)
-
-type StateFields r =
-  ( ids ∷ { | IndexStateFields r }
-  , sourceRanges ∷ { | SourceRangeStateFields r }
-  , errors ∷ { | RecoveredErrorStateFields r }
-  )
-
-newtype State r = State { | StateFields r }
-
-newtype SourceRanges = SourceRanges { | FieldGroup MakeSourceRangeFrozen }
-
-derive newtype instance Eq SourceRanges
-
-newtype RecoveredErrors = RecoveredErrors { | ErrorFieldGroup MakeRecoveredErrorFrozen }
-
-derive newtype instance Eq RecoveredErrors
-
-defaultState ∷ ∀ r. ST r (State r)
-defaultState = do
-  ids ← do
-    expr ← STRef.new 0
-    binder ← STRef.new 0
-    type_ ← STRef.new 0
-    doStatement ← STRef.new 0
-    letBinding ← STRef.new 0
-    declaration ← STRef.new 0
-    constructor ← STRef.new 0
-    newtype_ ← STRef.new 0
-    classMethod ← STRef.new 0
-    typeVarBinding ← STRef.new 0
-    pure
-      { expr
-      , binder
-      , type: type_
-      , doStatement
-      , letBinding
-      , declaration
-      , constructor
-      , newtype: newtype_
-      , classMethod
-      , typeVarBinding
-      }
-  sourceRanges ← do
-    expr ← STIntMap.empty
-    binder ← STIntMap.empty
-    type_ ← STIntMap.empty
-    doStatement ← STIntMap.empty
-    letBinding ← STIntMap.empty
-    declaration ← STIntMap.empty
-    constructor ← STIntMap.empty
-    newtype_ ← STIntMap.empty
-    classMethod ← STIntMap.empty
-    typeVarBinding ← STIntMap.empty
-    pure
-      { expr
-      , binder
-      , type: type_
-      , doStatement
-      , letBinding
-      , declaration
-      , constructor
-      , newtype: newtype_
-      , classMethod
-      , typeVarBinding
-      }
-  errors ← do
-    expr ← STIntMap.empty
-    binder ← STIntMap.empty
-    type_ ← STIntMap.empty
-    doStatement ← STIntMap.empty
-    letBinding ← STIntMap.empty
-    declaration ← STIntMap.empty
-    pure
-      { expr
-      , binder
-      , type: type_
-      , doStatement
-      , letBinding
-      , declaration
-      }
-  pure $ State { ids, sourceRanges, errors }
-
-freezeState ∷ ∀ r. State r → ST r { sourceRanges ∷ SourceRanges, errors ∷ RecoveredErrors }
-freezeState (State { sourceRanges, errors }) = do
-  sourceRanges' ← do
-    expr ← STIntMap.freeze sourceRanges.expr
-    binder ← STIntMap.freeze sourceRanges.binder
-    type_ ← STIntMap.freeze sourceRanges."type"
-    doStatement ← STIntMap.freeze sourceRanges.doStatement
-    letBinding ← STIntMap.freeze sourceRanges.letBinding
-    declaration ← STIntMap.freeze sourceRanges.declaration
-    constructor ← STIntMap.freeze sourceRanges.constructor
-    newtype_ ← STIntMap.freeze sourceRanges."newtype"
-    classMethod ← STIntMap.freeze sourceRanges.classMethod
-    typeVarBinding ← STIntMap.freeze sourceRanges.typeVarBinding
-    pure $ SourceRanges $ coerce
-      { expr
-      , binder
-      , type: type_
-      , doStatement
-      , letBinding
-      , declaration
-      , constructor
-      , newtype: newtype_
-      , classMethod
-      , typeVarBinding
-      }
-  errors' ← do
-    expr ← STIntMap.freeze errors.expr
-    binder ← STIntMap.freeze errors.binder
-    type_ ← STIntMap.freeze errors."type"
-    doStatement ← STIntMap.freeze errors.doStatement
-    letBinding ← STIntMap.freeze errors.letBinding
-    declaration ← STIntMap.freeze errors.declaration
-    pure $ RecoveredErrors $ coerce
-      { expr
-      , binder
-      , type: type_
-      , doStatement
-      , letBinding
-      , declaration
-      }
-  pure $ { sourceRanges: sourceRanges', errors: errors' }
-
-nextId
-  ∷ ∀ @n r t _t
-  . IsSymbol n
-  ⇒ Row.Cons n (STRef r Int) _t (IndexStateFields r)
-  ⇒ State r
-  → ST r (Id t)
-nextId (State { ids }) = do
-  let
-    ref ∷ STRef r Int
-    ref = Record.get (Proxy ∷ _ n) ids
-  id ← STRef.read ref
-  void $ STRef.modify (_ + 1) ref
-  pure $ Id id
-
-insertSourceRange
-  ∷ ∀ @n r s t _t
-  . IsSymbol n
-  ⇒ Row.Cons n (STIntMap r s) _t (SourceRangeStateFields r)
-  ⇒ State r
-  → Id t
-  → s
-  → ST r Unit
-insertSourceRange (State { sourceRanges }) index sourceRange = do
-  let
-    ref ∷ STIntMap r s
-    ref = Record.get (Proxy ∷ _ n) sourceRanges
-  STIntMap.set (coerce index) sourceRange ref
-
-insertError
-  ∷ ∀ @n r e t _t
-  . IsSymbol n
-  ⇒ Row.Cons n (STIntMap r RecoveredError) _t (RecoveredErrorStateFields r)
-  ⇒ IntoRecoveredError e
-  ⇒ State r
-  → Id t
-  → e
-  → ST r Unit
-insertError (State { errors }) index error = do
-  let
-    ref ∷ STIntMap r RecoveredError
-    ref = Record.get (Proxy ∷ _ n) errors
-  STIntMap.set (coerce index) (intoRecoveredError error) ref
+import PureScript.Surface.Syntax.Tree as SST
 
 unName ∷ ∀ a. CST.Name a → a
 unName (CST.Name { name }) = name
@@ -343,11 +130,11 @@ lowerExpr state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf e
-    id ← nextId @"expr" state
+    id ← State.nextId @"expr" state
     let
       annotation ∷ SST.ExprAnnotation
       annotation = SST.Annotation { id }
-    insertSourceRange @"expr" state id range
+    State.insertSourceRange @"expr" state id range
     case e of
       CST.ExprHole (CST.Name { name }) → do
         pure $ SST.ExprHole annotation name
@@ -447,7 +234,7 @@ lowerExpr state = runSTFn1 go
           go
           cstResult
       CST.ExprError error → do
-        insertError @"expr" state id error
+        State.insertError @"expr" state id error
         pure $ SST.ExprError annotation
 
 lowerBinder ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Binder e → ST r SST.Binder
@@ -471,11 +258,11 @@ lowerBinder state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf b
-    id ← nextId @"binder" state
+    id ← State.nextId @"binder" state
     let
       annotation ∷ SST.BinderAnnotation
       annotation = SST.Annotation { id }
-    insertSourceRange @"binder" state id range
+    State.insertSourceRange @"binder" state id range
     case b of
       CST.BinderWildcard _ →
         pure $ SST.BinderWildcard annotation
@@ -522,7 +309,7 @@ lowerBinder state = runSTFn1 go
           <$> runSTFn1 go cstHead
           <*> traverse (runSTFn2 goChain goOperator) cstChain
       CST.BinderError error → do
-        insertError @"binder" state id error
+        State.insertError @"binder" state id error
         pure $ SST.BinderError annotation
 
 lowerType ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Type e → ST r SST.Type
@@ -562,11 +349,11 @@ lowerType state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf t
-    id ← nextId @"type" state
+    id ← State.nextId @"type" state
     let
       annotation ∷ SST.TypeAnnotation
       annotation = SST.Annotation { id }
-    insertSourceRange @"type" state id range
+    State.insertSourceRange @"type" state id range
     case t of
       CST.TypeVar (CST.Name { name }) →
         pure $ SST.TypeVar annotation name
@@ -615,7 +402,7 @@ lowerType state = runSTFn1 go
       CST.TypeParens (CST.Wrapped { value }) →
         SST.TypeParens annotation <$> runSTFn1 go value
       CST.TypeError error → do
-        insertError @"type" state id error
+        State.insertError @"type" state id error
         pure $ SST.TypeError annotation
 
 data LetLoweringGroup r = LetLoweringGroup
@@ -648,11 +435,11 @@ lowerLetBindings state cstLetBindings = do
               { signature: signature <#> _.sourceRange
               , definitions: values <#> _.sourceRange
               }
-          id ← nextId @"letBinding" state
+          id ← State.nextId @"letBinding" state
           let
             annotation ∷ SST.LetBindingAnnotation
             annotation = SST.Annotation { id }
-          insertSourceRange @"letBinding" state id letBindingSourceRange
+          State.insertSourceRange @"letBinding" state id letBindingSourceRange
           let
             letBinding ∷ SST.LetBinding
             letBinding =
@@ -711,11 +498,11 @@ lowerLetBindings state cstLetBindings = do
         let
           letBindingSourceRange ∷ LetBindingSourceRange
           letBindingSourceRange = LetBindingPatternSourceRange sourceRange
-        id ← nextId @"letBinding" state
+        id ← State.nextId @"letBinding" state
         let
           annotation ∷ SST.LetBindingAnnotation
           annotation = SST.Annotation { id }
-        insertSourceRange @"letBinding" state id letBindingSourceRange
+        State.insertSourceRange @"letBinding" state id letBindingSourceRange
         sstBinder ← lowerBinder state cstBinder
         sstWhere ← lowerWhere state cstWhere
         let
@@ -727,12 +514,12 @@ lowerLetBindings state cstLetBindings = do
         let
           letBindingSourceRange ∷ LetBindingSourceRange
           letBindingSourceRange = LetBindingErrorSourceRange sourceRange
-        id ← nextId @"letBinding" state
+        id ← State.nextId @"letBinding" state
         let
           annotation ∷ SST.LetBindingAnnotation
           annotation = SST.Annotation { id }
-        insertSourceRange @"letBinding" state id letBindingSourceRange
-        insertError @"letBinding" state id error
+        State.insertSourceRange @"letBinding" state id letBindingSourceRange
+        State.insertError @"letBinding" state id error
         let
           letBinding ∷ SST.LetBinding
           letBinding = SST.LetBindingError annotation
@@ -751,11 +538,11 @@ lowerDoStatement state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf d
-    id ← nextId @"doStatement" state
+    id ← State.nextId @"doStatement" state
     let
       annotation ∷ SST.DoStatementAnnotation
       annotation = SST.Annotation { id }
-    insertSourceRange @"doStatement" state id range
+    State.insertSourceRange @"doStatement" state id range
     case d of
       CST.DoLet _ cstLetBindings → do
         SST.DoLet annotation <$> lowerLetBindings state cstLetBindings
@@ -764,7 +551,7 @@ lowerDoStatement state = runSTFn1 go
       CST.DoBind cstBinder _ cstExpr → do
         SST.DoBind annotation <$> lowerBinder state cstBinder <*> lowerExpr state cstExpr
       CST.DoError error → do
-        insertError @"doStatement" state id error
+        State.insertError @"doStatement" state id error
         pure $ SST.DoError annotation
 
 lowerDataMembers ∷ Maybe CST.DataMembers → Maybe SST.DataMembers
@@ -855,11 +642,11 @@ bySignatureName = case _, _ of
 lowerDataCtor
   ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.DataCtor e → ST r SST.DataConstructor
 lowerDataCtor state dataCtor = do
-  id ← nextId @"constructor" state
+  id ← State.nextId @"constructor" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf dataCtor
-  insertSourceRange @"constructor" state id sourceRange
+  State.insertSourceRange @"constructor" state id sourceRange
   let
     annotation ∷ SST.ConstructorAnnotation
     annotation = SST.Annotation { id }
@@ -879,11 +666,11 @@ lowerTypeVarBindings_
   → t (CST.TypeVarBinding i e)
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings_ un state = traverse \typeVarBinding → do
-  id ← nextId @"typeVarBinding" state
+  id ← State.nextId @"typeVarBinding" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf typeVarBinding
-  insertSourceRange @"typeVarBinding" state id sourceRange
+  State.insertSourceRange @"typeVarBinding" state id sourceRange
   let
     annotation ∷ SST.TypeVarBindingAnnotation
     annotation = SST.Annotation { id }
@@ -958,14 +745,14 @@ lowerNewtypeEquation
   → CST.Type e
   → ST r SST.NewtypeEquation
 lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
-  id ← nextId @"newtype" state
+  id ← State.nextId @"newtype" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange =
       { start: rangeOf cstName # _.start
       , end: rangeOf cstField # _.end
       }
-  insertSourceRange @"newtype" state id sourceRange
+  State.insertSourceRange @"newtype" state id sourceRange
   variables ← lowerTypeVarBindings state vars
   let
     annotation ∷ SST.NewtypeAnnotation
@@ -986,11 +773,11 @@ type CSTClassMethod e =
 lowerClassMethod
   ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CSTClassMethod e → ST r SST.ClassMethod
 lowerClassMethod state cstClassMethod = do
-  id ← nextId @"classMethod" state
+  id ← State.nextId @"classMethod" state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf cstClassMethod
-  insertSourceRange @"classMethod" state id sourceRange
+  State.insertSourceRange @"classMethod" state id sourceRange
   let
     annotation ∷ SST.ClassMethodAnnotation
     annotation = SST.Annotation { id }
@@ -1033,14 +820,14 @@ lowerDeclarations state cstDeclarations = do
 
     onTypeGroup ∷ CST.Proper → _ → _ → ST r Unit
     onTypeGroup cstName cstSignature cstDeclaration = do
-      id ← nextId @"declaration" state
+      id ← State.nextId @"declaration" state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
           , definitions: cstDeclaration <#> rangeOf
           }
-      insertSourceRange @"declaration" state id declarationSourceRange
+      State.insertSourceRange @"declaration" state id declarationSourceRange
 
       signature ← for cstSignature case _ of
         CST.DeclKindSignature _ (CST.Labeled { value: cstType }) →
@@ -1072,14 +859,14 @@ lowerDeclarations state cstDeclarations = do
 
     onDeclValueGroup ∷ CST.Ident → _ → _ → ST r Unit
     onDeclValueGroup cstName cstSignature cstValues = do
-      id ← nextId @"declaration" state
+      id ← State.nextId @"declaration" state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
           , definitions: cstValues <#> rangeOf
           }
-      insertSourceRange @"declaration" state id declarationSourceRange
+      State.insertSourceRange @"declaration" state id declarationSourceRange
 
       signature ← for cstSignature case _ of
         CST.DeclSignature (CST.Labeled { value: cstType }) →
@@ -1122,22 +909,16 @@ lowerDeclarations state cstDeclarations = do
         CST.DeclValue { name: CST.Name { name } } →
           onDeclValueGroup name Nothing (NEA.toArray signatureNameGroup)
         CST.DeclError error → do
-          id ← nextId @"declaration" state
+          id ← State.nextId @"declaration" state
           let
             declarationSourceRange ∷ DeclarationSourceRange
             declarationSourceRange = DeclarationErrorSourceRange $ rangeOf head
-          insertSourceRange @"declaration" state id declarationSourceRange
-          insertError @"declaration" state id error
+          State.insertSourceRange @"declaration" state id declarationSourceRange
+          State.insertError @"declaration" state id error
         _ →
           pure unit
 
   STA.freeze declarationsRaw
-
-type Result =
-  { surface ∷ SST.Module
-  , sourceRanges ∷ SourceRanges
-  , errors ∷ RecoveredErrors
-  }
 
 lowerModule ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ CST.Module e → ST r Result
 lowerModule
@@ -1150,11 +931,17 @@ lowerModule
       , body: CST.ModuleBody { decls: cstDeclarations }
       }
   ) = do
-  state ← defaultState
+  state ← State.empty
   surface ← do
     exports ← lowerExports cstExports
     imports ← lowerImportDecls cstImports
     declarations ← lowerDeclarations state cstDeclarations
     pure $ SST.Module { name, exports, imports, declarations }
-  { sourceRanges, errors } ← freezeState state
-  pure { surface, sourceRanges, errors }
+  { sourceRanges, recoveredErrors } ← State.freeze state
+  pure { surface, sourceRanges, recoveredErrors }
+
+type Result =
+  { surface ∷ SST.Module
+  , sourceRanges ∷ SourceRanges
+  , recoveredErrors ∷ RecoveredErrors
+  }

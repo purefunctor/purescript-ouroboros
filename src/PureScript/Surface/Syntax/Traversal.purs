@@ -1,11 +1,11 @@
-module PureScript.Surface.Traversal where
+module PureScript.Surface.Syntax.Traversal where
 
 import Prelude
 import Prim hiding (Row, Type)
 
 import Data.Traversable (traverse)
 import Data.Tuple (Tuple(..))
-import PureScript.Surface.Types
+import PureScript.Surface.Syntax.Tree
   ( AppSpine(..)
   , Binder(..)
   , ClassEquation(..)

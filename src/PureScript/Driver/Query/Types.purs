@@ -13,7 +13,7 @@ import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Scope.Collect as ScopeCollect
 import PureScript.Surface.Lower as SurfaceLower
-import PureScript.Surface.Types (Module)
+import PureScript.Surface.Syntax.Tree (Module)
 import Type.Proxy (Proxy(..))
 
 type Queries ∷ ∀ k. (Type → Type → k) → (Type → Type → k) → Row k

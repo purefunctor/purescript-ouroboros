@@ -1,4 +1,4 @@
-module PureScript.Surface.Types where
+module PureScript.Surface.Syntax.Tree where
 
 import Prelude
 import Prim hiding (Row, Type)

@@ -63,7 +63,7 @@ import PureScript.Driver.Query.Types (class GetQueryTag, Queries, QueryTag(..), 
 import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Scope.Collect as ScopeCollect
 import PureScript.Surface.Lower as SurfaceLower
-import PureScript.Surface.Types (Module)
+import PureScript.Surface.Syntax.Tree (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 import Record as Record
