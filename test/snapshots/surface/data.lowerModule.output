@@ -59,17 +59,18 @@
     ]
   },
   sourceRanges: {
-    exprSourceRange: [],
-    binderSourceRange: [],
-    typeSourceRange: [
+    expr: [],
+    binder: [],
+    type: [
       { start: { line: 2, column: 13 }, end: { line: 2, column: 17 } },
       { start: { line: 5, column: 14 }, end: { line: 5, column: 26 } },
       { start: { line: 5, column: 14 }, end: { line: 5, column: 18 } },
       { start: { line: 5, column: 22 }, end: { line: 5, column: 26 } },
       { start: { line: 6, column: 20 }, end: { line: 6, column: 21 } }
     ],
-    letBindingSourceRange: [],
-    declarationSourceRange: [
+    doStatement: [],
+    letBinding: [],
+    declaration: [
       DeclarationValueSourceRange {
         value0: {
           signature: Just {
@@ -103,18 +104,14 @@
         }
       }
     ],
-    constructorSourceRange: [
+    constructor: [
       { start: { line: 3, column: 12 }, end: { line: 3, column: 16 } },
       { start: { line: 6, column: 15 }, end: { line: 6, column: 21 } },
       { start: { line: 6, column: 24 }, end: { line: 6, column: 31 } }
     ],
-    newtypeSourceRange: [
-      { start: { line: 3, column: 12 }, end: { line: 3, column: 16 } },
-      { start: { line: 6, column: 15 }, end: { line: 6, column: 21 } },
-      { start: { line: 6, column: 24 }, end: { line: 6, column: 31 } }
-    ],
-    classMethodSourceRange: [],
-    typeVarBindingSourceRange: [
+    newtype: [],
+    classMethod: [],
+    typeVarBinding: [
       { start: { line: 6, column: 11 }, end: { line: 6, column: 12 } }
     ]
   }

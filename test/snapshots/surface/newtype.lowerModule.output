@@ -60,17 +60,18 @@
     ]
   },
   sourceRanges: {
-    exprSourceRange: [],
-    binderSourceRange: [],
-    typeSourceRange: [
+    expr: [],
+    binder: [],
+    type: [
       { start: { line: 2, column: 19 }, end: { line: 2, column: 31 } },
       { start: { line: 2, column: 19 }, end: { line: 2, column: 23 } },
       { start: { line: 2, column: 27 }, end: { line: 2, column: 31 } },
       { start: { line: 3, column: 28 }, end: { line: 3, column: 31 } },
       { start: { line: 5, column: 30 }, end: { line: 5, column: 31 } }
     ],
-    letBindingSourceRange: [],
-    declarationSourceRange: [
+    doStatement: [],
+    letBinding: [],
+    declaration: [
       DeclarationValueSourceRange {
         value0: {
           signature: Just {
@@ -99,10 +100,13 @@
         }
       }
     ],
-    constructorSourceRange: [],
-    newtypeSourceRange: [],
-    classMethodSourceRange: [],
-    typeVarBindingSourceRange: [
+    constructor: [],
+    newtype: [
+      { start: { line: 3, column: 20 }, end: { line: 3, column: 31 } },
+      { start: { line: 5, column: 21 }, end: { line: 5, column: 31 } }
+    ],
+    classMethod: [],
+    typeVarBinding: [
       { start: { line: 3, column: 16 }, end: { line: 3, column: 17 } },
       { start: { line: 5, column: 17 }, end: { line: 5, column: 18 } }
     ]

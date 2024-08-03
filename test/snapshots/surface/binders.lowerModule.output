@@ -305,7 +305,7 @@
     ]
   },
   sourceRanges: {
-    exprSourceRange: [
+    expr: [
       { start: { line: 2, column: 6 }, end: { line: 2, column: 7 } },
       { start: { line: 3, column: 8 }, end: { line: 3, column: 9 } },
       { start: { line: 4, column: 16 }, end: { line: 4, column: 17 } },
@@ -336,7 +336,7 @@
         end: { line: 18, column: 21 }
       }
     ],
-    binderSourceRange: [
+    binder: [
       { start: { line: 2, column: 2 }, end: { line: 2, column: 3 } },
       { start: { line: 3, column: 2 }, end: { line: 3, column: 5 } },
       { start: { line: 4, column: 2 }, end: { line: 4, column: 13 } },
@@ -372,11 +372,12 @@
         end: { line: 18, column: 16 }
       }
     ],
-    typeSourceRange: [
+    type: [
       { start: { line: 17, column: 8 }, end: { line: 17, column: 9 } }
     ],
-    letBindingSourceRange: [],
-    declarationSourceRange: [
+    doStatement: [],
+    letBinding: [],
+    declaration: [
       DeclarationValueSourceRange {
         value0: {
           signature: Nothing {},
@@ -453,9 +454,9 @@
         }
       }
     ],
-    constructorSourceRange: [],
-    newtypeSourceRange: [],
-    classMethodSourceRange: [],
-    typeVarBindingSourceRange: []
+    constructor: [],
+    newtype: [],
+    classMethod: [],
+    typeVarBinding: []
   }
 }

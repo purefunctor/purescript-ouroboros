@@ -745,14 +745,16 @@
                   value0: { index: 62 },
                   value1: [
                     DoBind {
-                      value0: BinderVar { value0: { index: 4 }, value1: 'a' },
-                      value1: ExprIdent {
+                      value0: { index: 0 },
+                      value1: BinderVar { value0: { index: 4 }, value1: 'a' },
+                      value2: ExprIdent {
                         value0: { index: 63 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     },
                     DoLet {
-                      value0: [
+                      value0: { index: 1 },
+                      value1: [
                         LetBindingValue {
                           value0: { index: 3 },
                           value1: 'c',
@@ -778,7 +780,8 @@
                       ]
                     },
                     DoDiscard {
-                      value0: ExprIdent {
+                      value0: { index: 2 },
+                      value1: ExprIdent {
                         value0: { index: 65 },
                         value1: { moduleName: Nothing {}, name: 'e' }
                       }
@@ -804,14 +807,16 @@
                   value0: { index: 66 },
                   value1: [
                     DoBind {
-                      value0: BinderVar { value0: { index: 5 }, value1: 'a' },
-                      value1: ExprIdent {
+                      value0: { index: 3 },
+                      value1: BinderVar { value0: { index: 5 }, value1: 'a' },
+                      value2: ExprIdent {
                         value0: { index: 67 },
                         value1: { moduleName: Nothing {}, name: 'b' }
                       }
                     },
                     DoLet {
-                      value0: [
+                      value0: { index: 4 },
+                      value1: [
                         LetBindingValue {
                           value0: { index: 4 },
                           value1: 'c',
@@ -851,7 +856,7 @@
     ]
   },
   sourceRanges: {
-    exprSourceRange: [
+    expr: [
       { start: { line: 2, column: 7 }, end: { line: 2, column: 12 } },
       { start: { line: 3, column: 10 }, end: { line: 3, column: 11 } },
       { start: { line: 4, column: 8 }, end: { line: 4, column: 13 } },
@@ -1028,7 +1033,7 @@
       },
       { start: { line: 44, column: 5 }, end: { line: 44, column: 6 } }
     ],
-    binderSourceRange: [
+    binder: [
       {
         start: { line: 25, column: 10 },
         end: { line: 25, column: 11 }
@@ -1039,13 +1044,20 @@
       { start: { line: 38, column: 2 }, end: { line: 38, column: 3 } },
       { start: { line: 42, column: 2 }, end: { line: 42, column: 3 } }
     ],
-    typeSourceRange: [
+    type: [
       {
         start: { line: 17, column: 14 },
         end: { line: 17, column: 15 }
       }
     ],
-    letBindingSourceRange: [
+    doStatement: [
+      { start: { line: 38, column: 2 }, end: { line: 38, column: 8 } },
+      { start: { line: 39, column: 2 }, end: { line: 39, column: 11 } },
+      { start: { line: 40, column: 2 }, end: { line: 40, column: 3 } },
+      { start: { line: 42, column: 2 }, end: { line: 42, column: 8 } },
+      { start: { line: 43, column: 2 }, end: { line: 43, column: 11 } }
+    ],
+    letBinding: [
       LetBindingNameSourceRange {
         value0: {
           signature: Nothing {},
@@ -1097,7 +1109,7 @@
         }
       }
     ],
-    declarationSourceRange: [
+    declaration: [
       DeclarationValueSourceRange {
         value0: {
           signature: Nothing {},
@@ -1418,9 +1430,9 @@
         }
       }
     ],
-    constructorSourceRange: [],
-    newtypeSourceRange: [],
-    classMethodSourceRange: [],
-    typeVarBindingSourceRange: []
+    constructor: [],
+    newtype: [],
+    classMethod: [],
+    typeVarBinding: []
   }
 }
