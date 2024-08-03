@@ -23,6 +23,7 @@ import Test.PureScript.Graph as TestGraph
 import Test.PureScript.Query as TestQuery
 import Test.PureScript.Scope as TestScope
 import Test.PureScript.Surface as TestSurface
+import Test.PureScript.Utils as TestUtils
 import Test.Snapshot (Options(..), runSnapshotSpec)
 
 optionsParser ∷ ArgParser Options
@@ -51,3 +52,4 @@ main = launchAff_ do
         TestGraph.spec
         TestScope.spec
         TestSurface.spec
+        TestUtils.spec
