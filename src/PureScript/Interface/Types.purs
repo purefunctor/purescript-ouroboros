@@ -2,7 +2,9 @@ module PureScript.Interface.Types where
 
 import Prelude
 
+import Data.Maybe (Maybe)
 import Foreign.Object (Object)
+import Foreign.Object as Object
 import PureScript.CST.Types (Ident, Proper)
 import PureScript.Surface.Syntax.Tree as SST
 
@@ -17,6 +19,12 @@ newtype Interface = Interface
   }
 
 derive instance Eq Interface
+
+lookupClassMethod ∷ String → Interface → Maybe SST.ClassMethodId
+lookupClassMethod name (Interface { classMethods }) = Object.lookup name classMethods
+
+lookupValue ∷ String → Interface → Maybe SST.DeclarationId
+lookupValue name (Interface { values }) = Object.lookup name values
 
 newtype Exported = Exported
   { dataConstructors ∷ Object Unit
