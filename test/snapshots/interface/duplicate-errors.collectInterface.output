@@ -1,0 +1,41 @@
+{
+  interface: {
+    constructors: {
+      A: {
+        kind: ExportKindOpen {},
+        id: ConstructorKindData { value0: 'A', value1: 0 }
+      }
+    },
+    types: {
+      A: { kind: ExportKindOpen {}, id: TypeKindSynoynm { value0: 0 } }
+    },
+    values: {
+      a: {
+        kind: ExportKindOpen {},
+        id: ValueKindMethod { value0: 'A', value1: 0 }
+      }
+    }
+  },
+  errors: [
+    DuplicateType {
+      value0: TypeKindData { value0: 1 },
+      value1: TypeKindSynoynm { value0: 0 }
+    },
+    DuplicateType {
+      value0: TypeKindNewtype { value0: 2 },
+      value1: TypeKindSynoynm { value0: 0 }
+    },
+    DuplicateConstructor {
+      value0: ConstructorKindNewtype { value0: 'A', value1: 0 },
+      value1: ConstructorKindData { value0: 'A', value1: 0 }
+    },
+    DuplicateType {
+      value0: TypeKindClass { value0: 3 },
+      value1: TypeKindSynoynm { value0: 0 }
+    },
+    DuplicateValue {
+      value0: ValueKindValue { value0: 4 },
+      value1: ValueKindMethod { value0: 'A', value1: 0 }
+    }
+  ]
+}

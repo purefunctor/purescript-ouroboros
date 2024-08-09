@@ -1,19 +1,18 @@
 {
   interface: {
-    dataConstructors: {},
-    newtypeConstructors: { A: 0 },
-    classMethods: {},
-    types: { A: 0 },
-    values: {},
-    constructorsOfData: { A: [ 'A' ] },
-    methodsOfClass: {}
-  },
-  exported: {
-    dataConstructors: {},
-    newtypeConstructors: {},
-    classMethods: {},
-    types: { A: undefined },
+    constructors: {
+      A: {
+        kind: ExportKindHidden {},
+        id: ConstructorKindNewtype { value0: 'A', value1: 0 }
+      }
+    },
+    types: {
+      A: {
+        kind: ExportKindExported {},
+        id: TypeKindNewtype { value0: 0 }
+      }
+    },
     values: {}
   },
-  errors: [ MissingMember { value0: 'B' } ]
+  errors: [ MissingConstructor { value0: 'B' } ]
 }

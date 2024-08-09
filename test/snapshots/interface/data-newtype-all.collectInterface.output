@@ -1,18 +1,22 @@
 {
   interface: {
-    dataConstructors: { A: 0 },
-    newtypeConstructors: { B: 0 },
-    classMethods: {},
-    types: { A: 0, B: 1 },
-    values: {},
-    constructorsOfData: { A: [ 'A' ], B: [ 'B' ] },
-    methodsOfClass: {}
-  },
-  exported: {
-    dataConstructors: { A: undefined },
-    newtypeConstructors: { B: undefined },
-    classMethods: {},
-    types: { A: undefined, B: undefined },
+    constructors: {
+      A: {
+        kind: ExportKindExported {},
+        id: ConstructorKindData { value0: 'A', value1: 0 }
+      },
+      B: {
+        kind: ExportKindExported {},
+        id: ConstructorKindNewtype { value0: 'B', value1: 0 }
+      }
+    },
+    types: {
+      A: { kind: ExportKindExported {}, id: TypeKindData { value0: 0 } },
+      B: {
+        kind: ExportKindExported {},
+        id: TypeKindNewtype { value0: 1 }
+      }
+    },
     values: {}
   },
   errors: []

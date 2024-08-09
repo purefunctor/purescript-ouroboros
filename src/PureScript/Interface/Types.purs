@@ -2,36 +2,51 @@ module PureScript.Interface.Types where
 
 import Prelude
 
-import Data.Maybe (Maybe)
 import Foreign.Object (Object)
-import Foreign.Object as Object
-import PureScript.CST.Types (Ident, Proper)
+import PureScript.CST.Types (Proper)
 import PureScript.Surface.Syntax.Tree as SST
 
+data ExportKind
+  = ExportKindOpen
+  | ExportKindExported
+  | ExportKindHidden
+
+derive instance Eq ExportKind
+derive instance Ord ExportKind
+
+newtype Export id = Export { kind ∷ ExportKind, id ∷ id }
+
+derive newtype instance Eq id ⇒ Eq (Export id)
+derive newtype instance Ord id ⇒ Ord (Export id)
+
+data ConstructorKind
+  = ConstructorKindData Proper SST.ConstructorId
+  | ConstructorKindNewtype Proper SST.NewtypeId
+
+derive instance Eq ConstructorKind
+derive instance Ord ConstructorKind
+
+data TypeKind
+  = TypeKindData SST.DeclarationId
+  | TypeKindSynoynm SST.DeclarationId
+  | TypeKindNewtype SST.DeclarationId
+  | TypeKindClass SST.DeclarationId
+
+derive instance Eq TypeKind
+derive instance Ord TypeKind
+
+data ValueKind
+  = ValueKindValue SST.DeclarationId
+  | ValueKindMethod Proper SST.ClassMethodId
+
+derive instance Eq ValueKind
+derive instance Ord ValueKind
+
 newtype Interface = Interface
-  { dataConstructors ∷ Object SST.ConstructorId
-  , newtypeConstructors ∷ Object SST.NewtypeId
-  , classMethods ∷ Object SST.ClassMethodId
-  , types ∷ Object SST.DeclarationId
-  , values ∷ Object SST.DeclarationId
-  , constructorsOfData ∷ Object (Array Proper)
-  , methodsOfClass ∷ Object (Array Ident)
+  { constructors ∷ Object (Export ConstructorKind)
+  , types ∷ Object (Export TypeKind)
+  , values ∷ Object (Export ValueKind)
   }
 
 derive instance Eq Interface
-
-lookupClassMethod ∷ String → Interface → Maybe SST.ClassMethodId
-lookupClassMethod name (Interface { classMethods }) = Object.lookup name classMethods
-
-lookupValue ∷ String → Interface → Maybe SST.DeclarationId
-lookupValue name (Interface { values }) = Object.lookup name values
-
-newtype Exported = Exported
-  { dataConstructors ∷ Object Unit
-  , newtypeConstructors ∷ Object Unit
-  , classMethods ∷ Object Unit
-  , types ∷ Object Unit
-  , values ∷ Object Unit
-  }
-
-derive instance Eq Exported
+derive instance Ord Interface

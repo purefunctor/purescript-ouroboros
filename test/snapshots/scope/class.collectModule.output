@@ -5,50 +5,65 @@
     0 => TopLevel {
       value0: RootScope {},
       value1: {
-        dataConstructors: {},
-        newtypeConstructors: {},
-        classMethods: { f: 0 },
-        types: { F: 0 },
-        values: {},
-        constructorsOfData: {},
-        methodsOfClass: { F: [ 'f' ] }
+        constructors: {},
+        types: {
+          F: { kind: ExportKindOpen {}, id: TypeKindClass { value0: 0 } }
+        },
+        values: {
+          f: {
+            kind: ExportKindOpen {},
+            id: ValueKindMethod { value0: 'F', value1: 0 }
+          }
+        }
       }
     },
     1 => TopLevel {
       value0: RootScope {},
       value1: {
-        dataConstructors: {},
-        newtypeConstructors: {},
-        classMethods: { f: 0 },
-        types: { F: 0 },
-        values: {},
-        constructorsOfData: {},
-        methodsOfClass: { F: [ 'f' ] }
+        constructors: {},
+        types: {
+          F: { kind: ExportKindOpen {}, id: TypeKindClass { value0: 0 } }
+        },
+        values: {
+          f: {
+            kind: ExportKindOpen {},
+            id: ValueKindMethod { value0: 'F', value1: 0 }
+          }
+        }
       }
     },
     2 => TopLevel {
       value0: RootScope {},
       value1: {
-        dataConstructors: {},
-        newtypeConstructors: {},
-        classMethods: { f: 0 },
-        types: { F: 0 },
-        values: {},
-        constructorsOfData: {},
-        methodsOfClass: { F: [ 'f' ] }
+        constructors: {},
+        types: {
+          F: { kind: ExportKindOpen {}, id: TypeKindClass { value0: 0 } }
+        },
+        values: {
+          f: {
+            kind: ExportKindOpen {},
+            id: ValueKindMethod { value0: 'F', value1: 0 }
+          }
+        }
       }
     },
     3 => TypeVar {
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: { f: 0 },
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: { F: [ 'f' ] }
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindClass { value0: 0 }
+            }
+          },
+          values: {
+            f: {
+              kind: ExportKindOpen {},
+              id: ValueKindMethod { value0: 'F', value1: 0 }
+            }
+          }
         }
       },
       value1: 'a',
@@ -58,13 +73,19 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: { f: 0 },
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: { F: [ 'f' ] }
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindClass { value0: 0 }
+            }
+          },
+          values: {
+            f: {
+              kind: ExportKindOpen {},
+              id: ValueKindMethod { value0: 'F', value1: 0 }
+            }
+          }
         }
       },
       value1: 'a',
@@ -74,13 +95,19 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: { f: 0 },
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: { F: [ 'f' ] }
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindClass { value0: 0 }
+            }
+          },
+          values: {
+            f: {
+              kind: ExportKindOpen {},
+              id: ValueKindMethod { value0: 'F', value1: 0 }
+            }
+          }
         }
       },
       value1: 'a',

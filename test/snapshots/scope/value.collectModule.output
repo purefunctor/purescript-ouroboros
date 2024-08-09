@@ -4,13 +4,14 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
+          constructors: {},
           types: {},
-          values: { f: 0 },
-          constructorsOfData: {},
-          methodsOfClass: {}
+          values: {
+            f: {
+              kind: ExportKindOpen {},
+              id: ValueKindValue { value0: 0 }
+            }
+          }
         }
       },
       value1: { x: 0 }
@@ -20,13 +21,11 @@
     0 => TopLevel {
       value0: RootScope {},
       value1: {
-        dataConstructors: {},
-        newtypeConstructors: {},
-        classMethods: {},
+        constructors: {},
         types: {},
-        values: { f: 0 },
-        constructorsOfData: {},
-        methodsOfClass: {}
+        values: {
+          f: { kind: ExportKindOpen {}, id: ValueKindValue { value0: 0 } }
+        }
       }
     }
   },

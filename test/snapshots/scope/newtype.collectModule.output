@@ -5,26 +5,38 @@
     0 => TopLevel {
       value0: RootScope {},
       value1: {
-        dataConstructors: {},
-        newtypeConstructors: { F: 0 },
-        classMethods: {},
-        types: { F: 0 },
-        values: {},
-        constructorsOfData: { F: [ 'F' ] },
-        methodsOfClass: {}
+        constructors: {
+          F: {
+            kind: ExportKindOpen {},
+            id: ConstructorKindNewtype { value0: 'F', value1: 0 }
+          }
+        },
+        types: {
+          F: {
+            kind: ExportKindOpen {},
+            id: TypeKindNewtype { value0: 0 }
+          }
+        },
+        values: {}
       }
     },
     1 => TypeVar {
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: { F: 0 },
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: { F: [ 'F' ] },
-          methodsOfClass: {}
+          constructors: {
+            F: {
+              kind: ExportKindOpen {},
+              id: ConstructorKindNewtype { value0: 'F', value1: 0 }
+            }
+          },
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindNewtype { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -34,13 +46,19 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: { F: 0 },
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: { F: [ 'F' ] },
-          methodsOfClass: {}
+          constructors: {
+            F: {
+              kind: ExportKindOpen {},
+              id: ConstructorKindNewtype { value0: 'F', value1: 0 }
+            }
+          },
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindNewtype { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -50,13 +68,19 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: { F: 0 },
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: { F: [ 'F' ] },
-          methodsOfClass: {}
+          constructors: {
+            F: {
+              kind: ExportKindOpen {},
+              id: ConstructorKindNewtype { value0: 'F', value1: 0 }
+            }
+          },
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindNewtype { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -66,13 +90,19 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: { F: 0 },
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: { F: [ 'F' ] },
-          methodsOfClass: {}
+          constructors: {
+            F: {
+              kind: ExportKindOpen {},
+              id: ConstructorKindNewtype { value0: 'F', value1: 0 }
+            }
+          },
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindNewtype { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -83,13 +113,19 @@
         value0: TopLevel {
           value0: RootScope {},
           value1: {
-            dataConstructors: {},
-            newtypeConstructors: { F: 0 },
-            classMethods: {},
-            types: { F: 0 },
-            values: {},
-            constructorsOfData: { F: [ 'F' ] },
-            methodsOfClass: {}
+            constructors: {
+              F: {
+                kind: ExportKindOpen {},
+                id: ConstructorKindNewtype { value0: 'F', value1: 0 }
+              }
+            },
+            types: {
+              F: {
+                kind: ExportKindOpen {},
+                id: TypeKindNewtype { value0: 0 }
+              }
+            },
+            values: {}
           }
         },
         value1: 'k',

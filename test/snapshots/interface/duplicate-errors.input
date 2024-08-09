@@ -1,0 +1,13 @@
+module Main where
+
+type A = Int
+
+data A = A
+
+newtype A = A Int
+
+class A where
+  a :: Int
+
+a :: Int
+a = 0

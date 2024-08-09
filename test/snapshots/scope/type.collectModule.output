@@ -5,26 +5,28 @@
     0 => TopLevel {
       value0: RootScope {},
       value1: {
-        dataConstructors: {},
-        newtypeConstructors: {},
-        classMethods: {},
-        types: { F: 0 },
-        values: {},
-        constructorsOfData: {},
-        methodsOfClass: {}
+        constructors: {},
+        types: {
+          F: {
+            kind: ExportKindOpen {},
+            id: TypeKindSynoynm { value0: 0 }
+          }
+        },
+        values: {}
       }
     },
     1 => TypeVar {
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: {}
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindSynoynm { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -34,13 +36,14 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: {}
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindSynoynm { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -50,13 +53,14 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: {}
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindSynoynm { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -66,13 +70,14 @@
       value0: TopLevel {
         value0: RootScope {},
         value1: {
-          dataConstructors: {},
-          newtypeConstructors: {},
-          classMethods: {},
-          types: { F: 0 },
-          values: {},
-          constructorsOfData: {},
-          methodsOfClass: {}
+          constructors: {},
+          types: {
+            F: {
+              kind: ExportKindOpen {},
+              id: TypeKindSynoynm { value0: 0 }
+            }
+          },
+          values: {}
         }
       },
       value1: 'k',
@@ -83,13 +88,14 @@
         value0: TopLevel {
           value0: RootScope {},
           value1: {
-            dataConstructors: {},
-            newtypeConstructors: {},
-            classMethods: {},
-            types: { F: 0 },
-            values: {},
-            constructorsOfData: {},
-            methodsOfClass: {}
+            constructors: {},
+            types: {
+              F: {
+                kind: ExportKindOpen {},
+                id: TypeKindSynoynm { value0: 0 }
+              }
+            },
+            values: {}
           }
         },
         value1: 'k',

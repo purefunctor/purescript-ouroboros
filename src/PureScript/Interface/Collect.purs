@@ -3,210 +3,220 @@ module PureScript.Interface.Collect where
 import Prelude
 
 import Control.Monad.ST (ST)
-import Control.Monad.ST as ST
+import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
 import Data.Foldable (for_)
-import Data.Maybe (Maybe(..), fromMaybe)
-import Data.Traversable (traverse_)
+import Data.FoldableWithIndex (forWithIndex_)
+import Data.Maybe (Maybe(..), maybe)
+import Data.Traversable (traverse, traverse_)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import PureScript.CST.Types (Ident(..), Proper(..))
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types (Exported(..), Interface(..))
+import PureScript.Interface.Types
+  ( ConstructorKind(..)
+  , Export(..)
+  , ExportKind(..)
+  , Interface(..)
+  , TypeKind(..)
+  , ValueKind(..)
+  )
 import PureScript.Surface.Syntax.Tree as SST
-import PureScript.Utils.Mutable.Array (MutableArray)
 import PureScript.Utils.Mutable.Array as MutableArray
 import PureScript.Utils.Mutable.Object (MutableObject)
 import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (class Coercible, coerce)
-import Unsafe.Coerce (unsafeCoerce)
 
 type Result =
   { interface ∷ Interface
-  , exported ∷ Exported
   , errors ∷ Array InterfaceError
   }
 
-pokeMulti ∷ ∀ r k v. Coercible k String ⇒ k → v → MutableObject r k (MutableArray r v) → ST r Unit
-pokeMulti k v o = do
-  vs ← MutableObject.peek k o >>= case _ of
-    Nothing → do
-      vs ← MutableArray.empty
-      MutableObject.poke k vs o
-      pure vs
-    Just vs →
-      pure vs
-  void $ MutableArray.push v vs
+newtype ExportMap = ExportMap
+  { types ∷ Object (Maybe SST.DataMembers)
+  , values ∷ Object Unit
+  }
 
-lookupMulti ∷ ∀ v. String → Object (Array v) → Array v
-lookupMulti k o = fromMaybe [] $ Object.lookup k o
+inferExportMap ∷ ∀ r. NonEmptyArray SST.Export → ST r ExportMap
+inferExportMap exports = do
+  typesRaw ← MutableObject.empty
+  valuesRaw ← MutableObject.empty
 
-unsafeFreezeMultiValue
-  ∷ ∀ r k v. Coercible k String ⇒ MutableObject r k (MutableArray r v) → ST r (Object (Array v))
-unsafeFreezeMultiValue = pure <<< unsafeCoerce
+  for_ exports case _ of
+    SST.ExportValue name →
+      MutableObject.poke name unit valuesRaw
+    SST.ExportType name memberList → do
+      MutableObject.poke name memberList typesRaw
+    SST.ExportClass name → do
+      MutableObject.poke name Nothing typesRaw
+    _ → do
+      pure unit
 
-collectExported ∷ ∀ r. Interface → Maybe (NonEmptyArray SST.Export) → ST r Result
-collectExported interface@(Interface interfaceInner) exports = do
-  dataConstructorsRaw ← MutableObject.empty
-  newtypeConstructorsRaw ← MutableObject.empty
-  classMethodsRaw ← MutableObject.empty
+  map ExportMap $ { types: _, values: _ }
+    <$> MutableObject.unsafeFreeze typesRaw
+    <*> MutableObject.unsafeFreeze valuesRaw
+
+constructorExportKind ∷ Proper → Proper → Maybe ExportMap → ExportKind
+constructorExportKind (Proper dataName) constructorName = maybe ExportKindOpen case _ of
+  ExportMap { types } → case Object.lookup dataName types of
+    Nothing →
+      ExportKindHidden
+    -- T
+    Just Nothing →
+      ExportKindHidden
+    -- T(..)
+    Just (Just SST.DataAll) →
+      ExportKindExported
+    -- T(U, V)
+    Just (Just (SST.DataEnumerated dataMembers)) →
+      maybe ExportKindHidden (const ExportKindExported)
+        $ Array.find (eq constructorName) dataMembers
+
+typeExportKind ∷ Proper → Maybe ExportMap → ExportKind
+typeExportKind (Proper typeName) = maybe ExportKindOpen case _ of
+  ExportMap { types } →
+    if Object.member typeName types then
+      ExportKindExported
+    else
+      ExportKindHidden
+
+valueExportKind ∷ Ident → Maybe ExportMap → ExportKind
+valueExportKind (Ident valueName) = maybe ExportKindOpen case _ of
+  ExportMap { values } →
+    if Object.member valueName values then
+      ExportKindExported
+    else
+      ExportKindHidden
+
+collectInterface ∷ ∀ r. SST.Module → ST r Result
+collectInterface (SST.Module { exports, declarations }) = do
+  exportMap ← traverse inferExportMap exports
+  constructorsRaw ← MutableObject.empty
   typesRaw ← MutableObject.empty
   valuesRaw ← MutableObject.empty
   errorsRaw ← MutableArray.empty
 
   let
-    check ∷ ∀ k. Coercible k String ⇒ k → _ → MutableObject r k Unit → _
-    check name collection into error =
-      if Object.member (coerce name) collection then
-        MutableObject.poke name unit into
-      else
-        void $ MutableArray.push error errorsRaw
+    insertOrError
+      ∷ ∀ k v
+      . Coercible k String
+      ⇒ k
+      → v
+      → ExportKind
+      → (v → v → InterfaceError)
+      → MutableObject r k (Export v)
+      → ST r Unit
+    insertOrError k v x e m =
+      MutableObject.peek k m >>= case _ of
+        Nothing → do
+          MutableObject.poke k (Export { kind: x, id: v }) m
+        Just (Export { id: v' }) → do
+          void $ MutableArray.push (e v v') errorsRaw
 
-  for_ exports $ traverse_ case _ of
-    SST.ExportValue name →
-      check name interfaceInner.values valuesRaw (MissingValue name)
-    SST.ExportType name memberList → do
-      check name interfaceInner.types typesRaw (MissingType name)
-      let
-        members ∷ Array Proper
-        members = case memberList of
-          Nothing →
-            []
-          Just SST.DataAll →
-            lookupMulti (coerce name) interfaceInner.constructorsOfData
-          Just (SST.DataEnumerated enumerated) →
-            enumerated
-      for_ members \member →
-        if Object.member (coerce member) interfaceInner.dataConstructors then
-          MutableObject.poke member unit dataConstructorsRaw
-        else if Object.member (coerce member) interfaceInner.newtypeConstructors then
-          MutableObject.poke member unit newtypeConstructorsRaw
-        else
-          void $ MutableArray.push (MissingMember member) errorsRaw
-    SST.ExportClass name → do
-      check name interfaceInner.types typesRaw (MissingType name)
-      let
-        members ∷ Array Ident
-        members = lookupMulti (coerce name) interfaceInner.methodsOfClass
-      for_ members \member →
-        MutableObject.poke member unit classMethodsRaw
-    _ →
-      pure unit
-
-  exported ← map Exported do
-    { dataConstructors: _
-    , newtypeConstructors: _
-    , classMethods: _
-    , types: _
-    , values: _
-    } <$> MutableObject.unsafeFreeze dataConstructorsRaw
-      <*> MutableObject.unsafeFreeze newtypeConstructorsRaw
-      <*> MutableObject.unsafeFreeze classMethodsRaw
-      <*> MutableObject.unsafeFreeze typesRaw
-      <*> MutableObject.unsafeFreeze valuesRaw
-  errors ← MutableArray.unsafeFreeze errorsRaw
-
-  pure $ { interface, exported, errors }
-
-checkExports ∷ Interface → Maybe (NonEmptyArray SST.Export) → Array InterfaceError
-checkExports (Interface { dataConstructors, newtypeConstructors, types, values }) = case _ of
-  Nothing →
-    []
-  Just exportList → ST.run do
-    errorsRaw ← MutableArray.empty
-
-    let
-      check ∷ ∀ k v. Coercible k String ⇒ k → Object v → InterfaceError → ST _ Unit
-      check name collection error =
-        unless (Object.member (coerce name) collection) do
-          void $ MutableArray.push error errorsRaw
-
-      checkMembers ∷ Maybe SST.DataMembers → ST _ Unit
-      checkMembers = traverse_ case _ of
-        SST.DataAll →
-          pure unit
-        SST.DataEnumerated members →
-          for_ members \member → do
-            let
-              isMember ∷ String → Boolean
-              isMember = flip Object.member dataConstructors
-                || flip Object.member newtypeConstructors
-            unless (isMember (coerce member)) do
-              void $ MutableArray.push (MissingMember member) errorsRaw
-
-    for_ exportList case _ of
-      SST.ExportType name members → do
-        check name types (MissingType name)
-        checkMembers members
-      SST.ExportValue name →
-        check name values (MissingValue name)
-      _ →
-        pure unit
-
-    MutableArray.unsafeFreeze errorsRaw
-
-collectInterface ∷ ∀ r. SST.Module → ST r Result
-collectInterface (SST.Module { exports, declarations }) = do
-  dataConstructorsRaw ← MutableObject.empty
-  newtypeConstructorsRaw ← MutableObject.empty
-  classMethodsRaw ← MutableObject.empty
-  typesRaw ← MutableObject.empty
-  valuesRaw ← MutableObject.empty
-  constructorsOfDataRaw ← MutableObject.empty
-  methodsOfClassRaw ← MutableObject.empty
-
-  let
     collectDataCtor ∷ Proper → SST.DataConstructor → _
     collectDataCtor typeName = case _ of
       SST.DataConstructor { annotation: SST.Annotation { id }, name } → do
-        MutableObject.poke name id dataConstructorsRaw
-        pokeMulti typeName name constructorsOfDataRaw
+        let
+          constructorKind ∷ ConstructorKind
+          constructorKind = ConstructorKindData typeName id
+
+          exportKind ∷ ExportKind
+          exportKind = constructorExportKind typeName name exportMap
+        insertOrError name constructorKind exportKind DuplicateConstructor constructorsRaw
 
     collectNewtypeCtor ∷ Proper → SST.NewtypeConstructor → _
     collectNewtypeCtor typeName = case _ of
       SST.NewtypeConstructor { annotation: SST.Annotation { id }, name } → do
-        MutableObject.poke name id newtypeConstructorsRaw
-        pokeMulti typeName name constructorsOfDataRaw
+        let
+          constructorKind ∷ ConstructorKind
+          constructorKind = ConstructorKindNewtype typeName id
 
-    collectMethod ∷ Proper → SST.ClassMethod → _
-    collectMethod typeName = case _ of
+          exportKind ∷ ExportKind
+          exportKind = constructorExportKind typeName name exportMap
+        insertOrError name constructorKind exportKind DuplicateConstructor constructorsRaw
+
+    collectClassMethod ∷ Proper → SST.ClassMethod → _
+    collectClassMethod typeName = case _ of
       SST.ClassMethod { annotation: SST.Annotation { id }, name } → do
-        MutableObject.poke name id classMethodsRaw
-        pokeMulti typeName name methodsOfClassRaw
+        let
+          valueKind ∷ ValueKind
+          valueKind = ValueKindMethod typeName id
+
+          exportKind ∷ ExportKind
+          exportKind = valueExportKind name exportMap
+        insertOrError name valueKind exportKind DuplicateValue valuesRaw
 
   for_ declarations case _ of
-    SST.DeclarationData (SST.Annotation { id }) name _ (SST.DataEquation { constructors }) →
-      do
-        traverse_ (traverse_ $ collectDataCtor name) constructors
-        MutableObject.poke name id typesRaw
-    SST.DeclarationType (SST.Annotation { id }) name _ _ →
-      MutableObject.poke name id typesRaw
-    SST.DeclarationNewtype (SST.Annotation { id }) name _ (SST.NewtypeEquation { constructor }) →
-      do
-        collectNewtypeCtor name constructor
-        MutableObject.poke name id typesRaw
+    SST.DeclarationData (SST.Annotation { id }) name _ (SST.DataEquation { constructors }) → do
+      let
+        typeKind ∷ TypeKind
+        typeKind = TypeKindData id
+
+        exportKind ∷ ExportKind
+        exportKind = typeExportKind name exportMap
+      insertOrError name typeKind exportKind DuplicateType typesRaw
+      traverse_ (traverse_ $ collectDataCtor name) constructors
+    SST.DeclarationType (SST.Annotation { id }) name _ _ → do
+      let
+        typeKind ∷ TypeKind
+        typeKind = TypeKindSynoynm id
+
+        exportKind ∷ ExportKind
+        exportKind = typeExportKind name exportMap
+      insertOrError name typeKind exportKind DuplicateType typesRaw
+    SST.DeclarationNewtype (SST.Annotation { id }) name _ (SST.NewtypeEquation { constructor }) → do
+      let
+        typeKind ∷ TypeKind
+        typeKind = TypeKindNewtype id
+
+        exportKind ∷ ExportKind
+        exportKind = typeExportKind name exportMap
+      insertOrError name typeKind exportKind DuplicateType typesRaw
+      collectNewtypeCtor name constructor
     SST.DeclarationClass (SST.Annotation { id }) name _ (SST.ClassEquation { methods }) → do
-      traverse_ (traverse_ $ collectMethod name) methods
-      MutableObject.poke name id typesRaw
-    SST.DeclarationValue (SST.Annotation { id }) name _ _ →
-      MutableObject.poke name id valuesRaw
-    SST.DeclarationNotImplemented _ →
+      let
+        typeKind ∷ TypeKind
+        typeKind = TypeKindClass id
+
+        exportKind ∷ ExportKind
+        exportKind = typeExportKind name exportMap
+      insertOrError name typeKind exportKind DuplicateType typesRaw
+      traverse_ (traverse_ $ collectClassMethod name) methods
+    SST.DeclarationValue (SST.Annotation { id }) name _ _ → do
+      let
+        valueKind ∷ ValueKind
+        valueKind = ValueKindValue id
+
+        exportKind ∷ ExportKind
+        exportKind = valueExportKind name exportMap
+      insertOrError name valueKind exportKind DuplicateValue valuesRaw
+    _ →
       pure unit
 
-  interface ← map Interface do
-    { dataConstructors: _
-    , newtypeConstructors: _
-    , classMethods: _
-    , types: _
-    , values: _
-    , constructorsOfData: _
-    , methodsOfClass: _
-    } <$> MutableObject.unsafeFreeze dataConstructorsRaw
-      <*> MutableObject.unsafeFreeze newtypeConstructorsRaw
-      <*> MutableObject.unsafeFreeze classMethodsRaw
-      <*> MutableObject.unsafeFreeze typesRaw
-      <*> MutableObject.unsafeFreeze valuesRaw
-      <*> unsafeFreezeMultiValue constructorsOfDataRaw
-      <*> unsafeFreezeMultiValue methodsOfClassRaw
+  constructors ← MutableObject.unsafeFreeze constructorsRaw
+  types ← MutableObject.unsafeFreeze typesRaw
+  values ← MutableObject.unsafeFreeze valuesRaw
 
-  collectExported interface exports
+  for_ exportMap case _ of
+    ExportMap { types: exMapTypes, values: exMapValues } → do
+      forWithIndex_ exMapTypes \name members → do
+        unless (Object.member name types) do
+          void $ MutableArray.push (MissingType (coerce name)) errorsRaw
+        for_ members case _ of
+          SST.DataAll →
+            pure unit
+          SST.DataEnumerated dataEnumerated →
+            for_ dataEnumerated \dataMember → do
+              unless (Object.member (coerce dataMember) constructors) do
+                void $ MutableArray.push (MissingConstructor dataMember) errorsRaw
+      forWithIndex_ exMapValues \name _ →
+        unless (Object.member name values) do
+          void $ MutableArray.push (MissingValue (coerce name)) errorsRaw
+
+  errors ← MutableArray.unsafeFreeze errorsRaw
+
+  let
+    interface ∷ Interface
+    interface = Interface { constructors, types, values }
+
+  pure $ { interface, errors }

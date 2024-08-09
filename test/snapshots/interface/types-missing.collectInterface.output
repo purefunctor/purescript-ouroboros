@@ -1,20 +1,5 @@
 {
-  interface: {
-    dataConstructors: {},
-    newtypeConstructors: {},
-    classMethods: {},
-    types: {},
-    values: {},
-    constructorsOfData: {},
-    methodsOfClass: {}
-  },
-  exported: {
-    dataConstructors: {},
-    newtypeConstructors: {},
-    classMethods: {},
-    types: {},
-    values: {}
-  },
+  interface: { constructors: {}, types: {}, values: {} },
   errors: [
     MissingType { value0: 'A' },
     MissingType { value0: 'B' },
