@@ -5,7 +5,7 @@ import Prelude
 import Data.Maybe (Maybe)
 import PureScript.CST.Errors (RecoveredError)
 import PureScript.CST.Types (SourceRange)
-import PureScript.Id (IdMap)
+import PureScript.Id.Map (IdMap)
 import PureScript.Surface.Syntax.Tree as SST
 
 type SigDefSourceRange =

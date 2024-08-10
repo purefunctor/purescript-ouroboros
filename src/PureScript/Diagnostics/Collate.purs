@@ -13,7 +13,7 @@ import PureScript.CST.Errors (RecoveredError)
 import PureScript.CST.Parser.Monad (PositionedError)
 import PureScript.Diagnostics.Types (Diagnostic(..), DiagnosticKind(..))
 import PureScript.Driver.Files (ParsedFile(..))
-import PureScript.Id (IdMap(..))
+import PureScript.Id.Map (IdMap(..))
 import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Interface.Error (InterfaceError)
 import PureScript.Surface.Lower as SurfaceLower

@@ -4,8 +4,9 @@ import Prelude
 
 import Data.Maybe (Maybe(..))
 import Partial.Unsafe (unsafeCrashWith)
-import PureScript.Id (Id, IdMap)
-import PureScript.Id as IdMap
+import PureScript.Id (Id)
+import PureScript.Id.Map (IdMap)
+import PureScript.Id.Map as IdMap
 import PureScript.Scope.Types (ScopeNode)
 import PureScript.Surface.Syntax.Tree as SST
 

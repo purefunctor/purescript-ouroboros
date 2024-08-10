@@ -130,11 +130,11 @@ lowerExpr state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf e
-    id ← State.nextId @"expr" state
+    id ← State.nextId _.expr state
     let
       annotation ∷ SST.ExprAnnotation
       annotation = SST.Annotation { id }
-    State.insertSourceRange @"expr" state id range
+    State.insertSourceRange _.expr state id range
     case e of
       CST.ExprHole (CST.Name { name }) → do
         pure $ SST.ExprHole annotation name
@@ -234,7 +234,7 @@ lowerExpr state = runSTFn1 go
           go
           cstResult
       CST.ExprError error → do
-        State.insertError @"expr" state id error
+        State.insertError _.expr state id error
         pure $ SST.ExprError annotation
 
 lowerBinder ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Binder e → ST r SST.Binder
@@ -258,11 +258,11 @@ lowerBinder state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf b
-    id ← State.nextId @"binder" state
+    id ← State.nextId _.binder state
     let
       annotation ∷ SST.BinderAnnotation
       annotation = SST.Annotation { id }
-    State.insertSourceRange @"binder" state id range
+    State.insertSourceRange _.binder state id range
     case b of
       CST.BinderWildcard _ →
         pure $ SST.BinderWildcard annotation
@@ -309,7 +309,7 @@ lowerBinder state = runSTFn1 go
           <$> runSTFn1 go cstHead
           <*> traverse (runSTFn2 goChain goOperator) cstChain
       CST.BinderError error → do
-        State.insertError @"binder" state id error
+        State.insertError _.binder state id error
         pure $ SST.BinderError annotation
 
 lowerType ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.Type e → ST r SST.Type
@@ -349,11 +349,11 @@ lowerType state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf t
-    id ← State.nextId @"type" state
+    id ← State.nextId _.type state
     let
       annotation ∷ SST.TypeAnnotation
       annotation = SST.Annotation { id }
-    State.insertSourceRange @"type" state id range
+    State.insertSourceRange _.type state id range
     case t of
       CST.TypeVar (CST.Name { name }) →
         pure $ SST.TypeVar annotation name
@@ -402,7 +402,7 @@ lowerType state = runSTFn1 go
       CST.TypeParens (CST.Wrapped { value }) →
         SST.TypeParens annotation <$> runSTFn1 go value
       CST.TypeError error → do
-        State.insertError @"type" state id error
+        State.insertError _.type state id error
         pure $ SST.TypeError annotation
 
 data LetLoweringGroup r = LetLoweringGroup
@@ -435,11 +435,11 @@ lowerLetBindings state cstLetBindings = do
               { signature: signature <#> _.sourceRange
               , definitions: values <#> _.sourceRange
               }
-          id ← State.nextId @"letBinding" state
+          id ← State.nextId _.letBinding state
           let
             annotation ∷ SST.LetBindingAnnotation
             annotation = SST.Annotation { id }
-          State.insertSourceRange @"letBinding" state id letBindingSourceRange
+          State.insertSourceRange _.letBinding state id letBindingSourceRange
           let
             letBinding ∷ SST.LetBinding
             letBinding =
@@ -498,11 +498,11 @@ lowerLetBindings state cstLetBindings = do
         let
           letBindingSourceRange ∷ LetBindingSourceRange
           letBindingSourceRange = LetBindingPatternSourceRange sourceRange
-        id ← State.nextId @"letBinding" state
+        id ← State.nextId _.letBinding state
         let
           annotation ∷ SST.LetBindingAnnotation
           annotation = SST.Annotation { id }
-        State.insertSourceRange @"letBinding" state id letBindingSourceRange
+        State.insertSourceRange _.letBinding state id letBindingSourceRange
         sstBinder ← lowerBinder state cstBinder
         sstWhere ← lowerWhere state cstWhere
         let
@@ -514,12 +514,12 @@ lowerLetBindings state cstLetBindings = do
         let
           letBindingSourceRange ∷ LetBindingSourceRange
           letBindingSourceRange = LetBindingErrorSourceRange sourceRange
-        id ← State.nextId @"letBinding" state
+        id ← State.nextId _.letBinding state
         let
           annotation ∷ SST.LetBindingAnnotation
           annotation = SST.Annotation { id }
-        State.insertSourceRange @"letBinding" state id letBindingSourceRange
-        State.insertError @"letBinding" state id error
+        State.insertSourceRange _.letBinding state id letBindingSourceRange
+        State.insertError _.letBinding state id error
         let
           letBinding ∷ SST.LetBinding
           letBinding = SST.LetBindingError annotation
@@ -538,11 +538,11 @@ lowerDoStatement state = runSTFn1 go
     let
       range ∷ CST.SourceRange
       range = rangeOf d
-    id ← State.nextId @"doStatement" state
+    id ← State.nextId _.doStatement state
     let
       annotation ∷ SST.DoStatementAnnotation
       annotation = SST.Annotation { id }
-    State.insertSourceRange @"doStatement" state id range
+    State.insertSourceRange _.doStatement state id range
     case d of
       CST.DoLet _ cstLetBindings → do
         SST.DoLet annotation <$> lowerLetBindings state cstLetBindings
@@ -551,7 +551,7 @@ lowerDoStatement state = runSTFn1 go
       CST.DoBind cstBinder _ cstExpr → do
         SST.DoBind annotation <$> lowerBinder state cstBinder <*> lowerExpr state cstExpr
       CST.DoError error → do
-        State.insertError @"doStatement" state id error
+        State.insertError _.doStatement state id error
         pure $ SST.DoError annotation
 
 lowerDataMembers ∷ Maybe CST.DataMembers → Maybe SST.DataMembers
@@ -642,11 +642,11 @@ bySignatureName = case _, _ of
 lowerDataCtor
   ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CST.DataCtor e → ST r SST.DataConstructor
 lowerDataCtor state dataCtor = do
-  id ← State.nextId @"constructor" state
+  id ← State.nextId _.constructor state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf dataCtor
-  State.insertSourceRange @"constructor" state id sourceRange
+  State.insertSourceRange _.constructor state id sourceRange
   let
     annotation ∷ SST.ConstructorAnnotation
     annotation = SST.Annotation { id }
@@ -666,11 +666,11 @@ lowerTypeVarBindings_
   → t (CST.TypeVarBinding i e)
   → ST r (t SST.TypeVarBinding)
 lowerTypeVarBindings_ un state = traverse \typeVarBinding → do
-  id ← State.nextId @"typeVarBinding" state
+  id ← State.nextId _.typeVarBinding state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf typeVarBinding
-  State.insertSourceRange @"typeVarBinding" state id sourceRange
+  State.insertSourceRange _.typeVarBinding state id sourceRange
   let
     annotation ∷ SST.TypeVarBindingAnnotation
     annotation = SST.Annotation { id }
@@ -745,14 +745,14 @@ lowerNewtypeEquation
   → CST.Type e
   → ST r SST.NewtypeEquation
 lowerNewtypeEquation state { vars } cstName@(CST.Name { name }) cstField = do
-  id ← State.nextId @"newtype" state
+  id ← State.nextId _.newtype state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange =
       { start: rangeOf cstName # _.start
       , end: rangeOf cstField # _.end
       }
-  State.insertSourceRange @"newtype" state id sourceRange
+  State.insertSourceRange _.newtype state id sourceRange
   variables ← lowerTypeVarBindings state vars
   let
     annotation ∷ SST.NewtypeAnnotation
@@ -773,11 +773,11 @@ type CSTClassMethod e =
 lowerClassMethod
   ∷ ∀ r e. RangeOf e ⇒ IntoRecoveredError e ⇒ State r → CSTClassMethod e → ST r SST.ClassMethod
 lowerClassMethod state cstClassMethod = do
-  id ← State.nextId @"classMethod" state
+  id ← State.nextId _.classMethod state
   let
     sourceRange ∷ CST.SourceRange
     sourceRange = rangeOf cstClassMethod
-  State.insertSourceRange @"classMethod" state id sourceRange
+  State.insertSourceRange _.classMethod state id sourceRange
   let
     annotation ∷ SST.ClassMethodAnnotation
     annotation = SST.Annotation { id }
@@ -820,14 +820,14 @@ lowerDeclarations state cstDeclarations = do
 
     onTypeGroup ∷ CST.Proper → _ → _ → ST r Unit
     onTypeGroup cstName cstSignature cstDeclaration = do
-      id ← State.nextId @"declaration" state
+      id ← State.nextId _.declaration state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
           , definitions: cstDeclaration <#> rangeOf
           }
-      State.insertSourceRange @"declaration" state id declarationSourceRange
+      State.insertSourceRange _.declaration state id declarationSourceRange
 
       signature ← for cstSignature case _ of
         CST.DeclKindSignature _ (CST.Labeled { value: cstType }) →
@@ -859,14 +859,14 @@ lowerDeclarations state cstDeclarations = do
 
     onDeclValueGroup ∷ CST.Ident → _ → _ → ST r Unit
     onDeclValueGroup cstName cstSignature cstValues = do
-      id ← State.nextId @"declaration" state
+      id ← State.nextId _.declaration state
       let
         declarationSourceRange ∷ DeclarationSourceRange
         declarationSourceRange = DeclarationValueSourceRange
           { signature: cstSignature <#> rangeOf
           , definitions: cstValues <#> rangeOf
           }
-      State.insertSourceRange @"declaration" state id declarationSourceRange
+      State.insertSourceRange _.declaration state id declarationSourceRange
 
       signature ← for cstSignature case _ of
         CST.DeclSignature (CST.Labeled { value: cstType }) →
@@ -909,12 +909,12 @@ lowerDeclarations state cstDeclarations = do
         CST.DeclValue { name: CST.Name { name } } →
           onDeclValueGroup name Nothing (NEA.toArray signatureNameGroup)
         CST.DeclError error → do
-          id ← State.nextId @"declaration" state
+          id ← State.nextId _.declaration state
           let
             declarationSourceRange ∷ DeclarationSourceRange
             declarationSourceRange = DeclarationErrorSourceRange $ rangeOf head
-          State.insertSourceRange @"declaration" state id declarationSourceRange
-          State.insertError @"declaration" state id error
+          State.insertSourceRange _.declaration state id declarationSourceRange
+          State.insertError _.declaration state id error
         _ →
           pure unit
 

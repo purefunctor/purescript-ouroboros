@@ -3,26 +3,27 @@ module PureScript.Scope.Resolve.State where
 import Prelude
 
 import Control.Monad.ST (ST)
-import PureScript.Id (Id(..), IdMap(..))
+import PureScript.Id (Id)
+import PureScript.Id.STMap (STIdMap)
+import PureScript.Id.STMap as STIdMap
 import PureScript.Scope.Resolve.Types (Resolutions)
 import PureScript.Scope.Types (ExprIdentResolution)
-import PureScript.Utils.Mutable.STIntMap (STIntMap)
-import PureScript.Utils.Mutable.STIntMap as STIntMap
+import PureScript.Surface.Syntax.Tree as SST
 import Safe.Coerce (coerce)
 
 type State r =
-  { exprIdent ∷ STIntMap r ExprIdentResolution
+  { exprIdent ∷ STIdMap r SST.Expr ExprIdentResolution
   }
 
 empty ∷ ∀ r. ST r (State r)
 empty = do
-  exprIdent ← STIntMap.empty
+  exprIdent ← STIdMap.empty
   pure { exprIdent }
 
-insertResolution ∷ ∀ r t v. (State r → STIntMap r v) → State r → Id t → v → ST r Unit
-insertResolution get state (Id i) v = STIntMap.set i v (get state)
+insertResolution ∷ ∀ r t v. (State r → STIdMap r t v) → State r → Id t → v → ST r Unit
+insertResolution get state id resolution = STIdMap.set id resolution (get state)
 
 freeze ∷ ∀ r. State r → ST r Resolutions
 freeze state = do
-  exprIdent ← STIntMap.freeze state.exprIdent
+  exprIdent ← STIdMap.freeze state.exprIdent
   pure $ coerce { exprIdent }
