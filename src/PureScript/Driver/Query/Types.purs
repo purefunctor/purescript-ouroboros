@@ -12,6 +12,7 @@ import PureScript.Driver.Files (ParsedFile)
 import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Scope.Collect as ScopeCollect
+import PureScript.Scope.Resolve as ScopeResolve
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Syntax.Tree (Module)
 import Type.Proxy (Proxy(..))
@@ -23,6 +24,7 @@ type Queries onInput onQuery =
   , surface ∷ onQuery FileId Module
   , interface ∷ onQuery FileId InterfaceCollect.Result
   , scopeGraph ∷ onQuery FileId ScopeCollect.Result
+  , resolution ∷ onQuery FileId ScopeResolve.Result
   , diagnostics ∷ onQuery FileId (Set Diagnostic)
   )
 

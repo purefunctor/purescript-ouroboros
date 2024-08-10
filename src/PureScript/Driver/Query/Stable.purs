@@ -3,7 +3,7 @@ module PureScript.Driver.Query.Stable where
 import Prelude
 
 import Control.Monad.ST (ST)
-import Data.Maybe (Maybe)
+import Data.Maybe (Maybe(..))
 import PureScript.CST.Types (ModuleName(..))
 import PureScript.Driver.StringInterner (Interner)
 import PureScript.Driver.StringInterner as Interner
@@ -54,3 +54,11 @@ lookupModuleNameId (Stable { moduleNames }) moduleName =
 lookupFileId ∷ ∀ r. Stable r → String → ST r (Maybe FileId)
 lookupFileId (Stable { filePaths }) filePath =
   Interner.lookup filePaths filePath
+
+lookupFileIdOfModuleName ∷ ∀ r. Stable r → ModuleName → ST r (Maybe FileId)
+lookupFileIdOfModuleName (Stable { moduleNames, pathsOfModule }) moduleName = do
+  Interner.lookup moduleNames moduleName >>= case _ of
+    Just moduleNameId →
+      JsMap.get moduleNameId pathsOfModule
+    Nothing →
+      pure Nothing

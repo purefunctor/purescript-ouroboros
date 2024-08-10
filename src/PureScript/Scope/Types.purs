@@ -59,6 +59,8 @@ data ExprIdentResolution
   | ExprIdentLocal (Export ValueKind)
   | ExprIdentImport FileId (Export ValueKind)
 
+derive instance Eq ExprIdentResolution
+
 scopeNodeExprIdent ∷ Ident → ScopeNode → Maybe ExprIdentResolution
 scopeNodeExprIdent (Ident i) = do
   searchCore $ defaultOnScopeNode

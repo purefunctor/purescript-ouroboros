@@ -62,6 +62,7 @@ import PureScript.Driver.Query.Storage as Storage
 import PureScript.Driver.Query.Types (class GetQueryTag, Queries, QueryTag(..), queryTag)
 import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Scope.Collect as ScopeCollect
+import PureScript.Scope.Resolve as ScopeResolve
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Syntax.Tree (Module)
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -239,6 +240,7 @@ instance engineQueryCoreInstance ∷
           , surface: checkDependency @"surface"
           , interface: checkDependency @"interface"
           , scopeGraph: checkDependency @"scopeGraph"
+          , resolution: checkDependency @"resolution"
           , diagnostics: checkDependency @"diagnostics"
           }
         STRef.read isClean
@@ -291,6 +293,7 @@ queryFns =
   , surface: surfaceImpl
   , interface: interfaceImpl
   , scopeGraph: scopeGraphImpl
+  , resolution: resolutionImpl
   , diagnostics: diagnosticsImpl
   }
 
@@ -316,6 +319,18 @@ scopeGraphImpl ∷ ∀ r. QueryFn r FileId ScopeCollect.Result
 scopeGraphImpl engine id = do
   surface ← queryGet @"surface" engine id
   ScopeCollect.collectModule surface
+
+resolutionImpl ∷ ∀ r. QueryFn r FileId ScopeResolve.Result
+resolutionImpl engine@(Engine { stable }) id = do
+  let
+    input ∷ ScopeResolve.Input r
+    input =
+      { lookupModule: Stable.lookupFileIdOfModuleName stable
+      , lookupSurface: surfaceImpl engine
+      , lookupInterface: interfaceImpl engine
+      , lookupScopeNode: scopeGraphImpl engine
+      }
+  ScopeResolve.resolveModule input id
 
 diagnosticsImpl ∷ ∀ r. QueryFn r FileId (Set Diagnostic)
 diagnosticsImpl engine id = do
