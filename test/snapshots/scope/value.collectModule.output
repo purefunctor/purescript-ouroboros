@@ -1,33 +1,8 @@
 {
-  exprScopeNode: Map(1) {
-    0 => Binders {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          constructors: {},
-          types: {},
-          values: {
-            f: {
-              kind: ExportKindOpen {},
-              id: ValueKindValue { value0: 0 }
-            }
-          }
-        }
-      },
-      value1: { x: 0 }
-    }
+  expr: Map(2) {
+    0 => Binders { value0: RootScope {}, value1: {} },
+    1 => Binders { value0: RootScope {}, value1: { x: 0 } }
   },
-  binderScopeNode: Map(1) {
-    0 => TopLevel {
-      value0: RootScope {},
-      value1: {
-        constructors: {},
-        types: {},
-        values: {
-          f: { kind: ExportKindOpen {}, id: ValueKindValue { value0: 0 } }
-        }
-      }
-    }
-  },
-  typeScopeNode: Map(0) {}
+  binder: Map(1) { 0 => RootScope {} },
+  type_: Map(0) {}
 }

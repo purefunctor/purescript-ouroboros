@@ -1,0 +1,8 @@
+{
+  exprIdent: Map(2) {
+    0 => ExprIdentLocal {
+      value0: { kind: ExportKindOpen {}, id: ValueKindValue { value0: 1 } }
+    },
+    1 => ExprIdentBinder { value0: 0 }
+  }
+}

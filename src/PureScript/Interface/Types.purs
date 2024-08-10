@@ -14,10 +14,13 @@ data ExportKind
 derive instance Eq ExportKind
 derive instance Ord ExportKind
 
-newtype Export id = Export { kind ∷ ExportKind, id ∷ id }
+newtype Export a = Export { kind ∷ ExportKind, id ∷ a }
 
-derive newtype instance Eq id ⇒ Eq (Export id)
-derive newtype instance Ord id ⇒ Ord (Export id)
+derive newtype instance Eq a ⇒ Eq (Export a)
+derive newtype instance Ord a ⇒ Ord (Export a)
+
+exportToLocal ∷ ∀ a. Export a → a
+exportToLocal (Export { id }) = id
 
 data ConstructorKind
   = ConstructorKindData Proper SST.ConstructorId

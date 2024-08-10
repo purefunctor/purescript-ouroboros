@@ -315,8 +315,7 @@ interfaceImpl engine id = do
 scopeGraphImpl ∷ ∀ r. QueryFn r FileId ScopeCollect.Result
 scopeGraphImpl engine id = do
   surface ← queryGet @"surface" engine id
-  { interface } ← queryGet @"interface" engine id
-  ScopeCollect.collectModule surface interface
+  ScopeCollect.collectModule surface
 
 diagnosticsImpl ∷ ∀ r. QueryFn r FileId (Set Diagnostic)
 diagnosticsImpl engine id = do

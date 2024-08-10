@@ -1,117 +1,12 @@
 {
-  exprScopeNode: Map(0) {},
-  binderScopeNode: Map(0) {},
-  typeScopeNode: Map(6) {
-    0 => TopLevel {
-      value0: RootScope {},
-      value1: {
-        constructors: {},
-        types: {
-          F: { kind: ExportKindOpen {}, id: TypeKindClass { value0: 0 } }
-        },
-        values: {
-          f: {
-            kind: ExportKindOpen {},
-            id: ValueKindMethod { value0: 'F', value1: 0 }
-          }
-        }
-      }
-    },
-    1 => TopLevel {
-      value0: RootScope {},
-      value1: {
-        constructors: {},
-        types: {
-          F: { kind: ExportKindOpen {}, id: TypeKindClass { value0: 0 } }
-        },
-        values: {
-          f: {
-            kind: ExportKindOpen {},
-            id: ValueKindMethod { value0: 'F', value1: 0 }
-          }
-        }
-      }
-    },
-    2 => TopLevel {
-      value0: RootScope {},
-      value1: {
-        constructors: {},
-        types: {
-          F: { kind: ExportKindOpen {}, id: TypeKindClass { value0: 0 } }
-        },
-        values: {
-          f: {
-            kind: ExportKindOpen {},
-            id: ValueKindMethod { value0: 'F', value1: 0 }
-          }
-        }
-      }
-    },
-    3 => TypeVar {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          constructors: {},
-          types: {
-            F: {
-              kind: ExportKindOpen {},
-              id: TypeKindClass { value0: 0 }
-            }
-          },
-          values: {
-            f: {
-              kind: ExportKindOpen {},
-              id: ValueKindMethod { value0: 'F', value1: 0 }
-            }
-          }
-        }
-      },
-      value1: 'a',
-      value2: 0
-    },
-    4 => TypeVar {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          constructors: {},
-          types: {
-            F: {
-              kind: ExportKindOpen {},
-              id: TypeKindClass { value0: 0 }
-            }
-          },
-          values: {
-            f: {
-              kind: ExportKindOpen {},
-              id: ValueKindMethod { value0: 'F', value1: 0 }
-            }
-          }
-        }
-      },
-      value1: 'a',
-      value2: 0
-    },
-    5 => TypeVar {
-      value0: TopLevel {
-        value0: RootScope {},
-        value1: {
-          constructors: {},
-          types: {
-            F: {
-              kind: ExportKindOpen {},
-              id: TypeKindClass { value0: 0 }
-            }
-          },
-          values: {
-            f: {
-              kind: ExportKindOpen {},
-              id: ValueKindMethod { value0: 'F', value1: 0 }
-            }
-          }
-        }
-      },
-      value1: 'a',
-      value2: 0
-    }
+  expr: Map(0) {},
+  binder: Map(0) {},
+  type_: Map(6) {
+    0 => RootScope {},
+    1 => RootScope {},
+    2 => RootScope {},
+    3 => TypeVar { value0: RootScope {}, value1: 'a', value2: 0 },
+    4 => TypeVar { value0: RootScope {}, value1: 'a', value2: 0 },
+    5 => TypeVar { value0: RootScope {}, value1: 'a', value2: 0 }
   }
 }
