@@ -1,12 +1,22 @@
 {
-  expr: Map(0) {},
-  binder: Map(0) {},
-  type_: Map(6) {
-    0 => RootScope {},
-    1 => RootScope {},
-    2 => RootScope {},
-    3 => TypeVar { value0: RootScope {}, value1: 'a', value2: 0 },
-    4 => TypeVar { value0: RootScope {}, value1: 'a', value2: 0 },
-    5 => TypeVar { value0: RootScope {}, value1: 'a', value2: 0 }
+  expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+  binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+  type_: MapNode {
+    datamap: 63,
+    nodemap: 0,
+    content: [
+      0,
+      RootScope {},
+      1,
+      RootScope {},
+      2,
+      RootScope {},
+      3,
+      TypeVar { value0: RootScope {}, value1: 'a', value2: 0 },
+      4,
+      TypeVar { value0: RootScope {}, value1: 'a', value2: 0 },
+      5,
+      TypeVar { value0: RootScope {}, value1: 'a', value2: 0 }
+    ]
   }
 }

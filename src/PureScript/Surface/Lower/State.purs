@@ -5,10 +5,10 @@ import Prelude
 import Control.Monad.ST (Region, ST)
 import Control.Monad.ST.Internal (STRef)
 import Control.Monad.ST.Ref as STRef
+import Data.HashMap (HashMap)
+import Data.HashMap as HashMap
 import PureScript.CST.Errors (RecoveredError)
 import PureScript.Id (Id(..))
-import PureScript.Id.STMap (STIdMap)
-import PureScript.Id.STMap as STIdMap
 import PureScript.Surface.Lower.Error (class IntoRecoveredError, intoRecoveredError)
 import PureScript.Surface.Lower.Types
   ( ErrorFieldGroup
@@ -22,10 +22,10 @@ type MakeId ∷ Region → Type → Type → Type
 type MakeId r t s = STRef r Int
 
 type MakeSourceRange ∷ Region → Type → Type → Type
-type MakeSourceRange r t s = STIdMap r t s
+type MakeSourceRange r t s = STRef r (HashMap (Id t) s)
 
 type MakeRecoveredError ∷ Region → Type → Type
-type MakeRecoveredError r t = STIdMap r t RecoveredError
+type MakeRecoveredError r t = STRef r (HashMap (Id t) RecoveredError)
 
 type IdFields r = FieldGroup (MakeId r)
 type SourceRangeFields r = FieldGroup (MakeSourceRange r)
@@ -63,16 +63,16 @@ empty = do
       , typeVarBinding
       }
   sourceRanges ← do
-    expr ← STIdMap.empty
-    binder ← STIdMap.empty
-    type_ ← STIdMap.empty
-    doStatement ← STIdMap.empty
-    letBinding ← STIdMap.empty
-    declaration ← STIdMap.empty
-    constructor ← STIdMap.empty
-    newtype_ ← STIdMap.empty
-    classMethod ← STIdMap.empty
-    typeVarBinding ← STIdMap.empty
+    expr ← STRef.new HashMap.empty
+    binder ← STRef.new HashMap.empty
+    type_ ← STRef.new HashMap.empty
+    doStatement ← STRef.new HashMap.empty
+    letBinding ← STRef.new HashMap.empty
+    declaration ← STRef.new HashMap.empty
+    constructor ← STRef.new HashMap.empty
+    newtype_ ← STRef.new HashMap.empty
+    classMethod ← STRef.new HashMap.empty
+    typeVarBinding ← STRef.new HashMap.empty
     pure
       { expr
       , binder
@@ -86,12 +86,12 @@ empty = do
       , typeVarBinding
       }
   recoveredErrors ← do
-    expr ← STIdMap.empty
-    binder ← STIdMap.empty
-    type_ ← STIdMap.empty
-    doStatement ← STIdMap.empty
-    letBinding ← STIdMap.empty
-    declaration ← STIdMap.empty
+    expr ← STRef.new HashMap.empty
+    binder ← STRef.new HashMap.empty
+    type_ ← STRef.new HashMap.empty
+    doStatement ← STRef.new HashMap.empty
+    letBinding ← STRef.new HashMap.empty
+    declaration ← STRef.new HashMap.empty
     pure
       { expr
       , binder
@@ -105,16 +105,16 @@ empty = do
 freeze ∷ ∀ r. State r → ST r { sourceRanges ∷ SourceRanges, recoveredErrors ∷ RecoveredErrors }
 freeze (State { sourceRanges, recoveredErrors }) = do
   sourceRanges' ← do
-    expr ← STIdMap.freeze sourceRanges.expr
-    binder ← STIdMap.freeze sourceRanges.binder
-    type_ ← STIdMap.freeze sourceRanges."type"
-    doStatement ← STIdMap.freeze sourceRanges.doStatement
-    letBinding ← STIdMap.freeze sourceRanges.letBinding
-    declaration ← STIdMap.freeze sourceRanges.declaration
-    constructor ← STIdMap.freeze sourceRanges.constructor
-    newtype_ ← STIdMap.freeze sourceRanges."newtype"
-    classMethod ← STIdMap.freeze sourceRanges.classMethod
-    typeVarBinding ← STIdMap.freeze sourceRanges.typeVarBinding
+    expr ← STRef.read sourceRanges.expr
+    binder ← STRef.read sourceRanges.binder
+    type_ ← STRef.read sourceRanges."type"
+    doStatement ← STRef.read sourceRanges.doStatement
+    letBinding ← STRef.read sourceRanges.letBinding
+    declaration ← STRef.read sourceRanges.declaration
+    constructor ← STRef.read sourceRanges.constructor
+    newtype_ ← STRef.read sourceRanges."newtype"
+    classMethod ← STRef.read sourceRanges.classMethod
+    typeVarBinding ← STRef.read sourceRanges.typeVarBinding
     pure $ SourceRanges $ coerce
       { expr
       , binder
@@ -128,12 +128,12 @@ freeze (State { sourceRanges, recoveredErrors }) = do
       , typeVarBinding
       }
   recoveredErrors' ← do
-    expr ← STIdMap.freeze recoveredErrors.expr
-    binder ← STIdMap.freeze recoveredErrors.binder
-    type_ ← STIdMap.freeze recoveredErrors."type"
-    doStatement ← STIdMap.freeze recoveredErrors.doStatement
-    letBinding ← STIdMap.freeze recoveredErrors.letBinding
-    declaration ← STIdMap.freeze recoveredErrors.declaration
+    expr ← STRef.read recoveredErrors.expr
+    binder ← STRef.read recoveredErrors.binder
+    type_ ← STRef.read recoveredErrors."type"
+    doStatement ← STRef.read recoveredErrors.doStatement
+    letBinding ← STRef.read recoveredErrors.letBinding
+    declaration ← STRef.read recoveredErrors.declaration
     pure $ RecoveredErrors $ coerce
       { expr
       , binder
@@ -159,27 +159,27 @@ nextId get (State { ids }) = do
 
 insertSourceRange
   ∷ ∀ r s t
-  . ({ | SourceRangeFields r } → STIdMap r t s)
+  . ({ | SourceRangeFields r } → STRef r (HashMap (Id t) s))
   → State r
   → Id t
   → s
   → ST r Unit
 insertSourceRange get (State { sourceRanges }) id sourceRange = do
   let
-    ref ∷ STIdMap r t s
+    ref ∷ STRef r (HashMap (Id t) s)
     ref = get sourceRanges
-  STIdMap.set id sourceRange ref
+  void $ STRef.modify (HashMap.insert id sourceRange) ref
 
 insertError
   ∷ ∀ r e t
   . IntoRecoveredError e
-  ⇒ ({ | RecoveredErrorFields r } → STIdMap r t RecoveredError)
+  ⇒ ({ | RecoveredErrorFields r } → STRef r (HashMap (Id t) RecoveredError))
   → State r
   → Id t
   → e
   → ST r Unit
 insertError get (State { recoveredErrors }) id error = do
   let
-    ref ∷ STIdMap r t RecoveredError
+    ref ∷ STRef r (HashMap (Id t) RecoveredError)
     ref = get recoveredErrors
-  STIdMap.set id (intoRecoveredError error) ref
+  void $ STRef.modify (HashMap.insert id (intoRecoveredError error)) ref

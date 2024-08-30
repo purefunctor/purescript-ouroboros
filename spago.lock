@@ -12,6 +12,7 @@ workspace:
         - language-cst-parser
         - prelude
         - refs
+        - unordered-collections
         - variant
       test_dependencies:
         - aff
@@ -95,6 +96,7 @@ workspace:
         - type-equality
         - typelevel-prelude
         - unfoldable
+        - unordered-collections
         - unsafe-coerce
         - variant
   package_set:
@@ -1504,6 +1506,21 @@ packages:
       - partial
       - prelude
       - tuples
+  unordered-collections:
+    type: registry
+    version: 3.1.0
+    integrity: sha256-H2eQR+ylI+cljz4XzWfEbdF7ee+pnw2IZCeq69AuJ+Q=
+    dependencies:
+      - arrays
+      - enums
+      - functions
+      - integers
+      - lists
+      - prelude
+      - record
+      - tuples
+      - typelevel-prelude
+      - unfoldable
   unsafe-coerce:
     type: registry
     version: 6.0.0

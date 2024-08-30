@@ -1,8 +1,14 @@
 {
-  expr: Map(2) {
-    0 => Binders { value0: RootScope {}, value1: {} },
-    1 => Binders { value0: RootScope {}, value1: { x: 0 } }
+  expr: MapNode {
+    datamap: 3,
+    nodemap: 0,
+    content: [
+      0,
+      Binders { value0: RootScope {}, value1: {} },
+      1,
+      Binders { value0: RootScope {}, value1: { x: 0 } }
+    ]
   },
-  binder: Map(1) { 0 => RootScope {} },
-  type_: Map(0) {}
+  binder: MapNode { datamap: 1, nodemap: 0, content: [ 0, RootScope {} ] },
+  type_: MapNode { datamap: 0, nodemap: 0, content: [] }
 }

@@ -2,10 +2,11 @@ module PureScript.Surface.Lower.Types where
 
 import Prelude
 
+import Data.HashMap (HashMap)
 import Data.Maybe (Maybe)
 import PureScript.CST.Errors (RecoveredError)
 import PureScript.CST.Types (SourceRange)
-import PureScript.Id.Map (IdMap)
+import PureScript.Id (Id)
 import PureScript.Surface.Syntax.Tree as SST
 
 type SigDefSourceRange =
@@ -51,8 +52,8 @@ type ErrorFieldGroup f =
   , declaration ∷ f SST.Declaration
   )
 
-type MakeSourceRange t s = IdMap t s
-type MakeRecoveredError t = IdMap t RecoveredError
+type MakeSourceRange t s = HashMap (Id t) s
+type MakeRecoveredError t = HashMap (Id t) RecoveredError
 
 newtype SourceRanges = SourceRanges
   { | FieldGroup MakeSourceRange

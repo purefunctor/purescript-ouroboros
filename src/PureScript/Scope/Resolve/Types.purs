@@ -1,9 +1,10 @@
 module PureScript.Scope.Resolve.Types where
 
-import PureScript.Id.Map (IdMap)
+import Data.HashMap (HashMap)
+import PureScript.Id (Id)
 import PureScript.Scope.Types (ExprIdentResolution)
 import PureScript.Surface.Syntax.Tree (Expr)
 
 type Resolutions =
-  { exprIdent ∷ IdMap Expr ExprIdentResolution
+  { exprIdent ∷ HashMap (Id Expr) ExprIdentResolution
   }

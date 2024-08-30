@@ -1,1 +1,1 @@
-{ exprIdent: Map(0) {} }
+{ exprIdent: MapNode { datamap: 0, nodemap: 0, content: [] } }

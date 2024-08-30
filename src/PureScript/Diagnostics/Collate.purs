@@ -5,20 +5,20 @@ module PureScript.Diagnostics.Collate where
 
 import Prelude
 
+import Data.HashMap (HashMap)
+import Data.HashMap as HashMap
 import Data.Set (Set)
 import Data.Set as Set
-import Data.Tuple (snd)
 import Heterogeneous.Folding (class Folding, hfoldl)
 import PureScript.CST.Errors (RecoveredError)
 import PureScript.CST.Parser.Monad (PositionedError)
 import PureScript.Diagnostics.Types (Diagnostic(..), DiagnosticKind(..))
 import PureScript.Driver.Files (ParsedFile(..))
-import PureScript.Id.Map (IdMap(..))
+import PureScript.Id (Id)
 import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Interface.Error (InterfaceError)
 import PureScript.Surface.Lower as SurfaceLower
 import PureScript.Surface.Lower.Types (RecoveredErrors(..))
-import PureScript.Utils.Immutable.IntMap as IntMap
 
 ofPositionedError ∷ PositionedError → Diagnostic
 ofPositionedError { error } = Diagnostic { kind: DiagnosticParseError error }
@@ -32,13 +32,11 @@ ofInterfaceError error = Diagnostic { kind: DiagnosticInterfaceError error }
 data CollateRecoveredErrors = CollateRecoveredErrors
 
 instance foldingCollateRecoveredErrors ∷
-  Folding CollateRecoveredErrors (Set Diagnostic) (IdMap t RecoveredError) (Set Diagnostic) where
-  folding _ diagnostics = case _ of
-    IdMap intMap → intMap
-      # IntMap.toArray
-      # map (ofRecoveredError <<< snd)
-      # Set.fromFoldable
-      # Set.union diagnostics
+  Folding CollateRecoveredErrors (Set Diagnostic) (HashMap (Id t) RecoveredError) (Set Diagnostic) where
+  folding _ diagnostics =
+    HashMap.toArrayBy (const ofRecoveredError)
+      >>> Set.fromFoldable
+      >>> Set.union diagnostics
 
 collateDiagnostics
   ∷ ParsedFile

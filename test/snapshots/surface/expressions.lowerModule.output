@@ -852,591 +852,1058 @@
     ]
   },
   sourceRanges: {
-    expr: Map(70) {
-      0 => { start: { line: 2, column: 7 }, end: { line: 2, column: 12 } },
-      1 => { start: { line: 3, column: 10 }, end: { line: 3, column: 11 } },
-      2 => { start: { line: 4, column: 8 }, end: { line: 4, column: 13 } },
-      3 => { start: { line: 5, column: 14 }, end: { line: 5, column: 25 } },
-      4 => { start: { line: 6, column: 10 }, end: { line: 6, column: 14 } },
-      5 => { start: { line: 7, column: 7 }, end: { line: 7, column: 10 } },
-      6 => { start: { line: 8, column: 9 }, end: { line: 8, column: 17 } },
-      7 => { start: { line: 9, column: 6 }, end: { line: 9, column: 8 } },
-      8 => { start: { line: 10, column: 9 }, end: { line: 10, column: 13 } },
-      9 => {
-        start: { line: 11, column: 13 },
-        end: { line: 11, column: 15 }
-      },
-      10 => {
-        start: { line: 12, column: 16 },
-        end: { line: 12, column: 26 }
-      },
-      11 => {
-        start: { line: 12, column: 17 },
-        end: { line: 12, column: 19 }
-      },
-      12 => {
-        start: { line: 12, column: 21 },
-        end: { line: 12, column: 25 }
-      },
-      13 => {
-        start: { line: 13, column: 14 },
-        end: { line: 13, column: 16 }
-      },
-      14 => {
-        start: { line: 14, column: 12 },
-        end: { line: 14, column: 17 }
-      },
-      15 => {
-        start: { line: 15, column: 14 },
-        end: { line: 15, column: 23 }
-      },
-      16 => {
-        start: { line: 15, column: 19 },
-        end: { line: 15, column: 21 }
-      },
-      17 => { start: { line: 16, column: 9 }, end: { line: 16, column: 12 } },
-      18 => {
-        start: { line: 16, column: 10 },
-        end: { line: 16, column: 11 }
-      },
-      19 => { start: { line: 17, column: 8 }, end: { line: 17, column: 16 } },
-      20 => { start: { line: 17, column: 9 }, end: { line: 17, column: 15 } },
-      21 => { start: { line: 17, column: 9 }, end: { line: 17, column: 10 } },
-      22 => { start: { line: 18, column: 9 }, end: { line: 18, column: 33 } },
-      23 => { start: { line: 18, column: 9 }, end: { line: 18, column: 10 } },
-      24 => {
-        start: { line: 18, column: 12 },
-        end: { line: 18, column: 20 }
-      },
-      25 => {
-        start: { line: 18, column: 22 },
-        end: { line: 18, column: 23 }
-      },
-      26 => {
-        start: { line: 18, column: 25 },
-        end: { line: 18, column: 30 }
-      },
-      27 => {
-        start: { line: 18, column: 32 },
-        end: { line: 18, column: 33 }
-      },
-      28 => {
-        start: { line: 19, column: 12 },
-        end: { line: 19, column: 21 }
-      },
-      29 => {
-        start: { line: 19, column: 12 },
-        end: { line: 19, column: 13 }
-      },
-      30 => {
-        start: { line: 19, column: 16 },
-        end: { line: 19, column: 17 }
-      },
-      31 => {
-        start: { line: 19, column: 20 },
-        end: { line: 19, column: 21 }
-      },
-      32 => { start: { line: 20, column: 9 }, end: { line: 20, column: 12 } },
-      33 => { start: { line: 21, column: 9 }, end: { line: 21, column: 11 } },
-      34 => {
-        start: { line: 21, column: 10 },
-        end: { line: 21, column: 11 }
-      },
-      35 => {
-        start: { line: 22, column: 11 },
-        end: { line: 22, column: 18 }
-      },
-      36 => {
-        start: { line: 22, column: 11 },
-        end: { line: 22, column: 12 }
-      },
-      37 => { start: { line: 23, column: 9 }, end: { line: 23, column: 33 } },
-      38 => { start: { line: 23, column: 9 }, end: { line: 23, column: 10 } },
-      39 => {
-        start: { line: 23, column: 17 },
-        end: { line: 23, column: 18 }
-      },
-      40 => {
-        start: { line: 23, column: 28 },
-        end: { line: 23, column: 29 }
-      },
-      41 => {
-        start: { line: 24, column: 14 },
-        end: { line: 24, column: 17 }
-      },
-      42 => {
-        start: { line: 24, column: 14 },
-        end: { line: 24, column: 15 }
-      },
-      43 => {
-        start: { line: 24, column: 16 },
-        end: { line: 24, column: 17 }
-      },
-      44 => { start: { line: 25, column: 9 }, end: { line: 25, column: 16 } },
-      45 => {
-        start: { line: 25, column: 15 },
-        end: { line: 25, column: 16 }
-      },
-      46 => {
-        start: { line: 26, column: 13 },
-        end: { line: 26, column: 31 }
-      },
-      47 => {
-        start: { line: 26, column: 16 },
-        end: { line: 26, column: 17 }
-      },
-      48 => {
-        start: { line: 26, column: 23 },
-        end: { line: 26, column: 24 }
-      },
-      49 => {
-        start: { line: 26, column: 30 },
-        end: { line: 26, column: 31 }
-      },
-      50 => {
-        start: { line: 27, column: 11 },
-        end: { line: 29, column: 12 }
-      },
-      51 => {
-        start: { line: 27, column: 16 },
-        end: { line: 27, column: 17 }
-      },
-      52 => { start: { line: 28, column: 7 }, end: { line: 28, column: 8 } },
-      53 => { start: { line: 29, column: 6 }, end: { line: 29, column: 7 } },
-      54 => {
-        start: { line: 29, column: 11 },
-        end: { line: 29, column: 12 }
-      },
-      55 => { start: { line: 31, column: 2 }, end: { line: 36, column: 10 } },
-      56 => { start: { line: 32, column: 8 }, end: { line: 32, column: 9 } },
-      57 => { start: { line: 33, column: 8 }, end: { line: 33, column: 9 } },
-      58 => { start: { line: 34, column: 8 }, end: { line: 34, column: 9 } },
-      59 => { start: { line: 36, column: 4 }, end: { line: 36, column: 10 } },
-      60 => { start: { line: 36, column: 5 }, end: { line: 36, column: 6 } },
-      61 => { start: { line: 36, column: 8 }, end: { line: 36, column: 9 } },
-      62 => { start: { line: 37, column: 9 }, end: { line: 40, column: 3 } },
-      63 => { start: { line: 38, column: 7 }, end: { line: 38, column: 8 } },
-      64 => {
-        start: { line: 39, column: 10 },
-        end: { line: 39, column: 11 }
-      },
-      65 => { start: { line: 40, column: 2 }, end: { line: 40, column: 3 } },
-      66 => { start: { line: 41, column: 10 }, end: { line: 44, column: 6 } },
-      67 => { start: { line: 42, column: 7 }, end: { line: 42, column: 8 } },
-      68 => {
-        start: { line: 43, column: 10 },
-        end: { line: 43, column: 11 }
-      },
-      69 => { start: { line: 44, column: 5 }, end: { line: 44, column: 6 } }
-    },
-    binder: Map(6) {
-      0 => {
-        start: { line: 25, column: 10 },
-        end: { line: 25, column: 11 }
-      },
-      1 => { start: { line: 28, column: 2 }, end: { line: 28, column: 3 } },
-      2 => { start: { line: 29, column: 2 }, end: { line: 29, column: 3 } },
-      3 => { start: { line: 33, column: 4 }, end: { line: 33, column: 5 } },
-      4 => { start: { line: 38, column: 2 }, end: { line: 38, column: 3 } },
-      5 => { start: { line: 42, column: 2 }, end: { line: 42, column: 3 } }
-    },
-    type: Map(1) {
-      0 => {
-        start: { line: 17, column: 14 },
-        end: { line: 17, column: 15 }
-      }
-    },
-    doStatement: Map(5) {
-      0 => { start: { line: 38, column: 2 }, end: { line: 38, column: 8 } },
-      1 => { start: { line: 39, column: 2 }, end: { line: 39, column: 11 } },
-      2 => { start: { line: 40, column: 2 }, end: { line: 40, column: 3 } },
-      3 => { start: { line: 42, column: 2 }, end: { line: 42, column: 8 } },
-      4 => { start: { line: 43, column: 2 }, end: { line: 43, column: 11 } }
-    },
-    letBinding: Map(5) {
-      0 => LetBindingNameSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
+    expr: MapNode {
+      datamap: 0,
+      nodemap: -1,
+      content: [
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            31,
             {
-              start: { line: 32, column: 4 },
-              end: { line: 32, column: 9 }
+              start: { line: 19, column: 20 },
+              end: { line: 19, column: 21 }
+            },
+            63,
+            {
+              start: { line: 38, column: 7 },
+              end: { line: 38, column: 8 }
             }
           ]
-        }
-      },
-      1 => LetBindingPatternSourceRange {
-        value0: {
-          start: { line: 33, column: 4 },
-          end: { line: 33, column: 9 }
-        }
-      },
-      2 => LetBindingNameSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            30,
             {
-              start: { line: 34, column: 4 },
+              start: { line: 19, column: 16 },
+              end: { line: 19, column: 17 }
+            },
+            62,
+            {
+              start: { line: 37, column: 9 },
+              end: { line: 40, column: 3 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            29,
+            {
+              start: { line: 19, column: 12 },
+              end: { line: 19, column: 13 }
+            },
+            61,
+            {
+              start: { line: 36, column: 8 },
+              end: { line: 36, column: 9 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            28,
+            {
+              start: { line: 19, column: 12 },
+              end: { line: 19, column: 21 }
+            },
+            60,
+            {
+              start: { line: 36, column: 5 },
+              end: { line: 36, column: 6 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            27,
+            {
+              start: { line: 18, column: 32 },
+              end: { line: 18, column: 33 }
+            },
+            59,
+            {
+              start: { line: 36, column: 4 },
+              end: { line: 36, column: 10 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            26,
+            {
+              start: { line: 18, column: 25 },
+              end: { line: 18, column: 30 }
+            },
+            58,
+            {
+              start: { line: 34, column: 8 },
               end: { line: 34, column: 9 }
             }
           ]
-        }
-      },
-      3 => LetBindingNameSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            25,
             {
-              start: { line: 39, column: 6 },
+              start: { line: 18, column: 22 },
+              end: { line: 18, column: 23 }
+            },
+            57,
+            {
+              start: { line: 33, column: 8 },
+              end: { line: 33, column: 9 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            24,
+            {
+              start: { line: 18, column: 12 },
+              end: { line: 18, column: 20 }
+            },
+            56,
+            {
+              start: { line: 32, column: 8 },
+              end: { line: 32, column: 9 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            23,
+            {
+              start: { line: 18, column: 9 },
+              end: { line: 18, column: 10 }
+            },
+            55,
+            {
+              start: { line: 31, column: 2 },
+              end: { line: 36, column: 10 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            22,
+            {
+              start: { line: 18, column: 9 },
+              end: { line: 18, column: 33 }
+            },
+            54,
+            {
+              start: { line: 29, column: 11 },
+              end: { line: 29, column: 12 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            21,
+            {
+              start: { line: 17, column: 9 },
+              end: { line: 17, column: 10 }
+            },
+            53,
+            {
+              start: { line: 29, column: 6 },
+              end: { line: 29, column: 7 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            20,
+            {
+              start: { line: 17, column: 9 },
+              end: { line: 17, column: 15 }
+            },
+            52,
+            {
+              start: { line: 28, column: 7 },
+              end: { line: 28, column: 8 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            19,
+            {
+              start: { line: 17, column: 8 },
+              end: { line: 17, column: 16 }
+            },
+            51,
+            {
+              start: { line: 27, column: 16 },
+              end: { line: 27, column: 17 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            18,
+            {
+              start: { line: 16, column: 10 },
+              end: { line: 16, column: 11 }
+            },
+            50,
+            {
+              start: { line: 27, column: 11 },
+              end: { line: 29, column: 12 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            17,
+            {
+              start: { line: 16, column: 9 },
+              end: { line: 16, column: 12 }
+            },
+            49,
+            {
+              start: { line: 26, column: 30 },
+              end: { line: 26, column: 31 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            16,
+            {
+              start: { line: 15, column: 19 },
+              end: { line: 15, column: 21 }
+            },
+            48,
+            {
+              start: { line: 26, column: 23 },
+              end: { line: 26, column: 24 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            15,
+            {
+              start: { line: 15, column: 14 },
+              end: { line: 15, column: 23 }
+            },
+            47,
+            {
+              start: { line: 26, column: 16 },
+              end: { line: 26, column: 17 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            14,
+            {
+              start: { line: 14, column: 12 },
+              end: { line: 14, column: 17 }
+            },
+            46,
+            {
+              start: { line: 26, column: 13 },
+              end: { line: 26, column: 31 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            13,
+            {
+              start: { line: 13, column: 14 },
+              end: { line: 13, column: 16 }
+            },
+            45,
+            {
+              start: { line: 25, column: 15 },
+              end: { line: 25, column: 16 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            12,
+            {
+              start: { line: 12, column: 21 },
+              end: { line: 12, column: 25 }
+            },
+            44,
+            {
+              start: { line: 25, column: 9 },
+              end: { line: 25, column: 16 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            11,
+            {
+              start: { line: 12, column: 17 },
+              end: { line: 12, column: 19 }
+            },
+            43,
+            {
+              start: { line: 24, column: 16 },
+              end: { line: 24, column: 17 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            10,
+            {
+              start: { line: 12, column: 16 },
+              end: { line: 12, column: 26 }
+            },
+            42,
+            {
+              start: { line: 24, column: 14 },
+              end: { line: 24, column: 15 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            9,
+            {
+              start: { line: 11, column: 13 },
+              end: { line: 11, column: 15 }
+            },
+            41,
+            {
+              start: { line: 24, column: 14 },
+              end: { line: 24, column: 17 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            8,
+            {
+              start: { line: 10, column: 9 },
+              end: { line: 10, column: 13 }
+            },
+            40,
+            {
+              start: { line: 23, column: 28 },
+              end: { line: 23, column: 29 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            7,
+            {
+              start: { line: 9, column: 6 },
+              end: { line: 9, column: 8 }
+            },
+            39,
+            {
+              start: { line: 23, column: 17 },
+              end: { line: 23, column: 18 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 3,
+          nodemap: 0,
+          content: [
+            6,
+            {
+              start: { line: 8, column: 9 },
+              end: { line: 8, column: 17 }
+            },
+            38,
+            {
+              start: { line: 23, column: 9 },
+              end: { line: 23, column: 10 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 7,
+          nodemap: 0,
+          content: [
+            5,
+            {
+              start: { line: 7, column: 7 },
+              end: { line: 7, column: 10 }
+            },
+            37,
+            {
+              start: { line: 23, column: 9 },
+              end: { line: 23, column: 33 }
+            },
+            69,
+            {
+              start: { line: 44, column: 5 },
+              end: { line: 44, column: 6 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 7,
+          nodemap: 0,
+          content: [
+            4,
+            {
+              start: { line: 6, column: 10 },
+              end: { line: 6, column: 14 }
+            },
+            36,
+            {
+              start: { line: 22, column: 11 },
+              end: { line: 22, column: 12 }
+            },
+            68,
+            {
+              start: { line: 43, column: 10 },
+              end: { line: 43, column: 11 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 7,
+          nodemap: 0,
+          content: [
+            3,
+            {
+              start: { line: 5, column: 14 },
+              end: { line: 5, column: 25 }
+            },
+            35,
+            {
+              start: { line: 22, column: 11 },
+              end: { line: 22, column: 18 }
+            },
+            67,
+            {
+              start: { line: 42, column: 7 },
+              end: { line: 42, column: 8 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 7,
+          nodemap: 0,
+          content: [
+            2,
+            {
+              start: { line: 4, column: 8 },
+              end: { line: 4, column: 13 }
+            },
+            34,
+            {
+              start: { line: 21, column: 10 },
+              end: { line: 21, column: 11 }
+            },
+            66,
+            {
+              start: { line: 41, column: 10 },
+              end: { line: 44, column: 6 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 7,
+          nodemap: 0,
+          content: [
+            1,
+            {
+              start: { line: 3, column: 10 },
+              end: { line: 3, column: 11 }
+            },
+            33,
+            {
+              start: { line: 21, column: 9 },
+              end: { line: 21, column: 11 }
+            },
+            65,
+            {
+              start: { line: 40, column: 2 },
+              end: { line: 40, column: 3 }
+            }
+          ]
+        },
+        MapNode {
+          datamap: 7,
+          nodemap: 0,
+          content: [
+            0,
+            {
+              start: { line: 2, column: 7 },
+              end: { line: 2, column: 12 }
+            },
+            32,
+            {
+              start: { line: 20, column: 9 },
+              end: { line: 20, column: 12 }
+            },
+            64,
+            {
+              start: { line: 39, column: 10 },
               end: { line: 39, column: 11 }
             }
           ]
         }
-      },
-      4 => LetBindingNameSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 43, column: 6 },
-              end: { line: 43, column: 11 }
-            }
-          ]
-        }
-      }
+      ]
     },
-    declaration: Map(29) {
-      0 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 2, column: 0 },
-              end: { line: 2, column: 12 }
-            }
-          ]
+    binder: MapNode {
+      datamap: 63,
+      nodemap: 0,
+      content: [
+        0,
+        {
+          start: { line: 25, column: 10 },
+          end: { line: 25, column: 11 }
+        },
+        1,
+        {
+          start: { line: 28, column: 2 },
+          end: { line: 28, column: 3 }
+        },
+        2,
+        {
+          start: { line: 29, column: 2 },
+          end: { line: 29, column: 3 }
+        },
+        3,
+        {
+          start: { line: 33, column: 4 },
+          end: { line: 33, column: 5 }
+        },
+        4,
+        {
+          start: { line: 38, column: 2 },
+          end: { line: 38, column: 3 }
+        },
+        5,
+        {
+          start: { line: 42, column: 2 },
+          end: { line: 42, column: 3 }
         }
-      },
-      1 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 3, column: 0 },
-              end: { line: 3, column: 11 }
-            }
-          ]
-        }
-      },
-      2 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 4, column: 0 },
-              end: { line: 4, column: 13 }
-            }
-          ]
-        }
-      },
-      3 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 5, column: 0 },
-              end: { line: 5, column: 25 }
-            }
-          ]
-        }
-      },
-      4 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 6, column: 0 },
-              end: { line: 6, column: 14 }
-            }
-          ]
-        }
-      },
-      5 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 7, column: 0 },
-              end: { line: 7, column: 10 }
-            }
-          ]
-        }
-      },
-      6 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 8, column: 0 },
-              end: { line: 8, column: 17 }
-            }
-          ]
-        }
-      },
-      7 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 9, column: 0 },
-              end: { line: 9, column: 8 }
-            }
-          ]
-        }
-      },
-      8 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 10, column: 0 },
-              end: { line: 10, column: 13 }
-            }
-          ]
-        }
-      },
-      9 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 11, column: 0 },
-              end: { line: 11, column: 15 }
-            }
-          ]
-        }
-      },
-      10 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 12, column: 0 },
-              end: { line: 12, column: 26 }
-            }
-          ]
-        }
-      },
-      11 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 13, column: 0 },
-              end: { line: 13, column: 16 }
-            }
-          ]
-        }
-      },
-      12 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 14, column: 0 },
-              end: { line: 14, column: 17 }
-            }
-          ]
-        }
-      },
-      13 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 15, column: 0 },
-              end: { line: 15, column: 23 }
-            }
-          ]
-        }
-      },
-      14 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 16, column: 0 },
-              end: { line: 16, column: 12 }
-            }
-          ]
-        }
-      },
-      15 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 17, column: 0 },
-              end: { line: 17, column: 16 }
-            }
-          ]
-        }
-      },
-      16 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 18, column: 0 },
-              end: { line: 18, column: 33 }
-            }
-          ]
-        }
-      },
-      17 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 19, column: 0 },
-              end: { line: 19, column: 21 }
-            }
-          ]
-        }
-      },
-      18 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 20, column: 0 },
-              end: { line: 20, column: 12 }
-            }
-          ]
-        }
-      },
-      19 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 21, column: 0 },
-              end: { line: 21, column: 11 }
-            }
-          ]
-        }
-      },
-      20 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 22, column: 0 },
-              end: { line: 22, column: 18 }
-            }
-          ]
-        }
-      },
-      21 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 23, column: 0 },
-              end: { line: 23, column: 33 }
-            }
-          ]
-        }
-      },
-      22 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 24, column: 0 },
-              end: { line: 24, column: 17 }
-            }
-          ]
-        }
-      },
-      23 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 25, column: 0 },
-              end: { line: 25, column: 16 }
-            }
-          ]
-        }
-      },
-      24 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 26, column: 0 },
-              end: { line: 26, column: 31 }
-            }
-          ]
-        }
-      },
-      25 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 27, column: 0 },
-              end: { line: 29, column: 12 }
-            }
-          ]
-        }
-      },
-      26 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 30, column: 0 },
-              end: { line: 36, column: 10 }
-            }
-          ]
-        }
-      },
-      27 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 37, column: 0 },
-              end: { line: 40, column: 3 }
-            }
-          ]
-        }
-      },
-      28 => DeclarationValueSourceRange {
-        value0: {
-          signature: Nothing {},
-          definitions: [
-            {
-              start: { line: 41, column: 0 },
-              end: { line: 44, column: 6 }
-            }
-          ]
-        }
-      }
+      ]
     },
-    constructor: Map(0) {},
-    newtype: Map(0) {},
-    classMethod: Map(0) {},
-    typeVarBinding: Map(0) {}
+    type: MapNode {
+      datamap: 1,
+      nodemap: 0,
+      content: [
+        0,
+        {
+          start: { line: 17, column: 14 },
+          end: { line: 17, column: 15 }
+        }
+      ]
+    },
+    doStatement: MapNode {
+      datamap: 31,
+      nodemap: 0,
+      content: [
+        0,
+        {
+          start: { line: 38, column: 2 },
+          end: { line: 38, column: 8 }
+        },
+        1,
+        {
+          start: { line: 39, column: 2 },
+          end: { line: 39, column: 11 }
+        },
+        2,
+        {
+          start: { line: 40, column: 2 },
+          end: { line: 40, column: 3 }
+        },
+        3,
+        {
+          start: { line: 42, column: 2 },
+          end: { line: 42, column: 8 }
+        },
+        4,
+        {
+          start: { line: 43, column: 2 },
+          end: { line: 43, column: 11 }
+        }
+      ]
+    },
+    letBinding: MapNode {
+      datamap: 31,
+      nodemap: 0,
+      content: [
+        0,
+        LetBindingNameSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 32, column: 4 },
+                end: { line: 32, column: 9 }
+              }
+            ]
+          }
+        },
+        1,
+        LetBindingPatternSourceRange {
+          value0: {
+            start: { line: 33, column: 4 },
+            end: { line: 33, column: 9 }
+          }
+        },
+        2,
+        LetBindingNameSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 34, column: 4 },
+                end: { line: 34, column: 9 }
+              }
+            ]
+          }
+        },
+        3,
+        LetBindingNameSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 39, column: 6 },
+                end: { line: 39, column: 11 }
+              }
+            ]
+          }
+        },
+        4,
+        LetBindingNameSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 43, column: 6 },
+                end: { line: 43, column: 11 }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    declaration: MapNode {
+      datamap: 536870911,
+      nodemap: 0,
+      content: [
+        0,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 2, column: 0 },
+                end: { line: 2, column: 12 }
+              }
+            ]
+          }
+        },
+        1,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 3, column: 0 },
+                end: { line: 3, column: 11 }
+              }
+            ]
+          }
+        },
+        2,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 4, column: 0 },
+                end: { line: 4, column: 13 }
+              }
+            ]
+          }
+        },
+        3,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 5, column: 0 },
+                end: { line: 5, column: 25 }
+              }
+            ]
+          }
+        },
+        4,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 6, column: 0 },
+                end: { line: 6, column: 14 }
+              }
+            ]
+          }
+        },
+        5,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 7, column: 0 },
+                end: { line: 7, column: 10 }
+              }
+            ]
+          }
+        },
+        6,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 8, column: 0 },
+                end: { line: 8, column: 17 }
+              }
+            ]
+          }
+        },
+        7,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 9, column: 0 },
+                end: { line: 9, column: 8 }
+              }
+            ]
+          }
+        },
+        8,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 10, column: 0 },
+                end: { line: 10, column: 13 }
+              }
+            ]
+          }
+        },
+        9,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 11, column: 0 },
+                end: { line: 11, column: 15 }
+              }
+            ]
+          }
+        },
+        10,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 12, column: 0 },
+                end: { line: 12, column: 26 }
+              }
+            ]
+          }
+        },
+        11,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 13, column: 0 },
+                end: { line: 13, column: 16 }
+              }
+            ]
+          }
+        },
+        12,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 14, column: 0 },
+                end: { line: 14, column: 17 }
+              }
+            ]
+          }
+        },
+        13,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 15, column: 0 },
+                end: { line: 15, column: 23 }
+              }
+            ]
+          }
+        },
+        14,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 16, column: 0 },
+                end: { line: 16, column: 12 }
+              }
+            ]
+          }
+        },
+        15,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 17, column: 0 },
+                end: { line: 17, column: 16 }
+              }
+            ]
+          }
+        },
+        16,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 18, column: 0 },
+                end: { line: 18, column: 33 }
+              }
+            ]
+          }
+        },
+        17,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 19, column: 0 },
+                end: { line: 19, column: 21 }
+              }
+            ]
+          }
+        },
+        18,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 20, column: 0 },
+                end: { line: 20, column: 12 }
+              }
+            ]
+          }
+        },
+        19,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 21, column: 0 },
+                end: { line: 21, column: 11 }
+              }
+            ]
+          }
+        },
+        20,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 22, column: 0 },
+                end: { line: 22, column: 18 }
+              }
+            ]
+          }
+        },
+        21,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 23, column: 0 },
+                end: { line: 23, column: 33 }
+              }
+            ]
+          }
+        },
+        22,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 24, column: 0 },
+                end: { line: 24, column: 17 }
+              }
+            ]
+          }
+        },
+        23,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 25, column: 0 },
+                end: { line: 25, column: 16 }
+              }
+            ]
+          }
+        },
+        24,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 26, column: 0 },
+                end: { line: 26, column: 31 }
+              }
+            ]
+          }
+        },
+        25,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 27, column: 0 },
+                end: { line: 29, column: 12 }
+              }
+            ]
+          }
+        },
+        26,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 30, column: 0 },
+                end: { line: 36, column: 10 }
+              }
+            ]
+          }
+        },
+        27,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 37, column: 0 },
+                end: { line: 40, column: 3 }
+              }
+            ]
+          }
+        },
+        28,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Nothing {},
+            definitions: [
+              {
+                start: { line: 41, column: 0 },
+                end: { line: 44, column: 6 }
+              }
+            ]
+          }
+        }
+      ]
+    },
+    constructor: MapNode { datamap: 0, nodemap: 0, content: [] },
+    newtype: MapNode { datamap: 0, nodemap: 0, content: [] },
+    classMethod: MapNode { datamap: 0, nodemap: 0, content: [] },
+    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] }
   },
   recoveredErrors: {
-    expr: Map(0) {},
-    binder: Map(0) {},
-    type: Map(0) {},
-    doStatement: Map(0) {},
-    letBinding: Map(0) {},
-    declaration: Map(0) {}
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode { datamap: 0, nodemap: 0, content: [] },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode { datamap: 0, nodemap: 0, content: [] }
   }
 }

@@ -10,6 +10,7 @@ package:
     - language-cst-parser
     - prelude
     - refs
+    - unordered-collections
     - variant
   test:
     main: Test.Main

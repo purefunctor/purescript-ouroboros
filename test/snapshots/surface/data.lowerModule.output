@@ -59,68 +59,122 @@
     ]
   },
   sourceRanges: {
-    expr: Map(0) {},
-    binder: Map(0) {},
-    type: Map(5) {
-      0 => { start: { line: 2, column: 13 }, end: { line: 2, column: 17 } },
-      1 => { start: { line: 5, column: 14 }, end: { line: 5, column: 26 } },
-      2 => { start: { line: 5, column: 14 }, end: { line: 5, column: 18 } },
-      3 => { start: { line: 5, column: 22 }, end: { line: 5, column: 26 } },
-      4 => { start: { line: 6, column: 20 }, end: { line: 6, column: 21 } }
-    },
-    doStatement: Map(0) {},
-    letBinding: Map(0) {},
-    declaration: Map(2) {
-      0 => DeclarationValueSourceRange {
-        value0: {
-          signature: Just {
-            value0: {
-              start: { line: 2, column: 0 },
-              end: { line: 2, column: 17 }
-            }
-          },
-          definitions: [
-            {
-              start: { line: 3, column: 0 },
-              end: { line: 3, column: 16 }
-            }
-          ]
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode {
+      datamap: 31,
+      nodemap: 0,
+      content: [
+        0,
+        {
+          start: { line: 2, column: 13 },
+          end: { line: 2, column: 17 }
+        },
+        1,
+        {
+          start: { line: 5, column: 14 },
+          end: { line: 5, column: 26 }
+        },
+        2,
+        {
+          start: { line: 5, column: 14 },
+          end: { line: 5, column: 18 }
+        },
+        3,
+        {
+          start: { line: 5, column: 22 },
+          end: { line: 5, column: 26 }
+        },
+        4,
+        {
+          start: { line: 6, column: 20 },
+          end: { line: 6, column: 21 }
         }
-      },
-      1 => DeclarationValueSourceRange {
-        value0: {
-          signature: Just {
-            value0: {
-              start: { line: 5, column: 0 },
-              end: { line: 5, column: 26 }
-            }
-          },
-          definitions: [
-            {
-              start: { line: 6, column: 0 },
-              end: { line: 6, column: 31 }
-            }
-          ]
+      ]
+    },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode {
+      datamap: 3,
+      nodemap: 0,
+      content: [
+        0,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Just {
+              value0: {
+                start: { line: 2, column: 0 },
+                end: { line: 2, column: 17 }
+              }
+            },
+            definitions: [
+              {
+                start: { line: 3, column: 0 },
+                end: { line: 3, column: 16 }
+              }
+            ]
+          }
+        },
+        1,
+        DeclarationValueSourceRange {
+          value0: {
+            signature: Just {
+              value0: {
+                start: { line: 5, column: 0 },
+                end: { line: 5, column: 26 }
+              }
+            },
+            definitions: [
+              {
+                start: { line: 6, column: 0 },
+                end: { line: 6, column: 31 }
+              }
+            ]
+          }
         }
-      }
+      ]
     },
-    constructor: Map(3) {
-      0 => { start: { line: 3, column: 12 }, end: { line: 3, column: 16 } },
-      1 => { start: { line: 6, column: 15 }, end: { line: 6, column: 21 } },
-      2 => { start: { line: 6, column: 24 }, end: { line: 6, column: 31 } }
+    constructor: MapNode {
+      datamap: 7,
+      nodemap: 0,
+      content: [
+        0,
+        {
+          start: { line: 3, column: 12 },
+          end: { line: 3, column: 16 }
+        },
+        1,
+        {
+          start: { line: 6, column: 15 },
+          end: { line: 6, column: 21 }
+        },
+        2,
+        {
+          start: { line: 6, column: 24 },
+          end: { line: 6, column: 31 }
+        }
+      ]
     },
-    newtype: Map(0) {},
-    classMethod: Map(0) {},
-    typeVarBinding: Map(1) {
-      0 => { start: { line: 6, column: 11 }, end: { line: 6, column: 12 } }
+    newtype: MapNode { datamap: 0, nodemap: 0, content: [] },
+    classMethod: MapNode { datamap: 0, nodemap: 0, content: [] },
+    typeVarBinding: MapNode {
+      datamap: 1,
+      nodemap: 0,
+      content: [
+        0,
+        {
+          start: { line: 6, column: 11 },
+          end: { line: 6, column: 12 }
+        }
+      ]
     }
   },
   recoveredErrors: {
-    expr: Map(0) {},
-    binder: Map(0) {},
-    type: Map(0) {},
-    doStatement: Map(0) {},
-    letBinding: Map(0) {},
-    declaration: Map(0) {}
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode { datamap: 0, nodemap: 0, content: [] },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode { datamap: 0, nodemap: 0, content: [] }
   }
 }

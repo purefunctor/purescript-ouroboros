@@ -1,16 +1,26 @@
 {
-  expr: Map(0) {},
-  binder: Map(0) {},
-  type_: Map(6) {
-    0 => RootScope {},
-    1 => TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
-    2 => TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
-    3 => TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
-    4 => TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
-    5 => TypeVar {
-      value0: TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
-      value1: 'a',
-      value2: 1
-    }
+  expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+  binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+  type_: MapNode {
+    datamap: 63,
+    nodemap: 0,
+    content: [
+      0,
+      RootScope {},
+      1,
+      TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
+      2,
+      TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
+      3,
+      TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
+      4,
+      TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
+      5,
+      TypeVar {
+        value0: TypeVar { value0: RootScope {}, value1: 'k', value2: 0 },
+        value1: 'a',
+        value2: 1
+      }
+    ]
   }
 }
