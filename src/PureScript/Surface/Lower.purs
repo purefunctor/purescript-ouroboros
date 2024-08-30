@@ -602,19 +602,50 @@ lowerExports cstExports = for cstExports case _ of
     exports ← STA.freeze exportsRaw
     pure $ NonEmptyArray exports
 
-lowerImportDecls ∷ ∀ r e. Array (CST.ImportDecl e) → ST r (Array SST.Import)
+lowerImportDecls ∷ ∀ r e. Array (CST.ImportDecl e) → ST r (Array SST.ModuleImport)
 lowerImportDecls cstImports = do
   importsRaw ← STA.new
 
   for_ cstImports \cstImport →
     case cstImport of
-      CST.ImportDecl { module: CST.Name { name: importName } } → do
+      CST.ImportDecl { module: CST.Name { name: importName }, names, qualified } → do
+        importList ← lowerImportList names
+
         let
-          sstImport ∷ SST.Import
-          sstImport = SST.Import { name: importName }
+          sstImport ∷ SST.ModuleImport
+          sstImport = SST.ModuleImport
+            { name: importName
+            , importList
+            , qualified: map (Tuple.snd >>> unName) qualified
+            }
+
         void $ STA.push sstImport importsRaw
 
   STA.unsafeFreeze importsRaw
+
+lowerImportList
+  ∷ ∀ r e
+  . Maybe (Tuple (Maybe CST.SourceToken) (CST.DelimitedNonEmpty (CST.Import e)))
+  → ST r (Maybe SST.ImportList)
+lowerImportList names = for names case _ of
+  (Tuple hidingToken (CST.Wrapped { value: CST.Separated { head: headImport, tail } })) → do
+    importListRaw ← STA.new
+    let
+      lowerImport ∷ CST.Import _ → SST.Import
+      lowerImport = case _ of
+        CST.ImportValue n → SST.ImportValue (unName n)
+        CST.ImportOp n → SST.ImportOp (unName n)
+        CST.ImportType n m → SST.ImportType (unName n) (lowerDataMembers m)
+        CST.ImportTypeOp _ n → SST.ImportTypeOp (unName n)
+        CST.ImportClass _ n → SST.ImportClass (unName n)
+        CST.ImportError _ → SST.ImportNotImplemented
+
+    void $ STA.push (lowerImport headImport) importListRaw
+    for_ tail \(Tuple _ tailImport) →
+      void $ STA.push (lowerImport tailImport) importListRaw
+    importList ← STA.freeze importListRaw
+
+    pure $ SST.ImportList { hiding: isJust hidingToken, imports: NonEmptyArray importList }
 
 bySignatureName ∷ ∀ e. CST.Declaration e → CST.Declaration e → Boolean
 bySignatureName = case _, _ of

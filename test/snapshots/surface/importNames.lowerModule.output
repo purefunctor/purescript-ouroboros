@@ -1,0 +1,56 @@
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [
+      {
+        name: 'Lib',
+        importList: Just {
+          value0: {
+            hiding: false,
+            imports: [
+              ImportValue { value0: 'value' },
+              ImportOp { value0: '+' },
+              ImportType { value0: 'Type', value1: Nothing {} },
+              ImportTypeOp { value0: '+' },
+              ImportClass { value0: 'Class' },
+              ImportType { value0: 'DataNone', value1: Nothing {} },
+              ImportType {
+                value0: 'DataSome',
+                value1: Just {
+                  value0: DataEnumerated { value0: [ 'A', 'B' ] }
+                }
+              },
+              ImportType {
+                value0: 'DataAll',
+                value1: Just { value0: DataAll {} }
+              }
+            ]
+          }
+        },
+        qualified: Nothing {}
+      }
+    ],
+    declarations: []
+  },
+  sourceRanges: {
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode { datamap: 0, nodemap: 0, content: [] },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode { datamap: 0, nodemap: 0, content: [] },
+    constructor: MapNode { datamap: 0, nodemap: 0, content: [] },
+    newtype: MapNode { datamap: 0, nodemap: 0, content: [] },
+    classMethod: MapNode { datamap: 0, nodemap: 0, content: [] },
+    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] }
+  },
+  recoveredErrors: {
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode { datamap: 0, nodemap: 0, content: [] },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode { datamap: 0, nodemap: 0, content: [] }
+  }
+}

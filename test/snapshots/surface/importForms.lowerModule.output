@@ -1,0 +1,33 @@
+{
+  surface: {
+    name: 'Main',
+    exports: Nothing {},
+    imports: [
+      { name: 'A', imports: [] },
+      { name: 'B', imports: [ ImportValue { value0: 'b' } ] },
+      { name: 'C', imports: [] },
+      { name: 'D', imports: [ ImportValue { value0: 'd' } ] }
+    ],
+    declarations: []
+  },
+  sourceRanges: {
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode { datamap: 0, nodemap: 0, content: [] },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode { datamap: 0, nodemap: 0, content: [] },
+    constructor: MapNode { datamap: 0, nodemap: 0, content: [] },
+    newtype: MapNode { datamap: 0, nodemap: 0, content: [] },
+    classMethod: MapNode { datamap: 0, nodemap: 0, content: [] },
+    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] }
+  },
+  recoveredErrors: {
+    expr: MapNode { datamap: 0, nodemap: 0, content: [] },
+    binder: MapNode { datamap: 0, nodemap: 0, content: [] },
+    type: MapNode { datamap: 0, nodemap: 0, content: [] },
+    doStatement: MapNode { datamap: 0, nodemap: 0, content: [] },
+    letBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    declaration: MapNode { datamap: 0, nodemap: 0, content: [] }
+  }
+}

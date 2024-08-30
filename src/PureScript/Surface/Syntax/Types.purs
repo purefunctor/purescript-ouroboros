@@ -26,7 +26,7 @@ derive newtype instance Eq (Annotation a)
 newtype Module = Module
   { name ∷ ModuleName
   , exports ∷ Maybe (NonEmptyArray Export)
-  , imports ∷ Array Import
+  , imports ∷ Array ModuleImport
   , declarations ∷ Array Declaration
   }
 
@@ -49,11 +49,30 @@ data DataMembers
 
 derive instance Eq DataMembers
 
-newtype Import = Import
-  { name ∷ ModuleName
+data Import
+  = ImportValue Ident
+  | ImportOp Operator
+  | ImportType Proper (Maybe DataMembers)
+  | ImportTypeOp Operator
+  | ImportClass Proper
+  | ImportNotImplemented
+
+derive instance Eq Import
+
+newtype ImportList = ImportList
+  { hiding ∷ Boolean
+  , imports ∷ NonEmptyArray Import
   }
 
-derive newtype instance Eq Import
+derive newtype instance Eq ImportList
+
+newtype ModuleImport = ModuleImport
+  { name ∷ ModuleName
+  , importList :: Maybe ImportList
+  , qualified :: Maybe ModuleName
+  }
+
+derive newtype instance Eq ModuleImport
 
 type DeclarationAnnotation = Annotation Declaration
 type DeclarationId = Id Declaration

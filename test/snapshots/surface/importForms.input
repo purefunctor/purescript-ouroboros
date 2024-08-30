@@ -1,0 +1,8 @@
+module Main where
+
+import A
+import B (b)
+import C as C
+import D (d) as D
+import E hiding (e)
+import F hiding (f) as F
