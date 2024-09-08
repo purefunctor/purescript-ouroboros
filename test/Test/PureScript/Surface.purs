@@ -13,6 +13,7 @@ import Partial.Unsafe (unsafeCrashWith)
 import PureScript.Debug (inspect)
 import PureScript.Driver.Files (ParsedFile(..), parseFile)
 import PureScript.Interface.Collect (collectInterface)
+import PureScript.Interface.Collect as InterfaceCollect
 import PureScript.Surface.Lower (Result, lowerModule)
 import Test.Snapshot (SnapshotSpec, findInputs, makeSnapshotsNamed)
 import Test.Spec (describe)
@@ -49,6 +50,12 @@ spec = do
       [ "collectInterface" /\ \inputFile → do
           liftEffect $ toEffect do
             { surface } ← lowerTotal inputFile
-            interface ← collectInterface surface
+            let
+              input ∷ ∀ r. InterfaceCollect.Input r
+              input =
+                { lookupModule: \_ → unsafeCrashWith "unimplemented!"
+                , lookupInterface: \_ → unsafeCrashWith "unimplemented!"
+                }
+            interface ← collectInterface input surface
             pure $ inspect interface
       ]

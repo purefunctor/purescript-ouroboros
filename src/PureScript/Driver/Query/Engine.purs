@@ -311,9 +311,15 @@ surfaceImpl engine id =
   queryGet @"surfaceFull" engine id <#> _.surface
 
 interfaceImpl ∷ ∀ r. QueryFn r FileId InterfaceCollect.Result
-interfaceImpl engine id = do
+interfaceImpl engine@(Engine { stable }) id = do
   surface ← queryGet @"surface" engine id
-  InterfaceCollect.collectInterface surface
+  let
+    input ∷ InterfaceCollect.Input r
+    input =
+      { lookupModule: Stable.lookupFileIdOfModuleName stable
+      , lookupInterface: interfaceImpl engine
+      }
+  InterfaceCollect.collectInterface input surface
 
 scopeGraphImpl ∷ ∀ r. QueryFn r FileId ScopeCollect.Result
 scopeGraphImpl engine id = do

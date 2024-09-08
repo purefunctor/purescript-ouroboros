@@ -12,7 +12,8 @@ import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Traversable (traverse)
 import Foreign.Object (Object)
 import Foreign.Object as Object
-import PureScript.CST.Types (Ident(..), Proper(..))
+import PureScript.CST.Types (Ident(..), ModuleName, Proper(..))
+import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Interface.Collect.Monad as Monad
 import PureScript.Interface.Error (InterfaceError(..))
 import PureScript.Interface.Types (ConstructorKind(..), ExportKind(..), Interface(..), TypeKind(..), ValueKind(..))
@@ -77,13 +78,18 @@ valueExportKind (Ident valueName) = maybe ExportKindOpen case _ of
     else
       ExportKindHidden
 
+type Input r =
+  { lookupModule ∷ ModuleName → ST r (Maybe FileId)
+  , lookupInterface ∷ FileId → ST r Result
+  }
+
 type Result =
   { interface ∷ Interface
   , errors ∷ Array InterfaceError
   }
 
-collectInterface ∷ ∀ r. SST.Module → ST r Result
-collectInterface (SST.Module { exports, declarations }) = Monad.run do
+collectInterface ∷ ∀ r. Input r → SST.Module → ST r Result
+collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
   exportMap ← liftST $ traverse inferExportMap exports
 
   for_ declarations case _ of
