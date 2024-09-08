@@ -7,7 +7,7 @@
       },
       C: {
         kind: ExportKindHidden {},
-        id: ConstructorKindData { value0: 'A', value1: 1 }
+        id: ConstructorKindData { value0: 'C', value1: 1 }
       },
       B: {
         kind: ExportKindExported {},

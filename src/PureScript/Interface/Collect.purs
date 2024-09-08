@@ -3,34 +3,23 @@ module PureScript.Interface.Collect where
 import Prelude
 
 import Control.Monad.ST (ST)
+import Control.Monad.ST.Class (liftST)
 import Data.Array as Array
 import Data.Array.NonEmpty (NonEmptyArray)
-import Data.Foldable (for_)
+import Data.Foldable (for_, traverse_)
 import Data.FoldableWithIndex (forWithIndex_)
-import Data.Maybe (Maybe(..), maybe)
-import Data.Traversable (traverse, traverse_)
+import Data.Maybe (Maybe(..), isNothing, maybe)
+import Data.Traversable (traverse)
 import Foreign.Object (Object)
 import Foreign.Object as Object
 import PureScript.CST.Types (Ident(..), Proper(..))
+import PureScript.Interface.Collect.Monad as Monad
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types
-  ( ConstructorKind(..)
-  , Export(..)
-  , ExportKind(..)
-  , Interface(..)
-  , TypeKind(..)
-  , ValueKind(..)
-  )
+import PureScript.Interface.Types (ConstructorKind(..), ExportKind(..), Interface(..), TypeKind(..), ValueKind(..))
 import PureScript.Surface.Syntax.Tree as SST
 import PureScript.Utils.Mutable.Array as MutableArray
-import PureScript.Utils.Mutable.Object (MutableObject)
 import PureScript.Utils.Mutable.Object as MutableObject
-import Safe.Coerce (class Coercible, coerce)
-
-type Result =
-  { interface ∷ Interface
-  , errors ∷ Array InterfaceError
-  }
+import Safe.Coerce (coerce)
 
 newtype ExportMap = ExportMap
   { types ∷ Object (Maybe SST.DataMembers)
@@ -88,135 +77,126 @@ valueExportKind (Ident valueName) = maybe ExportKindOpen case _ of
     else
       ExportKindHidden
 
+type Result =
+  { interface ∷ Interface
+  , errors ∷ Array InterfaceError
+  }
+
 collectInterface ∷ ∀ r. SST.Module → ST r Result
-collectInterface (SST.Module { exports, declarations }) = do
-  exportMap ← traverse inferExportMap exports
-  constructorsRaw ← MutableObject.empty
-  typesRaw ← MutableObject.empty
-  valuesRaw ← MutableObject.empty
-  errorsRaw ← MutableArray.empty
-
-  let
-    insertOrError
-      ∷ ∀ k v
-      . Coercible k String
-      ⇒ k
-      → v
-      → ExportKind
-      → (v → v → InterfaceError)
-      → MutableObject r k (Export v)
-      → ST r Unit
-    insertOrError k v x e m =
-      MutableObject.peek k m >>= case _ of
-        Nothing → do
-          MutableObject.poke k (Export { kind: x, id: v }) m
-        Just (Export { id: v' }) → do
-          void $ MutableArray.push (e v v') errorsRaw
-
-    collectDataCtor ∷ Proper → SST.DataConstructor → _
-    collectDataCtor typeName = case _ of
-      SST.DataConstructor { annotation: SST.Annotation { id }, name } → do
-        let
-          constructorKind ∷ ConstructorKind
-          constructorKind = ConstructorKindData typeName id
-
-          exportKind ∷ ExportKind
-          exportKind = constructorExportKind typeName name exportMap
-        insertOrError name constructorKind exportKind DuplicateConstructor constructorsRaw
-
-    collectNewtypeCtor ∷ Proper → SST.NewtypeConstructor → _
-    collectNewtypeCtor typeName = case _ of
-      SST.NewtypeConstructor { annotation: SST.Annotation { id }, name } → do
-        let
-          constructorKind ∷ ConstructorKind
-          constructorKind = ConstructorKindNewtype typeName id
-
-          exportKind ∷ ExportKind
-          exportKind = constructorExportKind typeName name exportMap
-        insertOrError name constructorKind exportKind DuplicateConstructor constructorsRaw
-
-    collectClassMethod ∷ Proper → SST.ClassMethod → _
-    collectClassMethod typeName = case _ of
-      SST.ClassMethod { annotation: SST.Annotation { id }, name } → do
-        let
-          valueKind ∷ ValueKind
-          valueKind = ValueKindMethod typeName id
-
-          exportKind ∷ ExportKind
-          exportKind = valueExportKind name exportMap
-        insertOrError name valueKind exportKind DuplicateValue valuesRaw
+collectInterface (SST.Module { exports, declarations }) = Monad.run do
+  exportMap ← liftST $ traverse inferExportMap exports
 
   for_ declarations case _ of
-    SST.DeclarationData (SST.Annotation { id }) name _ (SST.DataEquation { constructors }) → do
+    -- data Maybe a = Just a | Nothing
+    SST.DeclarationData (SST.Annotation { id }) tName _ (SST.DataEquation { constructors }) → do
       let
-        typeKind ∷ TypeKind
-        typeKind = TypeKindData id
+        tKind ∷ TypeKind
+        tKind = TypeKindData id
 
-        exportKind ∷ ExportKind
-        exportKind = typeExportKind name exportMap
-      insertOrError name typeKind exportKind DuplicateType typesRaw
-      traverse_ (traverse_ $ collectDataCtor name) constructors
-    SST.DeclarationType (SST.Annotation { id }) name _ _ → do
+        tExportKind ∷ ExportKind
+        tExportKind = typeExportKind tName exportMap
+      Monad.insertOrErrorType tName tKind tExportKind
+
+      for_ constructors $ traverse_ case _ of
+        SST.DataConstructor { annotation: SST.Annotation { id: cId }, name: cName } → do
+          let
+            cKind ∷ ConstructorKind
+            cKind = ConstructorKindData cName cId
+
+            cExportKind ∷ ExportKind
+            cExportKind = constructorExportKind tName cName exportMap
+          Monad.insertOrErrorConstructor cName cKind cExportKind
+
+    -- type Function a b = a -> b
+    SST.DeclarationType (SST.Annotation { id }) tName _ _ → do
       let
-        typeKind ∷ TypeKind
-        typeKind = TypeKindSynoynm id
+        tKind ∷ TypeKind
+        tKind = TypeKindSynoynm id
 
-        exportKind ∷ ExportKind
-        exportKind = typeExportKind name exportMap
-      insertOrError name typeKind exportKind DuplicateType typesRaw
-    SST.DeclarationNewtype (SST.Annotation { id }) name _ (SST.NewtypeEquation { constructor }) → do
+        tExportKind ∷ ExportKind
+        tExportKind = typeExportKind tName exportMap
+      Monad.insertOrErrorType tName tKind tExportKind
+
+    -- newtype Identity a = Identity a
+    SST.DeclarationNewtype (SST.Annotation { id }) tName _ (SST.NewtypeEquation { constructor }) → do
       let
-        typeKind ∷ TypeKind
-        typeKind = TypeKindNewtype id
+        tKind ∷ TypeKind
+        tKind = TypeKindNewtype id
 
-        exportKind ∷ ExportKind
-        exportKind = typeExportKind name exportMap
-      insertOrError name typeKind exportKind DuplicateType typesRaw
-      collectNewtypeCtor name constructor
-    SST.DeclarationClass (SST.Annotation { id }) name _ (SST.ClassEquation { methods }) → do
+        tExportKind ∷ ExportKind
+        tExportKind = typeExportKind tName exportMap
+      Monad.insertOrErrorType tName tKind tExportKind
+
+      case constructor of
+        SST.NewtypeConstructor { annotation: SST.Annotation { id: cId }, name: cName } → do
+          let
+            cKind ∷ ConstructorKind
+            cKind = ConstructorKindNewtype cName cId
+
+            cExportKind ∷ ExportKind
+            cExportKind = constructorExportKind tName cName exportMap
+          Monad.insertOrErrorConstructor cName cKind cExportKind
+
+    -- class Functor f where map :: forall a b. (a -> b) -> f a -> f b
+    SST.DeclarationClass (SST.Annotation { id }) tName _ (SST.ClassEquation { methods }) → do
       let
-        typeKind ∷ TypeKind
-        typeKind = TypeKindClass id
+        tKind ∷ TypeKind
+        tKind = TypeKindClass id
 
-        exportKind ∷ ExportKind
-        exportKind = typeExportKind name exportMap
-      insertOrError name typeKind exportKind DuplicateType typesRaw
-      traverse_ (traverse_ $ collectClassMethod name) methods
-    SST.DeclarationValue (SST.Annotation { id }) name _ _ → do
+        tExportKind ∷ ExportKind
+        tExportKind = typeExportKind tName exportMap
+      Monad.insertOrErrorType tName tKind tExportKind
+
+      for_ methods $ traverse_ case _ of
+        SST.ClassMethod { annotation: SST.Annotation { id: mId }, name: mName } → do
+          let
+            vKind ∷ ValueKind
+            vKind = ValueKindMethod tName mId
+
+            vExportKind ∷ ExportKind
+            vExportKind = valueExportKind mName exportMap
+          Monad.insertOrErrorValue mName vKind vExportKind
+
+    -- life = 42
+    SST.DeclarationValue (SST.Annotation { id }) vName _ _ → do
       let
-        valueKind ∷ ValueKind
-        valueKind = ValueKindValue id
+        vKind ∷ ValueKind
+        vKind = ValueKindValue id
 
-        exportKind ∷ ExportKind
-        exportKind = valueExportKind name exportMap
-      insertOrError name valueKind exportKind DuplicateValue valuesRaw
+        vExportKind ∷ ExportKind
+        vExportKind = valueExportKind vName exportMap
+      Monad.insertOrErrorValue vName vKind vExportKind
+
     _ →
       pure unit
-
-  constructors ← MutableObject.unsafeFreeze constructorsRaw
-  types ← MutableObject.unsafeFreeze typesRaw
-  values ← MutableObject.unsafeFreeze valuesRaw
 
   for_ exportMap case _ of
     ExportMap { types: exMapTypes, values: exMapValues } → do
       forWithIndex_ exMapTypes \name members → do
-        unless (Object.member name types) do
-          void $ MutableArray.push (MissingType (coerce name)) errorsRaw
+        { constructors, types } ← Monad.ask
+        typeExport ← liftST $ MutableObject.peek (coerce name) types
+        when (isNothing typeExport) do
+          Monad.addError (MissingType (coerce name))
         for_ members case _ of
           SST.DataAll →
             pure unit
-          SST.DataEnumerated dataEnumerated →
-            for_ dataEnumerated \dataMember → do
-              unless (Object.member (coerce dataMember) constructors) do
-                void $ MutableArray.push (MissingConstructor dataMember) errorsRaw
-      forWithIndex_ exMapValues \name _ →
-        unless (Object.member name values) do
-          void $ MutableArray.push (MissingValue (coerce name)) errorsRaw
+          SST.DataEnumerated dataMembers →
+            for_ dataMembers \dataMember → do
+              constructorExport ← liftST $ MutableObject.peek (coerce dataMember) constructors
+              when (isNothing constructorExport) do
+                Monad.addError (MissingConstructor (coerce dataMember))
+      forWithIndex_ exMapValues \name _ → do
+        { values } ← Monad.ask
+        valueExport ← liftST $ MutableObject.peek (coerce name) values
+        when (isNothing valueExport) do
+          Monad.addError (MissingValue (coerce name))
 
-  errors ← MutableArray.unsafeFreeze errorsRaw
+  { constructors, types, values, errors } ← Monad.ask
 
-  let
-    interface ∷ Interface
-    interface = Interface { constructors, types, values }
+  interface ← liftST $ { constructors: _, types: _, values: _ }
+    <$> MutableObject.unsafeFreeze constructors
+    <*> MutableObject.unsafeFreeze types
+    <*> MutableObject.unsafeFreeze values
 
-  pure $ { interface, errors }
+  liftST $ { interface: Interface interface, errors: _ }
+    <$> MutableArray.unsafeFreeze errors

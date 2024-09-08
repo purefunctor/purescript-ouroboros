@@ -3,10 +3,40 @@
     name: 'Main',
     exports: Nothing {},
     imports: [
-      { name: 'A', imports: [] },
-      { name: 'B', imports: [ ImportValue { value0: 'b' } ] },
-      { name: 'C', imports: [] },
-      { name: 'D', imports: [ ImportValue { value0: 'd' } ] }
+      { name: 'A', importList: Nothing {}, qualified: Nothing {} },
+      {
+        name: 'B',
+        importList: Just {
+          value0: { hiding: false, imports: [ ImportValue { value0: 'b' } ] }
+        },
+        qualified: Nothing {}
+      },
+      {
+        name: 'C',
+        importList: Nothing {},
+        qualified: Just { value0: 'C' }
+      },
+      {
+        name: 'D',
+        importList: Just {
+          value0: { hiding: false, imports: [ ImportValue { value0: 'd' } ] }
+        },
+        qualified: Just { value0: 'D' }
+      },
+      {
+        name: 'E',
+        importList: Just {
+          value0: { hiding: true, imports: [ ImportValue { value0: 'e' } ] }
+        },
+        qualified: Nothing {}
+      },
+      {
+        name: 'F',
+        importList: Just {
+          value0: { hiding: true, imports: [ ImportValue { value0: 'f' } ] }
+        },
+        qualified: Just { value0: 'F' }
+      }
     ],
     declarations: []
   },
