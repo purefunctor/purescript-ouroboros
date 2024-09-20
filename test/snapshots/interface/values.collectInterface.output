@@ -3,10 +3,16 @@
     constructors: {},
     types: {},
     values: {
-      a: { kind: ExportKindExported {}, id: ValueKindValue { value0: 0 } },
-      b: { kind: ExportKindExported {}, id: ValueKindValue { value0: 1 } },
-      c: { kind: ExportKindHidden {}, id: ValueKindValue { value0: 2 } },
-      d: { kind: ExportKindHidden {}, id: ValueKindValue { value0: 3 } }
+      a: {
+        kind: BindingKindExported {},
+        id: ValueKindValue { value0: 0 }
+      },
+      b: {
+        kind: BindingKindExported {},
+        id: ValueKindValue { value0: 1 }
+      },
+      c: { kind: BindingKindHidden {}, id: ValueKindValue { value0: 2 } },
+      d: { kind: BindingKindHidden {}, id: ValueKindValue { value0: 3 } }
     }
   },
   errors: []

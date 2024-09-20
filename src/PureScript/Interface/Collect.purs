@@ -16,7 +16,7 @@ import PureScript.CST.Types (Ident(..), ModuleName, Proper(..))
 import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Interface.Collect.Monad as Monad
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types (ConstructorKind(..), ExportKind(..), Interface(..), TypeKind(..), ValueKind(..))
+import PureScript.Interface.Types (ConstructorKind(..), BindingKind(..), Interface(..), TypeKind(..), ValueKind(..))
 import PureScript.Surface.Syntax.Tree as SST
 import PureScript.Utils.Mutable.Array as MutableArray
 import PureScript.Utils.Mutable.Object as MutableObject
@@ -46,37 +46,37 @@ inferExportMap exports = do
     <$> MutableObject.unsafeFreeze typesRaw
     <*> MutableObject.unsafeFreeze valuesRaw
 
-constructorExportKind ∷ Proper → Proper → Maybe ExportMap → ExportKind
-constructorExportKind (Proper dataName) constructorName = maybe ExportKindOpen case _ of
+constructorBindingKind ∷ Proper → Proper → Maybe ExportMap → BindingKind
+constructorBindingKind (Proper dataName) constructorName = maybe BindingKindOpen case _ of
   ExportMap { types } → case Object.lookup dataName types of
     Nothing →
-      ExportKindHidden
+      BindingKindHidden
     -- T
     Just Nothing →
-      ExportKindHidden
+      BindingKindHidden
     -- T(..)
     Just (Just SST.DataAll) →
-      ExportKindExported
+      BindingKindExported
     -- T(U, V)
     Just (Just (SST.DataEnumerated dataMembers)) →
-      maybe ExportKindHidden (const ExportKindExported)
+      maybe BindingKindHidden (const BindingKindExported)
         $ Array.find (eq constructorName) dataMembers
 
-typeExportKind ∷ Proper → Maybe ExportMap → ExportKind
-typeExportKind (Proper typeName) = maybe ExportKindOpen case _ of
+typeBindingKind ∷ Proper → Maybe ExportMap → BindingKind
+typeBindingKind (Proper typeName) = maybe BindingKindOpen case _ of
   ExportMap { types } →
     if Object.member typeName types then
-      ExportKindExported
+      BindingKindExported
     else
-      ExportKindHidden
+      BindingKindHidden
 
-valueExportKind ∷ Ident → Maybe ExportMap → ExportKind
-valueExportKind (Ident valueName) = maybe ExportKindOpen case _ of
+valueBindingKind ∷ Ident → Maybe ExportMap → BindingKind
+valueBindingKind (Ident valueName) = maybe BindingKindOpen case _ of
   ExportMap { values } →
     if Object.member valueName values then
-      ExportKindExported
+      BindingKindExported
     else
-      ExportKindHidden
+      BindingKindHidden
 
 type Input r =
   { lookupModule ∷ ModuleName → ST r (Maybe FileId)
@@ -99,9 +99,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
         tKind ∷ TypeKind
         tKind = TypeKindData id
 
-        tExportKind ∷ ExportKind
-        tExportKind = typeExportKind tName exportMap
-      Monad.insertOrErrorType tName tKind tExportKind
+        tBindingKind ∷ BindingKind
+        tBindingKind = typeBindingKind tName exportMap
+      Monad.insertOrErrorType tName tKind tBindingKind
 
       for_ constructors $ traverse_ case _ of
         SST.DataConstructor { annotation: SST.Annotation { id: cId }, name: cName } → do
@@ -109,9 +109,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
             cKind ∷ ConstructorKind
             cKind = ConstructorKindData cName cId
 
-            cExportKind ∷ ExportKind
-            cExportKind = constructorExportKind tName cName exportMap
-          Monad.insertOrErrorConstructor cName cKind cExportKind
+            cBindingKind ∷ BindingKind
+            cBindingKind = constructorBindingKind tName cName exportMap
+          Monad.insertOrErrorConstructor cName cKind cBindingKind
 
     -- type Function a b = a -> b
     SST.DeclarationType (SST.Annotation { id }) tName _ _ → do
@@ -119,9 +119,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
         tKind ∷ TypeKind
         tKind = TypeKindSynoynm id
 
-        tExportKind ∷ ExportKind
-        tExportKind = typeExportKind tName exportMap
-      Monad.insertOrErrorType tName tKind tExportKind
+        tBindingKind ∷ BindingKind
+        tBindingKind = typeBindingKind tName exportMap
+      Monad.insertOrErrorType tName tKind tBindingKind
 
     -- newtype Identity a = Identity a
     SST.DeclarationNewtype (SST.Annotation { id }) tName _ (SST.NewtypeEquation { constructor }) → do
@@ -129,9 +129,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
         tKind ∷ TypeKind
         tKind = TypeKindNewtype id
 
-        tExportKind ∷ ExportKind
-        tExportKind = typeExportKind tName exportMap
-      Monad.insertOrErrorType tName tKind tExportKind
+        tBindingKind ∷ BindingKind
+        tBindingKind = typeBindingKind tName exportMap
+      Monad.insertOrErrorType tName tKind tBindingKind
 
       case constructor of
         SST.NewtypeConstructor { annotation: SST.Annotation { id: cId }, name: cName } → do
@@ -139,9 +139,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
             cKind ∷ ConstructorKind
             cKind = ConstructorKindNewtype cName cId
 
-            cExportKind ∷ ExportKind
-            cExportKind = constructorExportKind tName cName exportMap
-          Monad.insertOrErrorConstructor cName cKind cExportKind
+            cBindingKind ∷ BindingKind
+            cBindingKind = constructorBindingKind tName cName exportMap
+          Monad.insertOrErrorConstructor cName cKind cBindingKind
 
     -- class Functor f where map :: forall a b. (a -> b) -> f a -> f b
     SST.DeclarationClass (SST.Annotation { id }) tName _ (SST.ClassEquation { methods }) → do
@@ -149,9 +149,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
         tKind ∷ TypeKind
         tKind = TypeKindClass id
 
-        tExportKind ∷ ExportKind
-        tExportKind = typeExportKind tName exportMap
-      Monad.insertOrErrorType tName tKind tExportKind
+        tBindingKind ∷ BindingKind
+        tBindingKind = typeBindingKind tName exportMap
+      Monad.insertOrErrorType tName tKind tBindingKind
 
       for_ methods $ traverse_ case _ of
         SST.ClassMethod { annotation: SST.Annotation { id: mId }, name: mName } → do
@@ -159,9 +159,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
             vKind ∷ ValueKind
             vKind = ValueKindMethod tName mId
 
-            vExportKind ∷ ExportKind
-            vExportKind = valueExportKind mName exportMap
-          Monad.insertOrErrorValue mName vKind vExportKind
+            vBindingKind ∷ BindingKind
+            vBindingKind = valueBindingKind mName exportMap
+          Monad.insertOrErrorValue mName vKind vBindingKind
 
     -- life = 42
     SST.DeclarationValue (SST.Annotation { id }) vName _ _ → do
@@ -169,9 +169,9 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
         vKind ∷ ValueKind
         vKind = ValueKindValue id
 
-        vExportKind ∷ ExportKind
-        vExportKind = valueExportKind vName exportMap
-      Monad.insertOrErrorValue vName vKind vExportKind
+        vBindingKind ∷ BindingKind
+        vBindingKind = valueBindingKind vName exportMap
+      Monad.insertOrErrorValue vName vKind vBindingKind
 
     _ →
       pure unit

@@ -2,7 +2,7 @@
   interface: {
     constructors: {},
     types: {
-      A: { kind: ExportKindExported {}, id: TypeKindData { value0: 0 } }
+      A: { kind: BindingKindExported {}, id: TypeKindData { value0: 0 } }
     },
     values: {}
   },

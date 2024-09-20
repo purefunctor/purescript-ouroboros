@@ -2,11 +2,11 @@
   interface: {
     constructors: {},
     types: {
-      A: { kind: ExportKindExported {}, id: TypeKindClass { value0: 0 } }
+      A: { kind: BindingKindExported {}, id: TypeKindClass { value0: 0 } }
     },
     values: {
       a: {
-        kind: ExportKindHidden {},
+        kind: BindingKindHidden {},
         id: ValueKindMethod { value0: 'A', value1: 0 }
       }
     }

@@ -9,7 +9,7 @@ import Control.Monad.ST.Class (liftST)
 import Data.Maybe (Maybe(..))
 import PureScript.CST.Types (Ident(..), Proper(..))
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types (ConstructorKind, Export(..), ExportKind, TypeKind, ValueKind)
+import PureScript.Interface.Types (ConstructorKind, Binding(..), BindingKind, TypeKind, ValueKind)
 import PureScript.Monad.Reader (Reader)
 import PureScript.Monad.Reader as Reader
 import PureScript.Utils.Mutable.Array (MutableArray)
@@ -19,32 +19,32 @@ import PureScript.Utils.Mutable.Object as MutableObject
 import Safe.Coerce (class Coercible)
 
 type Environment r =
-  { constructors ∷ MutableObject r Proper (Export ConstructorKind)
-  , types ∷ MutableObject r Proper (Export TypeKind)
-  , values ∷ MutableObject r Ident (Export ValueKind)
+  { constructors ∷ MutableObject r Proper (Binding ConstructorKind)
+  , types ∷ MutableObject r Proper (Binding TypeKind)
+  , values ∷ MutableObject r Ident (Binding ValueKind)
   , errors ∷ MutableArray r InterfaceError
   }
 
 type InterfaceM ∷ Region → Type → Type
 type InterfaceM r = Reader r (Environment r)
 
-type InsertOrErrorFn r k v = k → v → ExportKind → InterfaceM r Unit
+type InsertOrErrorFn r k v = k → v → BindingKind → InterfaceM r Unit
 
 insertOrError
   ∷ ∀ k v r
   . Coercible k String
-  ⇒ (Environment r → MutableObject r k (Export v))
+  ⇒ (Environment r → MutableObject r k (Binding v))
   → (v → v → InterfaceError)
   → InsertOrErrorFn r k v
 insertOrError f e k v x = do
   state@{ errors } ← Reader.ask
   let
-    m ∷ MutableObject r k (Export v)
+    m ∷ MutableObject r k (Binding v)
     m = f state
   liftST $ MutableObject.peek k m >>= case _ of
     Nothing →
-      MutableObject.poke k (Export { kind: x, id: v }) m
-    Just (Export { id: v' }) →
+      MutableObject.poke k (Binding { kind: x, id: v }) m
+    Just (Binding { id: v' }) →
       void $ MutableArray.push (e v v') errors
 
 insertOrErrorConstructor ∷ ∀ r. InsertOrErrorFn r Proper ConstructorKind

@@ -7,7 +7,7 @@ import Foreign.Object (Object)
 import Foreign.Object as Object
 import PureScript.CST.Types (Ident(..))
 import PureScript.Driver.Query.Stable (FileId)
-import PureScript.Interface.Types (Export, Interface(..), ValueKind)
+import PureScript.Interface.Types (Binding, Interface(..), ValueKind)
 import PureScript.Surface.Syntax.Tree as SST
 
 data ScopeNode
@@ -56,8 +56,8 @@ searchCore k n = go n
 data ExprIdentResolution
   = ExprIdentBinder SST.BinderId
   | ExprIdentLetBound SST.LetBindingId
-  | ExprIdentLocal (Export ValueKind)
-  | ExprIdentImport FileId (Export ValueKind)
+  | ExprIdentLocal (Binding ValueKind)
+  | ExprIdentImport FileId (Binding ValueKind)
 
 derive instance Eq ExprIdentResolution
 

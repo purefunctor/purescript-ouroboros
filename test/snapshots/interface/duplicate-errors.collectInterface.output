@@ -2,16 +2,16 @@
   interface: {
     constructors: {
       A: {
-        kind: ExportKindOpen {},
+        kind: BindingKindOpen {},
         id: ConstructorKindData { value0: 'A', value1: 0 }
       }
     },
     types: {
-      A: { kind: ExportKindOpen {}, id: TypeKindSynoynm { value0: 0 } }
+      A: { kind: BindingKindOpen {}, id: TypeKindSynoynm { value0: 0 } }
     },
     values: {
       a: {
-        kind: ExportKindOpen {},
+        kind: BindingKindOpen {},
         id: ValueKindMethod { value0: 'A', value1: 0 }
       }
     }

@@ -6,21 +6,21 @@ import Foreign.Object (Object)
 import PureScript.CST.Types (Proper)
 import PureScript.Surface.Syntax.Tree as SST
 
-data ExportKind
-  = ExportKindOpen
-  | ExportKindExported
-  | ExportKindHidden
+data BindingKind
+  = BindingKindOpen
+  | BindingKindExported
+  | BindingKindHidden
 
-derive instance Eq ExportKind
-derive instance Ord ExportKind
+derive instance Eq BindingKind
+derive instance Ord BindingKind
 
-newtype Export a = Export { kind ∷ ExportKind, id ∷ a }
+newtype Binding a = Binding { kind ∷ BindingKind, id ∷ a }
 
-derive newtype instance Eq a ⇒ Eq (Export a)
-derive newtype instance Ord a ⇒ Ord (Export a)
+derive newtype instance Eq a ⇒ Eq (Binding a)
+derive newtype instance Ord a ⇒ Ord (Binding a)
 
-exportToLocal ∷ ∀ a. Export a → a
-exportToLocal (Export { id }) = id
+exportToLocal ∷ ∀ a. Binding a → a
+exportToLocal (Binding { id }) = id
 
 data ConstructorKind
   = ConstructorKindData Proper SST.ConstructorId
@@ -46,9 +46,9 @@ derive instance Eq ValueKind
 derive instance Ord ValueKind
 
 newtype Interface = Interface
-  { constructors ∷ Object (Export ConstructorKind)
-  , types ∷ Object (Export TypeKind)
-  , values ∷ Object (Export ValueKind)
+  { constructors ∷ Object (Binding ConstructorKind)
+  , types ∷ Object (Binding TypeKind)
+  , values ∷ Object (Binding ValueKind)
   }
 
 derive instance Eq Interface

@@ -2,22 +2,22 @@
   interface: {
     constructors: {
       A: {
-        kind: ExportKindExported {},
+        kind: BindingKindExported {},
         id: ConstructorKindData { value0: 'A', value1: 0 }
       },
       C: {
-        kind: ExportKindHidden {},
+        kind: BindingKindHidden {},
         id: ConstructorKindData { value0: 'C', value1: 1 }
       },
       B: {
-        kind: ExportKindExported {},
+        kind: BindingKindExported {},
         id: ConstructorKindNewtype { value0: 'B', value1: 0 }
       }
     },
     types: {
-      A: { kind: ExportKindExported {}, id: TypeKindData { value0: 0 } },
+      A: { kind: BindingKindExported {}, id: TypeKindData { value0: 0 } },
       B: {
-        kind: ExportKindExported {},
+        kind: BindingKindExported {},
         id: TypeKindNewtype { value0: 1 }
       }
     },
