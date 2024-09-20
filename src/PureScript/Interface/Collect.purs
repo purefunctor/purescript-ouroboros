@@ -16,7 +16,7 @@ import PureScript.CST.Types (Ident(..), ModuleName, Proper(..))
 import PureScript.Driver.Query.Stable (FileId)
 import PureScript.Interface.Collect.Monad as Monad
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types (ConstructorKind(..), BindingKind(..), Interface(..), TypeKind(..), ValueKind(..))
+import PureScript.Interface.Types (BindingKind(..), ConstructorKind(..), Interface(..), TypeKind(..), ValueKind(..))
 import PureScript.Surface.Syntax.Tree as SST
 import PureScript.Utils.Mutable.Array as MutableArray
 import PureScript.Utils.Mutable.Object as MutableObject

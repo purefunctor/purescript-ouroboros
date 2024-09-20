@@ -602,19 +602,24 @@ lowerExports cstExports = for cstExports case _ of
     exports ← STA.freeze exportsRaw
     pure $ NonEmptyArray exports
 
-lowerImportDecls ∷ ∀ r e. Array (CST.ImportDecl e) → ST r (Array SST.ModuleImport)
-lowerImportDecls cstImports = do
+lowerImportDecls ∷ ∀ r e. State r → Array (CST.ImportDecl e) → ST r (Array SST.ModuleImport)
+lowerImportDecls state cstImports = do
   importsRaw ← STA.new
 
   for_ cstImports \cstImport →
     case cstImport of
       CST.ImportDecl { module: CST.Name { name: importName }, names, qualified } → do
         importList ← lowerImportList names
+        id ← State.nextId _.moduleImport state
 
         let
+          annotation ∷ SST.ModuleImportAnnotation
+          annotation = SST.Annotation { id }
+
           sstImport ∷ SST.ModuleImport
           sstImport = SST.ModuleImport
-            { name: importName
+            { annotation
+            , name: importName
             , importList
             , qualified: map (Tuple.snd >>> unName) qualified
             }
@@ -965,7 +970,7 @@ lowerModule
   state ← State.empty
   surface ← do
     exports ← lowerExports cstExports
-    imports ← lowerImportDecls cstImports
+    imports ← lowerImportDecls state cstImports
     declarations ← lowerDeclarations state cstDeclarations
     pure $ SST.Module { name, exports, imports, declarations }
   { sourceRanges, recoveredErrors } ← State.freeze state

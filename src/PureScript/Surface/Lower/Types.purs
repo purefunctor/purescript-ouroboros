@@ -40,6 +40,7 @@ type FieldGroup f =
   , newtype ∷ f SST.NewtypeConstructor SourceRange
   , classMethod ∷ f SST.ClassMethod SourceRange
   , typeVarBinding ∷ f SST.TypeVarBinding SourceRange
+  , moduleImport ∷ f SST.ModuleImport SourceRange
   )
 
 type ErrorFieldGroup ∷ (Type → Type) → Row Type

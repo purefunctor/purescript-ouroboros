@@ -915,7 +915,8 @@
           end: { line: 14, column: 42 }
         }
       ]
-    }
+    },
+    moduleImport: MapNode { datamap: 0, nodemap: 0, content: [] }
   },
   recoveredErrors: {
     expr: MapNode { datamap: 0, nodemap: 0, content: [] },

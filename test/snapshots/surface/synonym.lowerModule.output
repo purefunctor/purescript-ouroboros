@@ -126,7 +126,8 @@
         0,
         { start: { line: 5, column: 7 }, end: { line: 5, column: 8 } }
       ]
-    }
+    },
+    moduleImport: MapNode { datamap: 0, nodemap: 0, content: [] }
   },
   recoveredErrors: {
     expr: MapNode { datamap: 0, nodemap: 0, content: [] },

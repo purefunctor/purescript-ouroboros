@@ -163,7 +163,8 @@
           end: { line: 5, column: 18 }
         }
       ]
-    }
+    },
+    moduleImport: MapNode { datamap: 0, nodemap: 0, content: [] }
   },
   recoveredErrors: {
     expr: MapNode { datamap: 0, nodemap: 0, content: [] },

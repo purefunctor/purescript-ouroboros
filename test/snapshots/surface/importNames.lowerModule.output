@@ -4,6 +4,7 @@
     exports: Nothing {},
     imports: [
       {
+        annotation: { id: 0 },
         name: 'Lib',
         importList: Just {
           value0: {
@@ -43,7 +44,8 @@
     constructor: MapNode { datamap: 0, nodemap: 0, content: [] },
     newtype: MapNode { datamap: 0, nodemap: 0, content: [] },
     classMethod: MapNode { datamap: 0, nodemap: 0, content: [] },
-    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] }
+    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    moduleImport: MapNode { datamap: 0, nodemap: 0, content: [] }
   },
   recoveredErrors: {
     expr: MapNode { datamap: 0, nodemap: 0, content: [] },

@@ -50,6 +50,7 @@ empty = do
     newtype_ ← STRef.new 0
     classMethod ← STRef.new 0
     typeVarBinding ← STRef.new 0
+    moduleImport ← STRef.new 0
     pure
       { expr
       , binder
@@ -61,6 +62,7 @@ empty = do
       , newtype: newtype_
       , classMethod
       , typeVarBinding
+      , moduleImport
       }
   sourceRanges ← do
     expr ← STRef.new HashMap.empty
@@ -73,6 +75,7 @@ empty = do
     newtype_ ← STRef.new HashMap.empty
     classMethod ← STRef.new HashMap.empty
     typeVarBinding ← STRef.new HashMap.empty
+    moduleImport ← STRef.new HashMap.empty
     pure
       { expr
       , binder
@@ -84,6 +87,7 @@ empty = do
       , newtype: newtype_
       , classMethod
       , typeVarBinding
+      , moduleImport
       }
   recoveredErrors ← do
     expr ← STRef.new HashMap.empty
@@ -115,6 +119,7 @@ freeze (State { sourceRanges, recoveredErrors }) = do
     newtype_ ← STRef.read sourceRanges."newtype"
     classMethod ← STRef.read sourceRanges.classMethod
     typeVarBinding ← STRef.read sourceRanges.typeVarBinding
+    moduleImport ← STRef.read sourceRanges.moduleImport
     pure $ SourceRanges $ coerce
       { expr
       , binder
@@ -126,6 +131,7 @@ freeze (State { sourceRanges, recoveredErrors }) = do
       , newtype: newtype_
       , classMethod
       , typeVarBinding
+      , moduleImport
       }
   recoveredErrors' ← do
     expr ← STRef.read recoveredErrors.expr

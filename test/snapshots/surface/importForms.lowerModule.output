@@ -3,8 +3,14 @@
     name: 'Main',
     exports: Nothing {},
     imports: [
-      { name: 'A', importList: Nothing {}, qualified: Nothing {} },
       {
+        annotation: { id: 0 },
+        name: 'A',
+        importList: Nothing {},
+        qualified: Nothing {}
+      },
+      {
+        annotation: { id: 1 },
         name: 'B',
         importList: Just {
           value0: { hiding: false, imports: [ ImportValue { value0: 'b' } ] }
@@ -12,11 +18,13 @@
         qualified: Nothing {}
       },
       {
+        annotation: { id: 2 },
         name: 'C',
         importList: Nothing {},
         qualified: Just { value0: 'C' }
       },
       {
+        annotation: { id: 3 },
         name: 'D',
         importList: Just {
           value0: { hiding: false, imports: [ ImportValue { value0: 'd' } ] }
@@ -24,6 +32,7 @@
         qualified: Just { value0: 'D' }
       },
       {
+        annotation: { id: 4 },
         name: 'E',
         importList: Just {
           value0: { hiding: true, imports: [ ImportValue { value0: 'e' } ] }
@@ -31,6 +40,7 @@
         qualified: Nothing {}
       },
       {
+        annotation: { id: 5 },
         name: 'F',
         importList: Just {
           value0: { hiding: true, imports: [ ImportValue { value0: 'f' } ] }
@@ -50,7 +60,8 @@
     constructor: MapNode { datamap: 0, nodemap: 0, content: [] },
     newtype: MapNode { datamap: 0, nodemap: 0, content: [] },
     classMethod: MapNode { datamap: 0, nodemap: 0, content: [] },
-    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] }
+    typeVarBinding: MapNode { datamap: 0, nodemap: 0, content: [] },
+    moduleImport: MapNode { datamap: 0, nodemap: 0, content: [] }
   },
   recoveredErrors: {
     expr: MapNode { datamap: 0, nodemap: 0, content: [] },

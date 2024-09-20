@@ -66,10 +66,14 @@ newtype ImportList = ImportList
 
 derive newtype instance Eq ImportList
 
+type ModuleImportAnnotation = Annotation ModuleImport
+type ModuleImportId = Id ModuleImport
+
 newtype ModuleImport = ModuleImport
-  { name ∷ ModuleName
-  , importList :: Maybe ImportList
-  , qualified :: Maybe ModuleName
+  { annotation ∷ ModuleImportAnnotation
+  , name ∷ ModuleName
+  , importList ∷ Maybe ImportList
+  , qualified ∷ Maybe ModuleName
   }
 
 derive newtype instance Eq ModuleImport

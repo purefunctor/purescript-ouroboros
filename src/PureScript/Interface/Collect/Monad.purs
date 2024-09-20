@@ -9,7 +9,7 @@ import Control.Monad.ST.Class (liftST)
 import Data.Maybe (Maybe(..))
 import PureScript.CST.Types (Ident(..), Proper(..))
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types (ConstructorKind, Binding(..), BindingKind, TypeKind, ValueKind)
+import PureScript.Interface.Types (Binding(..), BindingKind, ConstructorKind, TypeKind, ValueKind)
 import PureScript.Monad.Reader (Reader)
 import PureScript.Monad.Reader as Reader
 import PureScript.Utils.Mutable.Array (MutableArray)
