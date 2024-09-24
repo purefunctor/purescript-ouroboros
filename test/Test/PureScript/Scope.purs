@@ -17,7 +17,7 @@ import PureScript.Interface.Collect as CollectInterface
 import PureScript.Scope.Collect (collectModule)
 import PureScript.Scope.Resolve (resolveModule)
 import PureScript.Scope.Resolve as ScopeResolve
-import Test.PureScript.Surface (lowerTotal)
+import Test.Common (lowerTotal)
 import Test.Snapshot (SnapshotSpec, findInputs, makeSnapshotsNamed)
 import Test.Spec (describe)
 

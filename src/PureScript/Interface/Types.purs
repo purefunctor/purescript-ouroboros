@@ -2,25 +2,52 @@ module PureScript.Interface.Types where
 
 import Prelude
 
+import Data.Maybe (Maybe(..))
 import Foreign.Object (Object)
 import PureScript.CST.Types (Proper)
+import PureScript.Surface.Syntax.Tree (ModuleImportId)
 import PureScript.Surface.Syntax.Tree as SST
+
+data ImportKind
+  = ImportKindOpen
+  | ImportKindClosed { hiding ∷ Boolean, explicit ∷ Boolean }
+
+derive instance Eq ImportKind
+derive instance Ord ImportKind
 
 data BindingKind
   = BindingKindOpen
   | BindingKindExported
   | BindingKindHidden
+  | BindingKindImported
+      { importId ∷ ModuleImportId
+      , importKind :: ImportKind
+      , importExported :: Boolean
+      }
 
 derive instance Eq BindingKind
 derive instance Ord BindingKind
+
+bindingKindImportId ∷ BindingKind → Maybe ModuleImportId
+bindingKindImportId = case _ of
+  BindingKindImported { importId } →
+    Just importId
+  _ →
+    Nothing
+
+bindingKindIsExported ∷ BindingKind → Boolean
+bindingKindIsExported = case _ of
+  BindingKindOpen →
+    true
+  BindingKindExported →
+    true
+  _ →
+    false
 
 newtype Binding a = Binding { kind ∷ BindingKind, id ∷ a }
 
 derive newtype instance Eq a ⇒ Eq (Binding a)
 derive newtype instance Ord a ⇒ Ord (Binding a)
-
-exportToLocal ∷ ∀ a. Binding a → a
-exportToLocal (Binding { id }) = id
 
 data ConstructorKind
   = ConstructorKindData Proper SST.ConstructorId
@@ -28,6 +55,11 @@ data ConstructorKind
 
 derive instance Eq ConstructorKind
 derive instance Ord ConstructorKind
+
+constructorTypeName ∷ ConstructorKind → Proper
+constructorTypeName = case _ of
+  ConstructorKindData name _ → name
+  ConstructorKindNewtype name _ → name
 
 data TypeKind
   = TypeKindData SST.DeclarationId

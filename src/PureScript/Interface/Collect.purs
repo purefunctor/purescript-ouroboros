@@ -12,11 +12,24 @@ import Data.Maybe (Maybe(..), isNothing, maybe)
 import Data.Traversable (traverse)
 import Foreign.Object (Object)
 import Foreign.Object as Object
+import Partial.Unsafe (unsafeCrashWith)
 import PureScript.CST.Types (Ident(..), ModuleName, Proper(..))
 import PureScript.Driver.Query.Stable (FileId)
+import PureScript.Interface.Collect.Monad (InterfaceM)
 import PureScript.Interface.Collect.Monad as Monad
 import PureScript.Interface.Error (InterfaceError(..))
-import PureScript.Interface.Types (BindingKind(..), ConstructorKind(..), Interface(..), TypeKind(..), ValueKind(..))
+import PureScript.Interface.Types
+  ( Binding(..)
+  , BindingKind(..)
+  , ConstructorKind(..)
+  , ImportKind(..)
+  , Interface(..)
+  , TypeKind(..)
+  , ValueKind(..)
+  , bindingKindIsExported
+  , constructorTypeName
+  )
+import PureScript.Surface.Syntax.Tree (ModuleImportId)
 import PureScript.Surface.Syntax.Tree as SST
 import PureScript.Utils.Mutable.Array as MutableArray
 import PureScript.Utils.Mutable.Object as MutableObject
@@ -88,90 +101,167 @@ type Result =
   , errors ∷ Array InterfaceError
   }
 
+newtype ImportMap = ImportMap
+  { types ∷ Object (Maybe SST.DataMembers)
+  , values ∷ Object Unit
+  }
+
+inferImportMap ∷ ∀ r. NonEmptyArray SST.Import → ST r ImportMap
+inferImportMap imports = do
+  typesRaw ← MutableObject.empty
+  valuesRaw ← MutableObject.empty
+
+  for_ imports case _ of
+    SST.ImportValue name →
+      MutableObject.poke name unit valuesRaw
+    SST.ImportOp _ →
+      unsafeCrashWith "todo: ImportOp"
+    SST.ImportType name memberList →
+      MutableObject.poke name memberList typesRaw
+    SST.ImportTypeOp _ →
+      unsafeCrashWith "todo: ImportTypeOp"
+    SST.ImportClass name →
+      MutableObject.poke name Nothing typesRaw
+    SST.ImportNotImplemented →
+      pure unit
+
+  map ImportMap $ { types: _, values: _ }
+    <$> MutableObject.unsafeFreeze typesRaw
+    <*> MutableObject.unsafeFreeze valuesRaw
+
+type ImportConstructorFn a = ModuleImportId → Proper → Binding a → Boolean → Maybe ImportMap → Binding a
+
+importConstructorBinding ∷ ImportConstructorFn ConstructorKind
+importConstructorBinding importId cName (Binding { kind: bKind, id }) hiding importMap = do
+  let
+    importExported ∷ Boolean
+    importExported = bindingKindIsExported bKind
+
+    tName ∷ Proper
+    tName = constructorTypeName id
+
+    importKind ∷ ImportKind
+    importKind = importMap # maybe ImportKindOpen case _ of
+      ImportMap { types } → ImportKindClosed
+        { hiding
+        , explicit: case Object.lookup (coerce tName) types of
+            Nothing →
+              false
+            Just Nothing →
+              false
+            Just (Just SST.DataAll) →
+              true
+            Just (Just (SST.DataEnumerated dataMembers)) →
+              Array.elem cName dataMembers
+        }
+
+  Binding { kind: BindingKindImported { importId, importKind, importExported }, id }
+
+importConstructorType ∷ ImportConstructorFn TypeKind
+importConstructorType importId tName (Binding { kind: bKind, id }) hiding importMap = do
+  let
+    importExported ∷ Boolean
+    importExported = bindingKindIsExported bKind
+
+    importKind ∷ ImportKind
+    importKind = importMap # maybe ImportKindOpen case _ of
+      ImportMap { types } → ImportKindClosed { hiding, explicit: Object.member (coerce tName) types }
+
+  Binding { kind: BindingKindImported { importId, importKind, importExported }, id }
+
+importConstructorValue ∷ ImportConstructorFn ValueKind
+importConstructorValue importId vName (Binding { kind: bKind, id }) hiding importMap = do
+  let
+    importExported ∷ Boolean
+    importExported = bindingKindIsExported bKind
+
+    importKind ∷ ImportKind
+    importKind = importMap # maybe ImportKindOpen case _ of
+      ImportMap { values } → ImportKindClosed { hiding, explicit: Object.member (coerce vName) values }
+
+  Binding { kind: BindingKindImported { importId, importKind, importExported }, id }
+
+collectImport ∷ ∀ r. Input r → SST.ModuleImport → InterfaceM r Unit
+collectImport input (SST.ModuleImport { annotation: SST.Annotation { id }, name, importList, qualified }) = do
+  let
+    { hiding, imports } = case importList of
+      Just (SST.ImportList { hiding, imports }) →
+        { hiding, imports: Just imports }
+      Nothing →
+        { hiding: false, imports: Nothing }
+  importMap ← liftST $ traverse inferImportMap imports
+  maybeImportFileId ← liftST $ input.lookupModule name
+  for_ maybeImportFileId \importFileId → do
+    { interface: Interface interface } ← liftST $ input.lookupInterface importFileId
+    forWithIndex_ interface.constructors \k v → do
+      Monad.insertOrErrorConstructor qualified (coerce k) $ importConstructorBinding id (coerce k) v hiding importMap
+    forWithIndex_ interface.types \k v →
+      Monad.insertOrErrorType qualified (coerce k) $ importConstructorType id (coerce k) v hiding importMap
+    forWithIndex_ interface.values \k v →
+      Monad.insertOrErrorValue qualified (coerce k) $ importConstructorValue id (coerce k) v hiding importMap
+
 collectInterface ∷ ∀ r. Input r → SST.Module → ST r Result
-collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
+collectInterface input (SST.Module { exports, imports, declarations }) = Monad.run do
+  traverse_ (collectImport input) imports
+
   exportMap ← liftST $ traverse inferExportMap exports
 
   for_ declarations case _ of
     -- data Maybe a = Just a | Nothing
     SST.DeclarationData (SST.Annotation { id }) tName _ (SST.DataEquation { constructors }) → do
-      let
-        tKind ∷ TypeKind
-        tKind = TypeKindData id
-
-        tBindingKind ∷ BindingKind
-        tBindingKind = typeBindingKind tName exportMap
-      Monad.insertOrErrorType tName tKind tBindingKind
+      Monad.insertOrErrorType Nothing tName $ Binding
+        { kind: typeBindingKind tName exportMap
+        , id: TypeKindData id
+        }
 
       for_ constructors $ traverse_ case _ of
         SST.DataConstructor { annotation: SST.Annotation { id: cId }, name: cName } → do
-          let
-            cKind ∷ ConstructorKind
-            cKind = ConstructorKindData cName cId
-
-            cBindingKind ∷ BindingKind
-            cBindingKind = constructorBindingKind tName cName exportMap
-          Monad.insertOrErrorConstructor cName cKind cBindingKind
+          Monad.insertOrErrorConstructor Nothing cName $ Binding
+            { kind: constructorBindingKind tName cName exportMap
+            , id: ConstructorKindData tName cId
+            }
 
     -- type Function a b = a -> b
     SST.DeclarationType (SST.Annotation { id }) tName _ _ → do
-      let
-        tKind ∷ TypeKind
-        tKind = TypeKindSynoynm id
-
-        tBindingKind ∷ BindingKind
-        tBindingKind = typeBindingKind tName exportMap
-      Monad.insertOrErrorType tName tKind tBindingKind
+      Monad.insertOrErrorType Nothing tName $ Binding
+        { kind: typeBindingKind tName exportMap
+        , id: TypeKindSynoynm id
+        }
 
     -- newtype Identity a = Identity a
     SST.DeclarationNewtype (SST.Annotation { id }) tName _ (SST.NewtypeEquation { constructor }) → do
-      let
-        tKind ∷ TypeKind
-        tKind = TypeKindNewtype id
-
-        tBindingKind ∷ BindingKind
-        tBindingKind = typeBindingKind tName exportMap
-      Monad.insertOrErrorType tName tKind tBindingKind
+      Monad.insertOrErrorType Nothing tName $ Binding
+        { kind: typeBindingKind tName exportMap
+        , id: TypeKindNewtype id
+        }
 
       case constructor of
         SST.NewtypeConstructor { annotation: SST.Annotation { id: cId }, name: cName } → do
-          let
-            cKind ∷ ConstructorKind
-            cKind = ConstructorKindNewtype cName cId
-
-            cBindingKind ∷ BindingKind
-            cBindingKind = constructorBindingKind tName cName exportMap
-          Monad.insertOrErrorConstructor cName cKind cBindingKind
+          Monad.insertOrErrorConstructor Nothing cName $ Binding
+            { kind: constructorBindingKind tName cName exportMap
+            , id: ConstructorKindNewtype tName cId
+            }
 
     -- class Functor f where map :: forall a b. (a -> b) -> f a -> f b
     SST.DeclarationClass (SST.Annotation { id }) tName _ (SST.ClassEquation { methods }) → do
-      let
-        tKind ∷ TypeKind
-        tKind = TypeKindClass id
-
-        tBindingKind ∷ BindingKind
-        tBindingKind = typeBindingKind tName exportMap
-      Monad.insertOrErrorType tName tKind tBindingKind
+      Monad.insertOrErrorType Nothing tName $ Binding
+        { kind: typeBindingKind tName exportMap
+        , id: TypeKindClass id
+        }
 
       for_ methods $ traverse_ case _ of
         SST.ClassMethod { annotation: SST.Annotation { id: mId }, name: mName } → do
-          let
-            vKind ∷ ValueKind
-            vKind = ValueKindMethod tName mId
-
-            vBindingKind ∷ BindingKind
-            vBindingKind = valueBindingKind mName exportMap
-          Monad.insertOrErrorValue mName vKind vBindingKind
+          Monad.insertOrErrorValue Nothing mName $ Binding
+            { kind: valueBindingKind mName exportMap
+            , id: ValueKindMethod tName mId
+            }
 
     -- life = 42
     SST.DeclarationValue (SST.Annotation { id }) vName _ _ → do
-      let
-        vKind ∷ ValueKind
-        vKind = ValueKindValue id
-
-        vBindingKind ∷ BindingKind
-        vBindingKind = valueBindingKind vName exportMap
-      Monad.insertOrErrorValue vName vKind vBindingKind
+      Monad.insertOrErrorValue Nothing vName $ Binding
+        { kind: valueBindingKind vName exportMap
+        , id: ValueKindValue id
+        }
 
     _ →
       pure unit
@@ -179,7 +269,7 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
   for_ exportMap case _ of
     ExportMap { types: exMapTypes, values: exMapValues } → do
       forWithIndex_ exMapTypes \name members → do
-        { constructors, types } ← Monad.ask
+        { unqualified: { constructors, types } } ← Monad.ask
         typeExport ← liftST $ MutableObject.peek (coerce name) types
         when (isNothing typeExport) do
           Monad.addError (MissingType (coerce name))
@@ -192,12 +282,12 @@ collectInterface _ (SST.Module { exports, declarations }) = Monad.run do
               when (isNothing constructorExport) do
                 Monad.addError (MissingConstructor (coerce dataMember))
       forWithIndex_ exMapValues \name _ → do
-        { values } ← Monad.ask
+        { unqualified: { values } } ← Monad.ask
         valueExport ← liftST $ MutableObject.peek (coerce name) values
         when (isNothing valueExport) do
           Monad.addError (MissingValue (coerce name))
 
-  { constructors, types, values, errors } ← Monad.ask
+  { unqualified: { constructors, types, values }, errors } ← Monad.ask
 
   interface ← liftST $ { constructors: _, types: _, values: _ }
     <$> MutableObject.unsafeFreeze constructors

@@ -1,0 +1,96 @@
+{
+  interface: {
+    constructors: {
+      Just: {
+        kind: BindingKindImported {
+          value0: {
+            importId: 0,
+            importKind: ImportKindClosed {
+              value0: { hiding: false, explicit: true }
+            },
+            importExported: true
+          }
+        },
+        id: ConstructorKindData { value0: 'Maybe', value1: 0 }
+      },
+      Nothing: {
+        kind: BindingKindImported {
+          value0: {
+            importId: 0,
+            importKind: ImportKindClosed {
+              value0: { hiding: false, explicit: true }
+            },
+            importExported: true
+          }
+        },
+        id: ConstructorKindData { value0: 'Maybe', value1: 1 }
+      }
+    },
+    types: {
+      Maybe: {
+        kind: BindingKindImported {
+          value0: {
+            importId: 0,
+            importKind: ImportKindClosed {
+              value0: { hiding: false, explicit: true }
+            },
+            importExported: true
+          }
+        },
+        id: TypeKindData { value0: 0 }
+      }
+    },
+    values: {
+      life: {
+        kind: BindingKindImported {
+          value0: {
+            importId: 0,
+            importKind: ImportKindClosed {
+              value0: { hiding: false, explicit: false }
+            },
+            importExported: true
+          }
+        },
+        id: ValueKindValue { value0: 1 }
+      }
+    }
+  },
+  errors: [
+    DuplicateConstructor {
+      value0: {
+        old: {
+          importId: Just { value0: 0 },
+          kind: ConstructorKindData { value0: 'Maybe', value1: 0 }
+        },
+        new: {
+          importId: Just { value0: 1 },
+          kind: ConstructorKindData { value0: 'Maybe', value1: 0 }
+        }
+      }
+    },
+    DuplicateConstructor {
+      value0: {
+        old: {
+          importId: Just { value0: 0 },
+          kind: ConstructorKindData { value0: 'Maybe', value1: 1 }
+        },
+        new: {
+          importId: Just { value0: 1 },
+          kind: ConstructorKindData { value0: 'Maybe', value1: 1 }
+        }
+      }
+    },
+    DuplicateType {
+      value0: {
+        old: {
+          importId: Just { value0: 0 },
+          kind: TypeKindData { value0: 0 }
+        },
+        new: {
+          importId: Just { value0: 1 },
+          kind: TypeKindData { value0: 0 }
+        }
+      }
+    }
+  ]
+}

@@ -18,24 +18,43 @@
   },
   errors: [
     DuplicateType {
-      value0: TypeKindData { value0: 1 },
-      value1: TypeKindSynoynm { value0: 0 }
+      value0: {
+        old: { importId: Nothing {}, kind: TypeKindSynoynm { value0: 0 } },
+        new: { importId: Nothing {}, kind: TypeKindData { value0: 1 } }
+      }
     },
     DuplicateType {
-      value0: TypeKindNewtype { value0: 2 },
-      value1: TypeKindSynoynm { value0: 0 }
+      value0: {
+        old: { importId: Nothing {}, kind: TypeKindSynoynm { value0: 0 } },
+        new: { importId: Nothing {}, kind: TypeKindNewtype { value0: 2 } }
+      }
     },
     DuplicateConstructor {
-      value0: ConstructorKindNewtype { value0: 'A', value1: 0 },
-      value1: ConstructorKindData { value0: 'A', value1: 0 }
+      value0: {
+        old: {
+          importId: Nothing {},
+          kind: ConstructorKindData { value0: 'A', value1: 0 }
+        },
+        new: {
+          importId: Nothing {},
+          kind: ConstructorKindNewtype { value0: 'A', value1: 0 }
+        }
+      }
     },
     DuplicateType {
-      value0: TypeKindClass { value0: 3 },
-      value1: TypeKindSynoynm { value0: 0 }
+      value0: {
+        old: { importId: Nothing {}, kind: TypeKindSynoynm { value0: 0 } },
+        new: { importId: Nothing {}, kind: TypeKindClass { value0: 3 } }
+      }
     },
     DuplicateValue {
-      value0: ValueKindValue { value0: 4 },
-      value1: ValueKindMethod { value0: 'A', value1: 0 }
+      value0: {
+        old: {
+          importId: Nothing {},
+          kind: ValueKindMethod { value0: 'A', value1: 0 }
+        },
+        new: { importId: Nothing {}, kind: ValueKindValue { value0: 4 } }
+      }
     }
   ]
 }
